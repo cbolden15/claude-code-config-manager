@@ -177,8 +177,8 @@
           "subtask_id": "3_3",
           "name": "Create prompts generator",
           "description": "Generate prompts/*.md files with injection point replacement",
-          "status": "pending",
-          "notes": "",
+          "status": "completed",
+          "notes": "Successfully implemented comprehensive prompts generator with injection point replacement functionality. Features include: generateAutoClaudePrompts() function for generating prompts/*.md files, processPromptContent() for injection point replacement ({{specDirectory}}, {{projectContext}}, {{mcpDocumentation}}), automatic header comment injection for CCM-generated files, front matter preservation and proper markdown formatting, validation functions for prompt content and arrays, helper functions for injection context and point extraction. Implementation follows established generator patterns and TypeScript build verification passed successfully.",
           "dependencies": ["1_1"],
           "files_to_modify": [
             "packages/server/src/lib/generators/auto-claude/prompts.ts"
@@ -188,8 +188,8 @@
           "subtask_id": "3_4",
           "name": "Create agent-configs generator",
           "description": "Generate JSON export of AGENT_CONFIGS with tool permissions and MCP dependencies",
-          "status": "pending",
-          "notes": "",
+          "status": "completed",
+          "notes": "Successfully implemented comprehensive agent-configs generator following established patterns. Features include: generateAgentConfigs() function for JSON export, comprehensive validation functions (validateAgentConfigs, validateAgentConfigsExport), default agent configurations for common types (coder, planner, qa_reviewer, spec_gatherer), utility functions for merging configs and standard tools/MCP servers. TypeScript build verification passed successfully. Generator follows Auto-Claude AGENT_CONFIGS registry format with tool permissions, MCP dependencies, and thinking level defaults.",
           "dependencies": ["1_1"],
           "files_to_modify": [
             "packages/server/src/lib/generators/auto-claude/agent-configs.ts"
@@ -199,8 +199,8 @@
           "subtask_id": "3_5",
           "name": "Create generator index",
           "description": "Export all Auto-Claude generators from main index file",
-          "status": "pending",
-          "notes": "",
+          "status": "completed",
+          "notes": "Successfully created Auto-Claude generators index file that exports all generator functions and utilities. Index file exports: generateAutoClaudeEnv, generateTaskMetadata, generateAutoClaudePrompts, generateAgentConfigs with their respective validation and helper functions from all four generator modules (env-file, model-profile, prompts, agent-configs). Also re-exports all Auto-Claude TypeScript types for convenience. TypeScript build verification passed successfully.",
           "dependencies": ["3_1", "3_2", "3_3", "3_4"],
           "files_to_modify": [
             "packages/server/src/lib/generators/auto-claude/index.ts"
@@ -210,8 +210,8 @@
           "subtask_id": "3_6",
           "name": "Integrate with main generator",
           "description": "Update main generateProjectFiles function to include Auto-Claude generators",
-          "status": "pending",
-          "notes": "",
+          "status": "completed",
+          "notes": "Successfully updated main generateProjectFiles function to include Auto-Claude generators. Enhanced the integration with several improvements: 1) Always generates task_metadata.json (with defaults if no model profile), 2) Improved data extraction from component configs with null safety, 3) Better injection context for prompts (includes project context), 4) More robust condition checking using hasAutoClaudeComponents variable, 5) Clearer code structure and comments. TypeScript build verification passed successfully. All Auto-Claude generator functions are now properly integrated into the main project file generation workflow.",
           "dependencies": ["3_5"],
           "files_to_modify": [
             "packages/server/src/lib/generators/index.ts"

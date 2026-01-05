@@ -54,7 +54,17 @@
       "description": "Implemented task_metadata.json generator for Auto-Claude with proper TypeScript types and validation. Generator follows established patterns and includes helper functions for different model profiles (default, cost-optimized, quality-focused).",
       "category": "generator",
       "discovered_at": "2026-01-05T21:24:05.932729+00:00"
+    },
+    "packages/server/src/lib/generators/auto-claude/prompts.ts": {
+      "description": "Implemented prompts generator for Auto-Claude with injection point replacement functionality. Features include: generateAutoClaudePrompts() function that processes AutoClaudePrompt arrays to generate prompts/*.md files, processPromptContent() function for replacing injection points ({{specDirectory}}, {{projectContext}}, {{mcpDocumentation}}) with actual values, automatic header comment injection for CCM-generated files, front matter preservation and proper markdown formatting, comprehensive validation functions, and helper utilities for injection context management.",
+      "category": "generator",
+      "discovered_at": "2026-01-05T21:28:25.119578+00:00"
+    },
+    "packages/server/src/app/api/auto-claude/import/route.ts": {
+      "description": "Successfully implemented POST /api/auto-claude/import endpoint with comprehensive Auto-Claude configuration parsing and database import capabilities. Includes request validation, file parsing for models.py/prompts/.env, transaction-based Component creation, error handling, and dry-run functionality.",
+      "category": "API Implementation",
+      "discovered_at": "2026-01-05T21:51:31.485785+00:00"
     }
   },
-  "last_updated": "2026-01-05T21:24:05.932737+00:00"
+  "last_updated": "2026-01-05T21:51:31.485793+00:00"
 }

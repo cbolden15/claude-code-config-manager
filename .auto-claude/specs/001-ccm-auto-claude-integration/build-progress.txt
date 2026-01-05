@@ -174,8 +174,37 @@ Ready for subtask 2_3: Create settings API routes.
   - ✅ **Location**: packages/server/src/lib/generators/auto-claude/model-profile.ts
   - ✅ **Commit**: cb508aa - "auto-claude: 3_2 - Generate task_metadata.json with phase models and thinking configurations"
 
+- [x] **Subtask 3_3**: Create prompts generator ✅ **COMPLETED**
+  - ✅ Implemented generateAutoClaudePrompts() function for generating prompts/*.md files
+  - ✅ Added processPromptContent() for injection point replacement ({{specDirectory}}, {{projectContext}}, {{mcpDocumentation}})
+  - ✅ Automatic header comment injection for CCM-generated files
+  - ✅ Front matter preservation and proper markdown formatting
+  - ✅ Validation functions: validatePromptContent() and validatePrompts()
+  - ✅ Helper functions: getDefaultInjectionContext() and extractInjectionPoints()
+  - ✅ Follows established generator patterns and TypeScript build verification passed
+  - ✅ **Location**: packages/server/src/lib/generators/auto-claude/prompts.ts
+
+- [x] **Subtask 3_4**: Create agent-configs generator ✅ **COMPLETED**
+  - ✅ Implemented generateAgentConfigs() function for JSON export of AGENT_CONFIGS
+  - ✅ Comprehensive validation functions: validateAgentConfigs() and validateAgentConfigsExport()
+  - ✅ Default agent configurations for common types (coder, planner, qa_reviewer, spec_gatherer)
+  - ✅ Utility functions: mergeAgentConfigs(), getStandardTools(), getStandardMcpServers()
+  - ✅ Follows Auto-Claude AGENT_CONFIGS registry format with tool permissions, MCP dependencies, thinking defaults
+  - ✅ TypeScript build verification passed successfully
+  - ✅ **Location**: packages/server/src/lib/generators/auto-claude/agent-configs.ts
+
+- [x] **Subtask 3_5**: Create generator index ✅ **COMPLETED**
+  - ✅ Created Auto-Claude generators index file that exports all generator functions and utilities
+  - ✅ Exports main generators: generateAutoClaudeEnv, generateTaskMetadata, generateAutoClaudePrompts, generateAgentConfigs
+  - ✅ Exports validation functions from all four generator modules (env-file, model-profile, prompts, agent-configs)
+  - ✅ Exports helper functions: getDefaultAutoClaudeProjectConfig, getDefaultModelProfile, getDefaultInjectionContext, getDefaultAgentConfigs
+  - ✅ Re-exports all Auto-Claude TypeScript types for convenience
+  - ✅ TypeScript build verification passed successfully
+  - ✅ **Location**: packages/server/src/lib/generators/auto-claude/index.ts
+  - ✅ **Commit**: f36e7a8 - "auto-claude: Export all Auto-Claude generators from main index file"
+
 🎯 **NEXT READY FOR:**
-**Subtask 3_3**: Create prompts generator
-- Dependencies: Subtask 1_1 ✅ (TypeScript interfaces completed)
-- Files to modify: packages/server/src/lib/generators/auto-claude/prompts.ts
-- Generate prompts/*.md files with injection point replacement
+**Subtask 3_6**: Integrate with main generator
+- Dependencies: Subtask 3_5 ✅ (generator index completed)
+- Files to modify: packages/server/src/lib/generators/index.ts
+- Update main generateProjectFiles function to include Auto-Claude generators
