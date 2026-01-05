@@ -39,7 +39,12 @@
       "description": "Completed comprehensive settings service layer with automatic encryption for sensitive keys. Provides full CRUD operations, automatic detection and encryption of API keys/tokens/passwords using AES-256-GCM, batch operations with transactions, Zod validation, and utility functions for migration and health checks. Follows existing codebase patterns.",
       "category": "Settings Infrastructure",
       "discovered_at": "2026-01-05T20:51:45.806637+00:00"
+    },
+    "packages/server/src/lib/generators/auto-claude/env-file.ts": {
+      "description": "Completed env-file generator for Auto-Claude .env file generation with MCP toggles, API keys, custom servers, validation functions, and default configuration helpers. Follows existing generator patterns from codebase.",
+      "category": "generator",
+      "discovered_at": "2026-01-05T21:08:49.199510+00:00"
     }
   },
-  "last_updated": "2026-01-05T20:51:45.806645+00:00"
+  "last_updated": "2026-01-05T21:08:49.199518+00:00"
 }

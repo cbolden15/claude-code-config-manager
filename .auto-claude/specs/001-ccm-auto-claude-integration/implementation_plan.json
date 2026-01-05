@@ -155,8 +155,8 @@
           "subtask_id": "3_1",
           "name": "Create env-file generator",
           "description": "Generate .auto-claude/.env with MCP toggles, API keys, custom servers",
-          "status": "pending",
-          "notes": "",
+          "status": "completed",
+          "notes": "Successfully implemented comprehensive .auto-claude/.env generator with MCP toggles, API keys, and custom servers. Features include: generateAutoClaudeEnv function for full environment file generation with header comments, core Auto-Claude settings, API keys section, MCP server toggles for all supported servers, custom MCP server configuration, per-agent MCP overrides, and development settings. Also includes validateAutoClaudeEnv function with comprehensive validation rules and getDefaultAutoClaudeProjectConfig helper function. Implementation follows existing generator patterns.",
           "dependencies": ["1_1", "2_2"],
           "files_to_modify": [
             "packages/server/src/lib/generators/auto-claude/env-file.ts"
