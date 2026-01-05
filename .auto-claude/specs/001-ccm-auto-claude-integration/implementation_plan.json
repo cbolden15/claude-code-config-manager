@@ -341,8 +341,8 @@
           "subtask_id": "5_4",
           "name": "Create import wizard UI",
           "description": "Multi-step wizard for Auto-Claude import with preview and validation",
-          "status": "pending",
-          "notes": "",
+          "status": "completed",
+          "notes": "Multi-step wizard for Auto-Claude import with preview and validation has been successfully implemented. All four wizard steps are complete: PathSelectionStep (validation of Auto-Claude installation path), PreviewStep (configuration detection and preview with agent configs, prompts, model profiles, and project settings), ValidationStep (import confirmations and progress tracking), and ResultsStep (import results, next steps, and CLI commands). The wizard includes comprehensive error handling, progress tracking, API integration with the import endpoint, and proper navigation. TypeScript build verification passed successfully. The implementation follows existing UI patterns and includes responsive design and accessibility features.",
           "dependencies": ["4_1"],
           "files_to_modify": [
             "packages/server/src/app/auto-claude/import/page.tsx",
