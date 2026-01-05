@@ -58,8 +58,8 @@
           "subtask_id": "1_4",
           "name": "Extend ComponentType enum",
           "description": "Add AUTO_CLAUDE_AGENT_CONFIG, AUTO_CLAUDE_PROMPT, AUTO_CLAUDE_MODEL_PROFILE, AUTO_CLAUDE_PROJECT_CONFIG to enum",
-          "status": "pending",
-          "notes": "",
+          "status": "completed",
+          "notes": "Successfully added four new Auto-Claude component types to the Prisma schema comment: AUTO_CLAUDE_AGENT_CONFIG, AUTO_CLAUDE_PROMPT, AUTO_CLAUDE_MODEL_PROFILE, and AUTO_CLAUDE_PROJECT_CONFIG. These extend the existing component type enum to support Auto-Claude integration components. The schema now properly documents all available component types for use by the application.",
           "dependencies": [],
           "files_to_modify": [
             "packages/server/prisma/schema.prisma"

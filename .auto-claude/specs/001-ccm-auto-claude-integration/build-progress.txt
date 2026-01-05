@@ -8,7 +8,7 @@
 
 ## Current Status: IMPLEMENTATION IN PROGRESS 🚧
 
-**Current Progress**: 3/72 subtasks completed (4.2%)
+**Current Progress**: 4/72 subtasks completed (5.6%)
 
 ### Phase Summary
 1. **Phase 1** - Schema & Types (Foundation): 6 subtasks, 12 hours
@@ -30,7 +30,7 @@
 - [x] Estimated time requirements for each phase
 - [x] Identified key component types and their relationships
 
-### Phase 1 - Schema & Types (Foundation) [3/6]
+### Phase 1 - Schema & Types (Foundation) [4/6]
 - [x] **Subtask 1_1**: Define Auto-Claude TypeScript interfaces ✅ **COMPLETED**
   - ✅ Created AutoClaudeAgentConfig interface (per-agent tool and MCP configuration)
   - ✅ Created AutoClaudePrompt interface (agent persona prompts with injection points)
@@ -58,6 +58,14 @@
   - ✅ Settings table now supports encrypted credential storage for Auto-Claude integration
   - ✅ **Commit**: 6cc8a1b - "auto-claude: 1_3 - Create Settings table for encrypted credential storage"
 
+- [x] **Subtask 1_4**: Extend ComponentType enum ✅ **COMPLETED**
+  - ✅ Added AUTO_CLAUDE_AGENT_CONFIG component type for agent tool and MCP configurations
+  - ✅ Added AUTO_CLAUDE_PROMPT component type for agent persona prompts with injection points
+  - ✅ Added AUTO_CLAUDE_MODEL_PROFILE component type for phase-specific model configurations
+  - ✅ Added AUTO_CLAUDE_PROJECT_CONFIG component type for project-level Auto-Claude settings
+  - ✅ Updated Prisma schema comment to document all available component types
+  - ✅ **Commit**: b878127 - "auto-claude: 1_4 - Add AUTO_CLAUDE_AGENT_CONFIG, AUTO_CLAUDE_PROMPT, AUTO_CLAUDE_MODEL_PROFILE, AUTO_CLAUDE_PROJECT_CONFIG to enum"
+
 ## Key Deliverables Planned
 
 ### New Component Types
@@ -75,17 +83,16 @@
 ## Next Steps
 
 🎯 **CURRENTLY READY FOR:**
-1. **Subtask 1_4**: Extend ComponentType enum
-   - Dependencies: None
+1. **Subtask 1_5**: Extend Project model for Auto-Claude
+   - Dependencies: Subtasks 1_3 ✅, 1_4 ✅
    - Files to modify: packages/server/prisma/schema.prisma
-   - Add AUTO_CLAUDE_AGENT_CONFIG, AUTO_CLAUDE_PROMPT, AUTO_CLAUDE_MODEL_PROFILE, AUTO_CLAUDE_PROJECT_CONFIG
+   - Add autoClaudeEnabled, autoClaudeConfigId, modelProfileId, lastAutoClaudeSync fields
 
 🔄 **UPCOMING IN PHASE 1:**
-2. **Subtask 1_5**: Extend Project model for Auto-Claude (autoClaudeEnabled, autoClaudeConfigId, modelProfileId, lastAutoClaudeSync)
-3. **Subtask 1_6**: Run Prisma migrations for all schema changes
+2. **Subtask 1_6**: Run Prisma migrations for all schema changes
 
 🚀 **PHASE 2 - Settings Infrastructure**: Implement encryption and settings management
-6. **Continue sequentially** through remaining phases based on dependencies
+3. **Continue sequentially** through remaining phases based on dependencies
 
 ## Success Criteria
 - [ ] Import workflow successfully imports all 23 prompts and ~15 agent configs

@@ -65,6 +65,12 @@ model Project {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
+  // Auto-Claude specific
+  autoClaudeEnabled    Boolean   @default(false)
+  autoClaudeConfigId   String?   // Link to AUTO_CLAUDE_PROJECT_CONFIG
+  modelProfileId       String?   // Link to AUTO_CLAUDE_MODEL_PROFILE
+  lastAutoClaudeSync   DateTime?
+
   profile Profile? @relation(fields: [profileId], references: [id], onDelete: SetNull)
 
   @@unique([path, machine])

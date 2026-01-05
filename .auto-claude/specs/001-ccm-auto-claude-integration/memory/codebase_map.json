@@ -19,7 +19,12 @@
       "description": "Comprehensive Zod validation schemas implemented for all Auto-Claude component types with robust validation rules, enum constraints, and custom refinement functions for complex validation logic.",
       "category": "schemas",
       "discovered_at": "2026-01-05T20:21:52.573010+00:00"
+    },
+    "packages/server/prisma/schema.prisma": {
+      "description": "Extended Project model with Auto-Claude fields: autoClaudeEnabled (Boolean default false), autoClaudeConfigId (String? link to project config), modelProfileId (String? link to model profile), and lastAutoClaudeSync (DateTime? sync timestamp)",
+      "category": "schema",
+      "discovered_at": "2026-01-05T20:27:53.111444+00:00"
     }
   },
-  "last_updated": "2026-01-05T20:21:52.573019+00:00"
+  "last_updated": "2026-01-05T20:27:53.111452+00:00"
 }
