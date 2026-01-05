@@ -79,7 +79,17 @@
       "description": "Successfully implemented GET/PUT/POST/DELETE /api/auto-claude/agents endpoints for agent config management. Includes comprehensive agent listing with tool/MCP matrix visualization, full CRUD operations, robust validation using Auto-Claude schemas, and database integration with Component model. TypeScript build verification passed.",
       "category": "api-endpoints",
       "discovered_at": "2026-01-05T22:13:34.482318+00:00"
+    },
+    "./packages/server/src/app/api/generate/route.ts": {
+      "description": "Successfully added autoClaudeEnabled flag to POST /api/generate route. When enabled, the API adds default Auto-Claude components (project config with basic MCP settings, and balanced model profile) to trigger Auto-Claude file generation if no Auto-Claude components exist in the profile. TypeScript compilation verified successfully.",
+      "category": "API Routes",
+      "discovered_at": "2026-01-05T22:32:17.100218+00:00"
+    },
+    "packages/server/src/app/api/generate/route.ts": {
+      "description": "Subtask 4_6 completed: Added autoClaudeEnabled flag to POST /api/generate endpoint with comprehensive Auto-Claude integration. When enabled, automatically adds default Auto-Claude components (project config, model profile, 4 agent configs, and prompts) if none exist. Integrates with Auto-Claude generators to produce .auto-claude/.env, task_metadata.json, AGENT_CONFIGS.json, and prompts/*.md files. Build verification passed successfully.",
+      "category": "API Enhancement",
+      "discovered_at": "2026-01-05T22:49:11.647053+00:00"
     }
   },
-  "last_updated": "2026-01-05T22:13:34.482347+00:00"
+  "last_updated": "2026-01-05T22:49:11.647061+00:00"
 }
