@@ -1,4 +1,4 @@
-import { AutoClaudeModelProfile } from '../../../../../shared/src/types/auto-claude';
+import { AutoClaudeModelProfile, ClaudeModel, ThinkingLevel } from '../../../../../shared/src/types/auto-claude';
 
 interface ModelProfileOptions {
   modelProfile?: AutoClaudeModelProfile | null;
@@ -6,16 +6,16 @@ interface ModelProfileOptions {
 
 interface TaskMetadata {
   models: {
-    spec: string;
-    planning: string;
-    coding: string;
-    qa: string;
+    spec: ClaudeModel;
+    planning: ClaudeModel;
+    coding: ClaudeModel;
+    qa: ClaudeModel;
   };
   thinking: {
-    spec: string;
-    planning: string;
-    coding: string;
-    qa: string;
+    spec: ThinkingLevel;
+    planning: ThinkingLevel;
+    coding: ThinkingLevel;
+    qa: ThinkingLevel;
   };
 }
 
