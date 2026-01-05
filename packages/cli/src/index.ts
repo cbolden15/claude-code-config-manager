@@ -6,6 +6,7 @@ import { listCommand } from './commands/list.js';
 import { initCommand } from './commands/init.js';
 import { applyCommand } from './commands/apply.js';
 import { syncCommand } from './commands/sync.js';
+import { createAutoClaudeCommand } from './commands/auto-claude.js';
 
 program
   .name('ccm')
@@ -91,6 +92,9 @@ program
       process.exit(1);
     }
   });
+
+// Auto-Claude command group
+program.addCommand(createAutoClaudeCommand());
 
 // Show help if no command specified
 program.showHelpAfterError();
