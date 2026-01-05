@@ -153,3 +153,27 @@ Created comprehensive settings service in packages/server/src/lib/settings.ts wi
 The service automatically detects sensitive keys based on patterns and encrypts them using the existing AES-256-GCM encryption utility. Non-sensitive settings remain unencrypted for performance.
 
 Ready for subtask 2_3: Create settings API routes.
+
+### Phase 3 - Generators [2/6]
+- [x] **Subtask 3_1**: Create env-file generator ✅ **COMPLETED**
+  - ✅ Implemented generateAutoClaudeEnv() function for .auto-claude/.env generation
+  - ✅ Added MCP server toggles, API keys configuration, custom MCP servers
+  - ✅ Includes validation function and default project configuration helpers
+  - ✅ Follows existing generator patterns from codebase
+  - ✅ **Location**: packages/server/src/lib/generators/auto-claude/env-file.ts
+
+- [x] **Subtask 3_2**: Create model-profile generator ✅ **COMPLETED**
+  - ✅ Implemented generateTaskMetadata() function for task_metadata.json generation
+  - ✅ Generates phase-specific model and thinking configurations from AutoClaudeModelProfile
+  - ✅ Added validation function and helper functions for default profiles
+  - ✅ Includes balanced, cost-optimized, and quality-focused model profile presets
+  - ✅ Fixed import paths to use relative imports for shared types
+  - ✅ Build verification passed successfully
+  - ✅ **Location**: packages/server/src/lib/generators/auto-claude/model-profile.ts
+  - ✅ **Commit**: 29073f7 - "auto-claude: 3_2 - Generate task_metadata.json with phase models and thinking configurations"
+
+🎯 **NEXT READY FOR:**
+**Subtask 3_3**: Create prompts generator
+- Dependencies: Subtask 1_1 ✅ (TypeScript interfaces completed)
+- Files to modify: packages/server/src/lib/generators/auto-claude/prompts.ts
+- Generate prompts/*.md files with injection point replacement

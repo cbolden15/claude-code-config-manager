@@ -44,7 +44,17 @@
       "description": "Completed env-file generator for Auto-Claude .env file generation with MCP toggles, API keys, custom servers, validation functions, and default configuration helpers. Follows existing generator patterns from codebase.",
       "category": "generator",
       "discovered_at": "2026-01-05T21:08:49.199510+00:00"
+    },
+    "./packages/server/src/lib/generators/auto-claude/model-profile.ts": {
+      "description": "Implemented model-profile generator with generateTaskMetadata() function that creates task_metadata.json files from AutoClaudeModelProfile data. Includes validation, default profiles (balanced, cost-optimized, quality-focused), and follows existing generator patterns.",
+      "category": "generator",
+      "discovered_at": "2026-01-05T21:14:00.771298+00:00"
+    },
+    "packages/server/src/lib/generators/auto-claude/model-profile.ts": {
+      "description": "Implemented task_metadata.json generator for Auto-Claude with proper TypeScript types and validation. Generator follows established patterns and includes helper functions for different model profiles (default, cost-optimized, quality-focused).",
+      "category": "generator",
+      "discovered_at": "2026-01-05T21:24:05.932729+00:00"
     }
   },
-  "last_updated": "2026-01-05T21:08:49.199518+00:00"
+  "last_updated": "2026-01-05T21:24:05.932737+00:00"
 }

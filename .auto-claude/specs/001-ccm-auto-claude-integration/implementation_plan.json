@@ -166,8 +166,8 @@
           "subtask_id": "3_2",
           "name": "Create model-profile generator",
           "description": "Generate task_metadata.json with phase models and thinking configurations",
-          "status": "pending",
-          "notes": "",
+          "status": "completed",
+          "notes": "Successfully implemented task_metadata.json generator with proper TypeScript types from shared package. Updated imports to include ClaudeModel and ThinkingLevel types, fixed TaskMetadata interface to use proper typing, and included validation function and helper functions for different model profiles (default, cost-optimized, quality-focused). Generator follows established patterns and build verification passed without TypeScript errors.",
           "dependencies": ["1_1"],
           "files_to_modify": [
             "packages/server/src/lib/generators/auto-claude/model-profile.ts"
