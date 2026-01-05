@@ -35,7 +35,7 @@
 
 ---
 
-**Current Progress**: 23/72 subtasks completed (31.9%)
+**Current Progress**: 28/72 subtasks completed (38.9%)
 
 ### Phase Summary
 1. **Phase 1** - Schema & Types (Foundation): 6 subtasks, 12 hours
@@ -340,7 +340,40 @@ Ready for subtask 2_3: Create settings API routes.
   - ✅ **Location**: packages/server/src/lib/import/env-parser.ts
   - ✅ **Commit**: 6de7bb4 - "auto-claude: 5_3 - Parse .auto-claude/.env for project configuration"
 
+### Phase 6 - CLI Commands [1/8] 🚧
+- [x] **Subtask 6_1**: Create base auto-claude command ✅ **COMPLETED**
+  - ✅ **Command Group Structure** - Created comprehensive auto-claude command group with proper help text and subcommand placeholders
+  - ✅ **createAutoClaudeCommand() Function** - Returns Commander.js Command instance with all planned subcommands (config, import, sync, profiles, agents)
+  - ✅ **autoClaudeCommand() Handler** - Main command handler with comprehensive help text, usage examples, and web interface integration
+  - ✅ **Placeholder Subcommands** - Structured placeholders for config, import, sync, profiles (list/show/apply), and agents (list/show) subcommands
+  - ✅ **Help System Integration** - Proper help text with examples, integration notes, and documentation links
+  - ✅ **Chalk Integration** - Follows existing CLI patterns with colored output and formatted help text
+  - ✅ **Commander.js Structure** - Uses Command instances for proper subcommand organization and help generation
+  - ✅ **TypeScript Build Verified** - All code compiles without errors and follows existing CLI command patterns
+  - ✅ **Location**: packages/cli/src/commands/auto-claude.ts
+  - ✅ **Commit**: 1600f78 - "auto-claude: Setup auto-claude command group structure and help"
+
 🎯 **NEXT READY FOR:**
+**Phase 6: CLI Commands** [2/8] - In Progress
+- [x] **Subtask 6_2**: Implement config subcommand ✅ **COMPLETED**
+  - ✅ **Auto-Claude Backend Path Configuration** - Implemented `ccm auto-claude config --path` command for setting Auto-Claude backend path
+  - ✅ **Path Validation** - Comprehensive validation checks for Auto-Claude installation structure (apps/backend/prompts directories)
+  - ✅ **Settings API Integration** - Added settings methods to API client (getSetting, setSetting, getSettings) for storing/retrieving backend path
+  - ✅ **Configuration Display** - --show option to display current configuration status with validation
+  - ✅ **Error Handling** - Detailed validation messages and helpful guidance for invalid installations
+  - ✅ **Version Detection** - Optional version detection from package.json when available
+  - ✅ **Next Steps Guidance** - Helpful guidance for next steps after configuration (import and sync commands)
+  - ✅ **CLI Patterns** - Follows established CLI patterns using chalk for colored output and proper TypeScript typing
+  - ✅ **TypeScript Build Verified** - All code compiles without errors
+  - ✅ **Location**: packages/cli/src/commands/auto-claude.ts, packages/cli/src/lib/api.ts
+  - ✅ **Commit**: acb3be8 - "auto-claude: unknown - ccm auto-claude config --path for setting Auto-Cla"
+
+🎯 **NEXT READY FOR:**
+**Subtask 6_3**: Implement import subcommand
+- Dependencies: Subtask 6_1 ✅ (base auto-claude command completed), Subtask 4_1 ✅ (import API endpoint completed)
+- Files to modify: packages/cli/src/commands/auto-claude.ts
+- ccm auto-claude import with --source and --dry-run options
+
 **Phase 5: Import Wizard** [3/4] - Almost complete
 **Subtask 5_4**: Create import wizard UI
 - Dependencies: Subtask 4_1 ✅ (import API endpoint completed)
