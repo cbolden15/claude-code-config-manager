@@ -111,8 +111,8 @@
           "subtask_id": "2_2",
           "name": "Implement settings service",
           "description": "Create service layer for settings CRUD with automatic encryption for sensitive keys",
-          "status": "pending",
-          "notes": "",
+          "status": "completed",
+          "notes": "Successfully implemented comprehensive settings service layer with automatic encryption for sensitive keys. Features include: CRUD operations (getSetting, setSetting, deleteSettings), automatic detection and encryption of sensitive keys (API keys, tokens, passwords), batch operations with transaction support, Zod validation, utility functions for migration and health checks. Uses existing AES-256-GCM encryption utility and follows codebase patterns.",
           "dependencies": ["2_1"],
           "files_to_modify": [
             "packages/server/src/lib/settings.ts"
@@ -122,8 +122,8 @@
           "subtask_id": "2_3",
           "name": "Create settings API routes",
           "description": "Implement GET/PUT/DELETE /api/settings endpoints with encryption handling",
-          "status": "pending",
-          "notes": "",
+          "status": "completed",
+          "notes": "Successfully implemented GET/PUT/DELETE /api/settings endpoints with encryption handling. Enhanced main settings route (packages/server/src/app/api/settings/route.ts) to use settings service functions instead of direct Prisma calls, added support for query parameters (includeSensitive, keysOnly, pattern), enhanced PUT method for both single and batch updates, and added DELETE method for bulk deletion. Created individual key route (packages/server/src/app/api/settings/[key]/route.ts) with GET/PUT/DELETE methods for specific setting management with automatic encryption/decryption. Fixed schema compatibility issues across codebase by updating prisma.setting references to prisma.settings in multiple files. The API routes now provide comprehensive settings management with automatic encryption for sensitive keys, flexible query options, proper error handling, and consistent response formats following codebase patterns.",
           "dependencies": ["2_2"],
           "files_to_modify": [
             "packages/server/src/app/api/settings/route.ts",
@@ -134,8 +134,8 @@
           "subtask_id": "2_4",
           "name": "Create settings UI page",
           "description": "Build settings management page with masked credential inputs and validation",
-          "status": "pending",
-          "notes": "",
+          "status": "completed",
+          "notes": "Settings management page with masked credential inputs and validation has been successfully implemented. All required components exist and are working correctly: EnhancedSettingsForm with comprehensive CCM and Auto-Claude settings, MaskedInput component with show/hide toggle functionality for sensitive credentials (Linear API key, GitHub token), and ExportImportSection for backup/restore. Build verification passed successfully. The implementation includes proper validation, error handling, and follows existing UI patterns.",
           "dependencies": ["2_3"],
           "files_to_modify": [
             "packages/server/src/app/settings/page.tsx",
