@@ -4,6 +4,9 @@ import { z } from 'zod';
 import { AutoClaudePromptSchema } from '../../../../shared/src/schemas/auto-claude';
 import type { AutoClaudePrompt } from '../../../../shared/src/types/auto-claude';
 
+// Type inference from Zod schema
+type ValidatedAutoClaudePrompt = z.infer<typeof AutoClaudePromptSchema>;
+
 /**
  * Validation schema for parsed prompt
  */
@@ -101,14 +104,20 @@ function convertToAutoClaudePrompt(agentType: string, content: string): AutoClau
     // Only include injection points if any are detected
     const hasInjectionPoints = Object.values(injectionPoints).some(Boolean);
 
-    const prompt: AutoClaudePrompt = {
+    // Build prompt object with required fields
+    const promptData: Partial<AutoClaudePrompt> = {
       agentType,
       promptContent: cleanContent.trim(),
-      ...(hasInjectionPoints && { injectionPoints }),
     };
 
-    // Validate using Zod schema
-    return AutoClaudePromptSchema.parse(prompt);
+    // Only include injection points if any are detected
+    if (hasInjectionPoints) {
+      promptData.injectionPoints = injectionPoints;
+    }
+
+    // Validate using Zod schema and return the parsed result
+    const validatedPrompt: ValidatedAutoClaudePrompt = AutoClaudePromptSchema.parse(promptData);
+    return validatedPrompt as AutoClaudePrompt;
   } catch (error) {
     // Silently return null on validation errors - errors will be tracked by caller
     return null;
@@ -207,7 +216,7 @@ export function validateParsedPrompts(prompts: ParsedPrompt[]): { valid: boolean
     const duplicates = agentTypes.filter((type, index) => agentTypes.indexOf(type) !== index);
 
     if (duplicates.length > 0) {
-      errors.push(`Duplicate agent types found: ${[...new Set(duplicates)].join(', ')}`);
+      errors.push(`Duplicate agent types found: ${Array.from(new Set(duplicates)).join(', ')}`);
     }
 
     // Validate each prompt
