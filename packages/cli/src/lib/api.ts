@@ -135,6 +135,11 @@ class ApiClient {
     const queryString = query.toString();
     return this.get(`/api/settings${queryString ? `?${queryString}` : ''}`);
   }
+
+  // Auto-Claude
+  async autoClaudeImport(data: AutoClaudeImportRequest): Promise<ApiResponse<AutoClaudeImportResponse>> {
+    return this.post('/api/auto-claude/import', data);
+  }
 }
 
 // Types
@@ -197,5 +202,29 @@ interface GenerateResponse {
   summary: Record<string, number>;
 }
 
+interface AutoClaudeImportRequest {
+  autoClaudeInstallPath: string;
+  dryRun?: boolean;
+}
+
+interface AutoClaudeImportResponse {
+  success: boolean;
+  dryRun?: boolean;
+  preview?: {
+    agentConfigs: number;
+    prompts: number;
+    modelProfiles: number;
+    projectConfig: number;
+  };
+  stats?: {
+    agentConfigsImported: number;
+    promptsImported: number;
+    modelProfilesImported: number;
+    projectConfigImported: number;
+    errors: string[];
+  };
+  configs?: any; // For dry-run preview
+}
+
 export const api = new ApiClient();
-export type { Component, Profile, ProfileDetail, Project, GenerateRequest, GenerateResponse };
+export type { Component, Profile, ProfileDetail, Project, GenerateRequest, GenerateResponse, AutoClaudeImportRequest, AutoClaudeImportResponse };

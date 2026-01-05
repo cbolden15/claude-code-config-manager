@@ -2,7 +2,7 @@ import chalk from 'chalk';
 import { Command } from 'commander';
 import { existsSync, statSync } from 'fs';
 import { join, resolve } from 'path';
-import { api } from '../lib/api.js';
+import { api, type AutoClaudeImportRequest, type AutoClaudeImportResponse } from '../lib/api.js';
 
 /**
  * Create and configure the auto-claude command group
@@ -43,17 +43,14 @@ ${chalk.gray('Documentation:')}
       await autoClaudeConfigCommand(options);
     });
 
-  // Import subcommand - Will be implemented in subtask 6_3
+  // Import subcommand
   autoClaudeCommand
     .command('import')
     .description('Import existing Auto-Claude configurations')
     .option('-s, --source <path>', 'Source directory containing Auto-Claude configs')
     .option('--dry-run', 'Preview import without making changes')
-    .action(async () => {
-      console.log(chalk.yellow('Auto-Claude import command is not yet implemented.'));
-      console.log(chalk.gray('This will be available in a future update.'));
-      console.log();
-      console.log(chalk.cyan('Use the web interface at /auto-claude/import for now.'));
+    .action(async (options: { source?: string; dryRun?: boolean }) => {
+      await autoClaudeImportCommand(options);
     });
 
   // Sync subcommand - Will be implemented in subtask 6_4
@@ -216,6 +213,131 @@ async function autoClaudeConfigCommand(options: { path?: string; show?: boolean 
       console.log(chalk.red('Error saving configuration:'), error instanceof Error ? error.message : 'Unknown error');
       process.exit(1);
     }
+  }
+}
+
+/**
+ * Auto-Claude import command implementation
+ */
+async function autoClaudeImportCommand(options: { source?: string; dryRun?: boolean }): Promise<void> {
+  console.log(chalk.bold('Auto-Claude Import'));
+  console.log();
+
+  // Check for source path
+  if (!options.source) {
+    console.log(chalk.red('Error: --source <path> is required.'));
+    console.log();
+    console.log('Usage:');
+    console.log(`  ${chalk.cyan('ccm auto-claude import --source /path/to/auto-claude')}`);
+    console.log(`  ${chalk.cyan('ccm auto-claude import --source /path/to/auto-claude --dry-run')}`);
+    console.log();
+    console.log('The source path should point to your Auto-Claude installation directory.');
+    return;
+  }
+
+  const sourcePath = resolve(options.source);
+  console.log(`Import source: ${chalk.cyan(sourcePath)}`);
+  if (options.dryRun) {
+    console.log(chalk.yellow('Dry run mode: no changes will be made'));
+  }
+  console.log();
+
+  // Validate source path
+  console.log(chalk.gray('Validating Auto-Claude installation...'));
+  const validation = validateAutoClaudePath(sourcePath);
+  if (!validation.valid) {
+    console.log(chalk.red('✗ Invalid Auto-Claude installation:'), validation.error);
+    console.log();
+    console.log(chalk.gray('Expected structure:'));
+    console.log(chalk.gray('  path/to/auto-claude/'));
+    console.log(chalk.gray('  ├── apps/'));
+    console.log(chalk.gray('  │   └── backend/'));
+    console.log(chalk.gray('  │       ├── prompts/'));
+    console.log(chalk.gray('  │       └── models.py'));
+    console.log(chalk.gray('  └── .auto-claude/.env (optional)'));
+    process.exit(1);
+  }
+
+  console.log(chalk.green('✓ Valid Auto-Claude installation detected'));
+  if (validation.version) {
+    console.log(chalk.gray(`  Version: ${validation.version}`));
+  }
+  console.log();
+
+  // Call import API
+  try {
+    console.log(chalk.gray('Scanning Auto-Claude installation...'));
+
+    const importResult = await api.autoClaudeImport({
+      autoClaudeInstallPath: sourcePath,
+      dryRun: options.dryRun || false,
+    });
+
+    if (importResult.error) {
+      console.log(chalk.red('Import failed:'), importResult.error);
+      process.exit(1);
+    }
+
+    const result = importResult.data!;
+
+    if (options.dryRun || result.dryRun) {
+      // Show preview results
+      console.log(chalk.bold('Import Preview'));
+      console.log();
+
+      if (result.preview) {
+        console.log('Components found:');
+        console.log(`  ${chalk.cyan('Agent Configs:')} ${result.preview.agentConfigs}`);
+        console.log(`  ${chalk.cyan('Prompts:')} ${result.preview.prompts}`);
+        console.log(`  ${chalk.cyan('Model Profiles:')} ${result.preview.modelProfiles}`);
+        console.log(`  ${chalk.cyan('Project Config:')} ${result.preview.projectConfig}`);
+        console.log();
+
+        const total = result.preview.agentConfigs + result.preview.prompts + result.preview.modelProfiles + result.preview.projectConfig;
+        console.log(`${chalk.green('Total components:')} ${total}`);
+        console.log();
+        console.log(chalk.yellow('This was a dry run - no changes were made.'));
+        console.log(`Run without ${chalk.cyan('--dry-run')} to perform the actual import.`);
+      }
+    } else {
+      // Show actual import results
+      console.log(chalk.bold('Import Results'));
+      console.log();
+
+      if (result.stats) {
+        console.log('Components imported:');
+        console.log(`  ${chalk.green('✓')} Agent Configs: ${result.stats.agentConfigsImported}`);
+        console.log(`  ${chalk.green('✓')} Prompts: ${result.stats.promptsImported}`);
+        console.log(`  ${chalk.green('✓')} Model Profiles: ${result.stats.modelProfilesImported}`);
+        console.log(`  ${chalk.green('✓')} Project Config: ${result.stats.projectConfigImported}`);
+        console.log();
+
+        const total = result.stats.agentConfigsImported + result.stats.promptsImported +
+                     result.stats.modelProfilesImported + result.stats.projectConfigImported;
+        console.log(`${chalk.green.bold('Total imported:')} ${total} components`);
+
+        // Show any errors
+        if (result.stats.errors.length > 0) {
+          console.log();
+          console.log(chalk.yellow('Import warnings:'));
+          for (const error of result.stats.errors) {
+            console.log(`  ${chalk.yellow('⚠')} ${error}`);
+          }
+        }
+      }
+
+      console.log();
+      console.log(chalk.green.bold('Import completed successfully!'));
+      console.log();
+      console.log('Next steps:');
+      console.log(`  • Visit ${chalk.cyan('/auto-claude')} to manage your imported configurations`);
+      console.log(`  • Run ${chalk.cyan('ccm auto-claude agents list')} to see imported agent configs`);
+      console.log(`  • Run ${chalk.cyan('ccm auto-claude sync')} to sync changes back to Auto-Claude`);
+    }
+
+  } catch (error) {
+    console.log(chalk.red('Import failed:'), error instanceof Error ? error.message : 'Unknown error');
+    process.exit(1);
   }
 }
 
