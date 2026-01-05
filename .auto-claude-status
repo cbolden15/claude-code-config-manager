@@ -9,17 +9,17 @@
     "failed": 0
   },
   "phase": {
-    "current": "Import Wizard",
+    "current": "CLI Commands",
     "id": null,
-    "total": 4
+    "total": 8
   },
   "workers": {
     "active": 0,
     "max": 1
   },
   "session": {
-    "number": 64,
+    "number": 70,
     "started_at": "2026-01-05T13:56:37.927289"
   },
-  "last_update": "2026-01-05T17:35:12.077816"
+  "last_update": "2026-01-05T17:53:24.018180"
 }

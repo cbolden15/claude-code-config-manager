@@ -362,8 +362,8 @@
           "subtask_id": "6_1",
           "name": "Create base auto-claude command",
           "description": "Setup auto-claude command group structure and help text",
-          "status": "pending",
-          "notes": "",
+          "status": "completed",
+          "notes": "Successfully created comprehensive auto-claude command group structure with proper help text and placeholder subcommands. Implemented createAutoClaudeCommand() function that returns a Command instance with all planned subcommands (config, import, sync, profiles, agents) as placeholders. Also created autoClaudeCommand() function for the main command handler with comprehensive help text. The structure follows existing CLI patterns using chalk for colored output and commander.js for command organization. TypeScript build verification passed successfully. Ready for individual subcommand implementation in subsequent subtasks.",
           "dependencies": [],
           "files_to_modify": [
             "packages/cli/src/commands/auto-claude.ts"
@@ -373,8 +373,8 @@
           "subtask_id": "6_2",
           "name": "Implement config subcommand",
           "description": "ccm auto-claude config --path for setting Auto-Claude backend path",
-          "status": "pending",
-          "notes": "",
+          "status": "completed",
+          "notes": "Successfully implemented `ccm auto-claude config --path` command for setting Auto-Claude backend path. Features include: path validation (checks for Auto-Claude installation structure with apps/backend/prompts directories), settings API integration for storing/retrieving backend path, comprehensive error handling with detailed validation messages, version detection from package.json when available, helpful guidance for next steps after configuration, and --show option to display current configuration status. Implementation follows established CLI patterns using chalk for colored output, proper TypeScript typing, and integration with the settings service via API. TypeScript build verification passed successfully.",
           "dependencies": ["6_1", "2_2"],
           "files_to_modify": [
             "packages/cli/src/commands/auto-claude.ts"

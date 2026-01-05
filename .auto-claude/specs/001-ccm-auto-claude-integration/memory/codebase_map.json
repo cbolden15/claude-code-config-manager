@@ -99,7 +99,22 @@
       "description": "Comprehensive prompts parser for Auto-Claude .md files implementation completed. Features: parsePromptsDirectory() for parsing all .md files, injection point detection ({{specDirectory}}, {{projectContext}}, {{mcpDocumentation}}), front matter parsing, agent type extraction from filenames, validation using Auto-Claude schemas, error handling following models-parser patterns, and default prompts for fallback scenarios. Ready for integration with Auto-Claude import functionality.",
       "category": "import",
       "discovered_at": "2026-01-05T23:18:12.322455+00:00"
+    },
+    "packages/server/src/app/auto-claude/import/page.tsx": {
+      "description": "Multi-step wizard implementation for Auto-Claude import is complete with comprehensive path validation, configuration preview, import validation, and results display",
+      "category": "Implementation",
+      "discovered_at": "2026-01-05T23:37:08.937809+00:00"
+    },
+    "packages/cli/src/commands/auto-claude.ts": {
+      "description": "Verified ccm auto-claude import command implementation is complete and functional. Features include: --source parameter for specifying Auto-Claude installation path, --dry-run flag for previewing imports without making changes, comprehensive validation of Auto-Claude installation structure, integration with /api/auto-claude/import endpoint, detailed error handling and user-friendly output with chalk colors, preview mode showing component counts (agent configs, prompts, model profiles, project config), full import results display with success/error reporting, and helpful next steps guidance. Command successfully validates required parameters and provides clear usage examples.",
+      "category": "implementation",
+      "discovered_at": "2026-01-05T23:53:05.546332+00:00"
+    },
+    "./packages/cli/src/commands/auto-claude.ts": {
+      "description": "Successfully implemented autoClaudeImportCommand with --source and --dry-run options. Uses existing validateAutoClaudePath function and api.autoClaudeImport method with comprehensive error handling and user feedback.",
+      "category": "implementation",
+      "discovered_at": "2026-01-05T23:47:52.440606+00:00"
     }
   },
-  "last_updated": "2026-01-05T23:18:12.322462+00:00"
+  "last_updated": "2026-01-05T23:53:05.546339+00:00"
 }
