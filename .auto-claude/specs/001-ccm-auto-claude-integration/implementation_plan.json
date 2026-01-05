@@ -276,8 +276,8 @@
           "subtask_id": "4_5",
           "name": "Create model-profiles CRUD endpoints",
           "description": "Full CRUD API for model profiles with phase-by-phase configuration",
-          "status": "pending",
-          "notes": "",
+          "status": "completed",
+          "notes": "Successfully implemented comprehensive model profiles CRUD API with full phase-by-phase configuration management. Features include: GET/POST /api/auto-claude/model-profiles for listing and creating profiles with detailed phase analysis (cost estimation, quality scoring, model/thinking distribution), GET/PUT/DELETE /api/auto-claude/model-profiles/[id] for individual profile management with partial updates support, phase configuration matrices for visualization, validation to prevent deletion of profiles in use by projects, comprehensive Zod validation and error handling. TypeScript build verification successful. API provides detailed analysis including cost estimates (high/medium/low), quality levels (premium/high/balanced/basic), phase uniformity checks, and statistics for frontend consumption.",
           "dependencies": ["1_2"],
           "files_to_modify": [
             "packages/server/src/app/api/auto-claude/model-profiles/route.ts",
