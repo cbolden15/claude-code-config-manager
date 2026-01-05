@@ -8,7 +8,7 @@
 
 ## Current Status: IMPLEMENTATION IN PROGRESS 🚧
 
-**Current Progress**: 4/72 subtasks completed (5.6%)
+**Current Progress**: 5/72 subtasks completed (6.9%)
 
 ### Phase Summary
 1. **Phase 1** - Schema & Types (Foundation): 6 subtasks, 12 hours
@@ -30,7 +30,7 @@
 - [x] Estimated time requirements for each phase
 - [x] Identified key component types and their relationships
 
-### Phase 1 - Schema & Types (Foundation) [4/6]
+### Phase 1 - Schema & Types (Foundation) [5/6]
 - [x] **Subtask 1_1**: Define Auto-Claude TypeScript interfaces ✅ **COMPLETED**
   - ✅ Created AutoClaudeAgentConfig interface (per-agent tool and MCP configuration)
   - ✅ Created AutoClaudePrompt interface (agent persona prompts with injection points)
@@ -66,6 +66,14 @@
   - ✅ Updated Prisma schema comment to document all available component types
   - ✅ **Commit**: b878127 - "auto-claude: 1_4 - Add AUTO_CLAUDE_AGENT_CONFIG, AUTO_CLAUDE_PROMPT, AUTO_CLAUDE_MODEL_PROFILE, AUTO_CLAUDE_PROJECT_CONFIG to enum"
 
+- [x] **Subtask 1_5**: Extend Project model for Auto-Claude ✅ **COMPLETED**
+  - ✅ Added autoClaudeEnabled field (Boolean with default false) for enabling/disabling Auto-Claude integration
+  - ✅ Added autoClaudeConfigId field (String?) to link to AUTO_CLAUDE_PROJECT_CONFIG component
+  - ✅ Added modelProfileId field (String?) to link to AUTO_CLAUDE_MODEL_PROFILE component
+  - ✅ Added lastAutoClaudeSync field (DateTime?) to track Auto-Claude sync timestamps
+  - ✅ Schema now supports Auto-Claude integration at the project level
+  - ✅ **Commit**: 7da06ec - "auto-claude: Extend Project model with Auto-Claude fields"
+
 ## Key Deliverables Planned
 
 ### New Component Types
@@ -83,16 +91,13 @@
 ## Next Steps
 
 🎯 **CURRENTLY READY FOR:**
-1. **Subtask 1_5**: Extend Project model for Auto-Claude
-   - Dependencies: Subtasks 1_3 ✅, 1_4 ✅
-   - Files to modify: packages/server/prisma/schema.prisma
-   - Add autoClaudeEnabled, autoClaudeConfigId, modelProfileId, lastAutoClaudeSync fields
+1. **Subtask 1_6**: Run Prisma migrations
+   - Dependencies: Subtasks 1_3 ✅, 1_4 ✅, 1_5 ✅
+   - Files to modify: packages/server/prisma/migrations/
+   - Generate and apply database migrations for new schema changes (Settings model + Project Auto-Claude fields)
 
-🔄 **UPCOMING IN PHASE 1:**
-2. **Subtask 1_6**: Run Prisma migrations for all schema changes
-
-🚀 **PHASE 2 - Settings Infrastructure**: Implement encryption and settings management
-3. **Continue sequentially** through remaining phases based on dependencies
+🚀 **PHASE 2 - Settings Infrastructure**: Ready to begin after schema migrations complete
+2. **Continue sequentially** through remaining phases based on dependencies
 
 ## Success Criteria
 - [ ] Import workflow successfully imports all 23 prompts and ~15 agent configs
