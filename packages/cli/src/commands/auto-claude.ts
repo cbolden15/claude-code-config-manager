@@ -1,5 +1,8 @@
 import chalk from 'chalk';
 import { Command } from 'commander';
+import { existsSync, statSync } from 'fs';
+import { join, resolve } from 'path';
+import { api } from '../lib/api.js';
 
 /**
  * Create and configure the auto-claude command group
@@ -30,17 +33,14 @@ ${chalk.gray('Documentation:')}
 
   // Placeholder subcommands (to be implemented in subsequent subtasks)
 
-  // Config subcommand - Will be implemented in subtask 6_2
+  // Config subcommand
   autoClaudeCommand
     .command('config')
     .description('Configure Auto-Claude backend path and settings')
     .option('-p, --path <path>', 'Set Auto-Claude backend installation path')
     .option('--show', 'Show current Auto-Claude configuration')
-    .action(async () => {
-      console.log(chalk.yellow('Auto-Claude config command is not yet implemented.'));
-      console.log(chalk.gray('This will be available in a future update.'));
-      console.log();
-      console.log(chalk.cyan('Use the web interface at /settings for now.'));
+    .action(async (options: { path?: string; show?: boolean }) => {
+      await autoClaudeConfigCommand(options);
     });
 
   // Import subcommand - Will be implemented in subtask 6_3
@@ -131,6 +131,149 @@ ${chalk.gray('Examples:')}
     });
 
   return autoClaudeCommand;
+}
+
+/**
+ * Auto-Claude config command implementation
+ */
+async function autoClaudeConfigCommand(options: { path?: string; show?: boolean }): Promise<void> {
+  // Show current configuration
+  if (options.show || (!options.path)) {
+    console.log(chalk.bold('Auto-Claude Configuration'));
+    console.log();
+
+    try {
+      // Get current backend path
+      const pathResult = await api.getSetting('autoClaudeBackendPath');
+      const currentPath = pathResult.data?.value;
+
+      if (pathResult.error || !currentPath) {
+        console.log(`  Backend Path: ${chalk.gray('(not configured)')}`);
+        console.log();
+        console.log(chalk.yellow('No Auto-Claude backend path configured.'));
+        console.log(`Use ${chalk.cyan('ccm auto-claude config --path <path>')} to set the backend path.`);
+        return;
+      }
+
+      console.log(`  Backend Path: ${chalk.cyan(currentPath)}`);
+
+      // Validate current path
+      const isValidPath = validateAutoClaudePath(currentPath);
+      if (isValidPath.valid) {
+        console.log(`  Status:       ${chalk.green('✓ Valid Auto-Claude installation')}`);
+        if (isValidPath.version) {
+          console.log(`  Version:      ${chalk.cyan(isValidPath.version)}`);
+        }
+      } else {
+        console.log(`  Status:       ${chalk.red('✗ Invalid installation')}`);
+        console.log(`  Issue:        ${chalk.red(isValidPath.error)}`);
+      }
+
+    } catch (error) {
+      console.log(chalk.red('Error retrieving configuration:'), error instanceof Error ? error.message : 'Unknown error');
+    }
+    return;
+  }
+
+  // Set backend path
+  if (options.path) {
+    const absolutePath = resolve(options.path);
+    console.log(`Setting Auto-Claude backend path to: ${chalk.cyan(absolutePath)}`);
+
+    // Validate the path
+    const validation = validateAutoClaudePath(absolutePath);
+    if (!validation.valid) {
+      console.log();
+      console.log(chalk.red('✗ Invalid Auto-Claude installation:'), validation.error);
+      console.log();
+      console.log(chalk.gray('Expected structure:'));
+      console.log(chalk.gray('  path/to/auto-claude/'));
+      console.log(chalk.gray('  ├── apps/'));
+      console.log(chalk.gray('  │   └── backend/'));
+      console.log(chalk.gray('  └── (other Auto-Claude files)'));
+      process.exit(1);
+    }
+
+    try {
+      // Save to settings
+      const result = await api.setSetting('autoClaudeBackendPath', absolutePath);
+      if (result.error) {
+        console.log(chalk.red('Error saving configuration:'), result.error);
+        process.exit(1);
+      }
+
+      console.log();
+      console.log(chalk.green('✓ Auto-Claude backend path configured successfully.'));
+      if (validation.version) {
+        console.log(chalk.gray(`  Detected version: ${validation.version}`));
+      }
+      console.log();
+      console.log('Next steps:');
+      console.log(`  • ${chalk.cyan('ccm auto-claude import --source ' + absolutePath)} to import existing configs`);
+      console.log(`  • ${chalk.cyan('ccm auto-claude sync')} to sync configs to Auto-Claude backend`);
+
+    } catch (error) {
+      console.log(chalk.red('Error saving configuration:'), error instanceof Error ? error.message : 'Unknown error');
+      process.exit(1);
+    }
+  }
+}
+
+/**
+ * Validate Auto-Claude installation path
+ */
+function validateAutoClaudePath(path: string): { valid: boolean; error?: string; version?: string } {
+  try {
+    // Check if path exists
+    if (!existsSync(path)) {
+      return { valid: false, error: 'Path does not exist' };
+    }
+
+    // Check if it's a directory
+    const pathStat = statSync(path);
+    if (!pathStat.isDirectory()) {
+      return { valid: false, error: 'Path is not a directory' };
+    }
+
+    // Check for Auto-Claude structure
+    const appsPath = join(path, 'apps');
+    const backendPath = join(appsPath, 'backend');
+
+    if (!existsSync(appsPath)) {
+      return { valid: false, error: 'Missing apps/ directory' };
+    }
+
+    if (!existsSync(backendPath)) {
+      return { valid: false, error: 'Missing apps/backend/ directory' };
+    }
+
+    // Check for backend structure
+    const promptsPath = join(backendPath, 'prompts');
+    if (!existsSync(promptsPath)) {
+      return { valid: false, error: 'Missing apps/backend/prompts/ directory' };
+    }
+
+    // Try to detect version (optional)
+    let version: string | undefined;
+    const packageJsonPath = join(path, 'package.json');
+    if (existsSync(packageJsonPath)) {
+      try {
+        const fs = require('fs');
+        const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+        version = packageJson.version;
+      } catch {
+        // Ignore version detection errors
+      }
+    }
+
+    return { valid: true, version };
+
+  } catch (error) {
+    return {
+      valid: false,
+      error: error instanceof Error ? error.message : 'Unknown validation error'
+    };
+  }
 }
 
 /**

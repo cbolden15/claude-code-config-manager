@@ -116,6 +116,25 @@ class ApiClient {
   async generate(data: GenerateRequest): Promise<ApiResponse<GenerateResponse>> {
     return this.post('/api/generate', data);
   }
+
+  // Settings
+  async getSetting(key: string): Promise<ApiResponse<{ value: string }>> {
+    return this.get(`/api/settings/${key}`);
+  }
+
+  async setSetting(key: string, value: string): Promise<ApiResponse<{ key: string; value: string }>> {
+    return this.put(`/api/settings/${key}`, { value });
+  }
+
+  async getSettings(options: { includeSensitive?: boolean; keysOnly?: boolean; pattern?: string } = {}): Promise<ApiResponse<{ settings: Array<{ key: string; value: string; encrypted: boolean }> }>> {
+    const query = new URLSearchParams();
+    if (options.includeSensitive) query.set('includeSensitive', 'true');
+    if (options.keysOnly) query.set('keysOnly', 'true');
+    if (options.pattern) query.set('pattern', options.pattern);
+
+    const queryString = query.toString();
+    return this.get(`/api/settings${queryString ? `?${queryString}` : ''}`);
+  }
 }
 
 // Types
