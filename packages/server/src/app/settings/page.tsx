@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 import { Header } from '@/components/layout/header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { SettingsForm } from './settings-form';
+import { EnhancedSettingsForm } from './components/enhanced-settings-form';
 import { ExportImportSection } from './export-import-section';
 
 async function getSettings() {
@@ -54,59 +54,47 @@ export default async function SettingsPage() {
       />
 
       <div className="p-6 space-y-6">
-        <div className="grid grid-cols-2 gap-6">
-          {/* Server Settings */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Server Settings</CardTitle>
-              <CardDescription>
-                Configure how the CCM server operates
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <SettingsForm settings={settings} />
-            </CardContent>
-          </Card>
+        {/* Settings Configuration */}
+        <EnhancedSettingsForm settings={settings} />
 
-          {/* CLI Configuration */}
-          <Card>
-            <CardHeader>
-              <CardTitle>CLI Configuration</CardTitle>
-              <CardDescription>
-                Settings for CLI clients connecting to this server
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <p className="text-sm text-gray-500 mb-2">Server URL</p>
-                <code className="block p-3 bg-gray-100 rounded text-sm font-mono">
-                  {process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3000'}
-                </code>
-              </div>
+        {/* CLI Configuration */}
+        <Card>
+          <CardHeader>
+            <CardTitle>CLI Configuration</CardTitle>
+            <CardDescription>
+              Settings for CLI clients connecting to this server
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <p className="text-sm text-gray-500 mb-2">Server URL</p>
+              <code className="block p-3 bg-gray-100 rounded text-sm font-mono">
+                {process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3000'}
+              </code>
+            </div>
 
-              <Separator />
+            <Separator />
 
-              <div>
-                <p className="text-sm text-gray-500 mb-2">CLI Config Location</p>
-                <code className="block p-3 bg-gray-100 rounded text-sm font-mono">
-                  ~/.ccm/config.json
-                </code>
-              </div>
+            <div>
+              <p className="text-sm text-gray-500 mb-2">CLI Config Location</p>
+              <code className="block p-3 bg-gray-100 rounded text-sm font-mono">
+                ~/.ccm/config.json
+              </code>
+            </div>
 
-              <Separator />
+            <Separator />
 
-              <div>
-                <p className="text-sm text-gray-500 mb-2">Example CLI Config</p>
-                <pre className="p-3 bg-gray-900 text-gray-100 rounded text-sm font-mono overflow-x-auto">
+            <div>
+              <p className="text-sm text-gray-500 mb-2">Example CLI Config</p>
+              <pre className="p-3 bg-gray-900 text-gray-100 rounded text-sm font-mono overflow-x-auto">
 {`{
   "serverUrl": "${process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3000'}",
   "machine": "macbook-pro"
 }`}
-                </pre>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+              </pre>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Export/Import */}
         <ExportImportSection />
