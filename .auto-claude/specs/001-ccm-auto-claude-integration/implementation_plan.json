@@ -288,8 +288,8 @@
           "subtask_id": "4_6",
           "name": "Extend generate endpoint",
           "description": "Add autoClaudeEnabled flag to POST /api/generate and include Auto-Claude files",
-          "status": "pending",
-          "notes": "",
+          "status": "completed",
+          "notes": "autoClaudeEnabled flag implementation is fully complete and working correctly. The POST /api/generate endpoint includes: 1) autoClaudeEnabled boolean flag in Zod schema, 2) comprehensive logic that adds default Auto-Claude components when enabled (AUTO_CLAUDE_PROJECT_CONFIG, AUTO_CLAUDE_MODEL_PROFILE, multiple AUTO_CLAUDE_AGENT_CONFIG and AUTO_CLAUDE_PROMPT entries), 3) proper integration with main generator that produces all required Auto-Claude files (.env, task_metadata.json, prompts/*.md, AGENT_CONFIGS.json). Build verification successful with no TypeScript errors.",
           "dependencies": ["3_6"],
           "files_to_modify": [
             "packages/server/src/app/api/generate/route.ts"
