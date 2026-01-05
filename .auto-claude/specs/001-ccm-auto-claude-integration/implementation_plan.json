@@ -69,8 +69,8 @@
           "subtask_id": "1_5",
           "name": "Extend Project model for Auto-Claude",
           "description": "Add autoClaudeEnabled, autoClaudeConfigId, modelProfileId, lastAutoClaudeSync fields",
-          "status": "pending",
-          "notes": "",
+          "status": "completed",
+          "notes": "Successfully added four Auto-Claude fields to Project model: autoClaudeEnabled (Boolean default false for enabling/disabling Auto-Claude), autoClaudeConfigId (String? link to AUTO_CLAUDE_PROJECT_CONFIG), modelProfileId (String? link to AUTO_CLAUDE_MODEL_PROFILE), and lastAutoClaudeSync (DateTime? to track sync timestamps). Schema now supports Auto-Claude integration at the project level.",
           "dependencies": ["1_3", "1_4"],
           "files_to_modify": [
             "packages/server/prisma/schema.prisma"
@@ -80,8 +80,8 @@
           "subtask_id": "1_6",
           "name": "Run Prisma migrations",
           "description": "Generate and apply database migrations for new schema changes",
-          "status": "pending",
-          "notes": "",
+          "status": "completed",
+          "notes": "Database migrations successfully generated and applied. The migration '20260105203016_add_auto_claude_support' includes all required schema changes: Settings table for encrypted credential storage (with id, key (unique), value, encrypted boolean, timestamps), Auto-Claude fields added to Project model (autoClaudeEnabled, autoClaudeConfigId, modelProfileId, lastAutoClaudeSync), and all necessary indexes and constraints. Migration status confirmed as 'Database schema is up to date!' and database tables verified to contain the expected structure.",
           "dependencies": ["1_3", "1_4", "1_5"],
           "files_to_modify": [
             "packages/server/prisma/migrations/"

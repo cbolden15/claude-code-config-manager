@@ -24,7 +24,12 @@
       "description": "Extended Project model with Auto-Claude fields: autoClaudeEnabled (Boolean default false), autoClaudeConfigId (String? link to project config), modelProfileId (String? link to model profile), and lastAutoClaudeSync (DateTime? sync timestamp)",
       "category": "schema",
       "discovered_at": "2026-01-05T20:27:53.111444+00:00"
+    },
+    "./prisma/migrations/20260105203016_add_auto_claude_support/migration.sql": {
+      "description": "Successfully generated and applied Prisma migration for Auto-Claude schema changes: Settings table for encrypted credential storage, Project model extended with autoClaudeEnabled/autoClaudeConfigId/modelProfileId/lastAutoClaudeSync fields. Database structure now supports Auto-Claude integration.",
+      "category": "database-migration",
+      "discovered_at": "2026-01-05T20:31:55.271228+00:00"
     }
   },
-  "last_updated": "2026-01-05T20:27:53.111452+00:00"
+  "last_updated": "2026-01-05T20:31:55.271238+00:00"
 }
