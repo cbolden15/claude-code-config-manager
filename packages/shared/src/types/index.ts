@@ -89,4 +89,4 @@ export type {
   McpServerType,
   CustomMcpServer,
   AgentMcpOverride,
-} from './auto-claude';
+} from './auto-claude.js';
