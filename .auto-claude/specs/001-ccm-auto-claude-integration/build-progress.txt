@@ -164,13 +164,15 @@ Ready for subtask 2_3: Create settings API routes.
 
 - [x] **Subtask 3_2**: Create model-profile generator ✅ **COMPLETED**
   - ✅ Implemented generateTaskMetadata() function for task_metadata.json generation
+  - ✅ Updated imports to use proper TypeScript types from shared package (ClaudeModel, ThinkingLevel)
+  - ✅ Fixed TaskMetadata interface to use proper types instead of strings
   - ✅ Generates phase-specific model and thinking configurations from AutoClaudeModelProfile
-  - ✅ Added validation function and helper functions for default profiles
-  - ✅ Includes balanced, cost-optimized, and quality-focused model profile presets
-  - ✅ Fixed import paths to use relative imports for shared types
-  - ✅ Build verification passed successfully
+  - ✅ Added comprehensive validation function with proper type checking
+  - ✅ Helper functions for different model profiles: default, cost-optimized, quality-focused
+  - ✅ Follows established generator patterns (similar to env-file.ts)
+  - ✅ Build verification passed with no TypeScript errors
   - ✅ **Location**: packages/server/src/lib/generators/auto-claude/model-profile.ts
-  - ✅ **Commit**: 29073f7 - "auto-claude: 3_2 - Generate task_metadata.json with phase models and thinking configurations"
+  - ✅ **Commit**: cb508aa - "auto-claude: 3_2 - Generate task_metadata.json with phase models and thinking configurations"
 
 🎯 **NEXT READY FOR:**
 **Subtask 3_3**: Create prompts generator
