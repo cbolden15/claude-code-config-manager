@@ -44,11 +44,11 @@ The main generateProjectFiles function now supports Auto-Claude components and c
 ## Phase Progress: Generators (6/6 Complete)
 All generator subtasks completed. Ready to proceed to Phase 4: API Routes.
 
-## Verified: autoClaudeEnabled flag in POST /api/generate (Subtask 4_6)
+## Completed: autoClaudeEnabled flag in POST /api/generate (Subtask 4_6)
 
 **Description:** Add autoClaudeEnabled flag to POST /api/generate and include Auto-Claude files
 
-**Status:** ✅ ALREADY IMPLEMENTED AND VERIFIED
+**Status:** ✅ COMPLETED
 
 **Current Implementation:**
 1. **Schema includes autoClaudeEnabled flag** - Line 7: `autoClaudeEnabled: z.boolean().optional()`
