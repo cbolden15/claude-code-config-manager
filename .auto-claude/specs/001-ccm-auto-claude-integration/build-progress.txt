@@ -35,7 +35,7 @@
 
 ---
 
-**Current Progress**: 20/72 subtasks completed (27.8%)
+**Current Progress**: 22/72 subtasks completed (30.6%)
 
 ### Phase Summary
 1. **Phase 1** - Schema & Types (Foundation): 6 subtasks, 12 hours
@@ -239,7 +239,7 @@ Ready for subtask 2_3: Create settings API routes.
   - ✅ TypeScript build verification passed successfully
   - ✅ **Location**: packages/server/src/lib/generators/index.ts
 
-### Phase 4 - API Routes [4/6]
+### Phase 4 - API Routes [6/6] ✅ **COMPLETED**
 - [x] **Subtask 4_1**: Create import API endpoint ✅ **COMPLETED**
   - ✅ Implemented comprehensive POST /api/auto-claude/import endpoint
   - ✅ Parses Auto-Claude installation directory and extracts agent configs from models.py
@@ -278,8 +278,27 @@ Ready for subtask 2_3: Create settings API routes.
   - ✅ TypeScript build verification passed successfully
   - ✅ **Location**: packages/server/src/app/api/auto-claude/prompts/route.ts, [id]/route.ts
 
+- [x] **Subtask 4_5**: Create model-profiles CRUD endpoints ✅ **COMPLETED**
+  - ✅ Implemented comprehensive model profiles CRUD API with phase-by-phase configuration management
+  - ✅ GET/POST endpoints with detailed phase analysis (cost estimation, quality scoring, model/thinking distribution)
+  - ✅ Individual profile management with partial updates support
+  - ✅ Phase configuration matrices for visualization and validation to prevent deletion of profiles in use
+  - ✅ **Location**: packages/server/src/app/api/auto-claude/model-profiles/route.ts, [id]/route.ts
+
+- [x] **Subtask 4_6**: Extend generate endpoint ✅ **COMPLETED**
+  - ✅ Added autoClaudeEnabled optional boolean field to GenerateSchema for enabling Auto-Claude integration
+  - ✅ Comprehensive Auto-Claude defaults when enabled with no existing components
+  - ✅ Added AUTO_CLAUDE_PROJECT_CONFIG with context7 enabled and sensible MCP settings
+  - ✅ Added AUTO_CLAUDE_MODEL_PROFILE with balanced configuration for all phases
+  - ✅ Added AUTO_CLAUDE_AGENT_CONFIG for coder, planner, qa_reviewer, spec_gatherer with proper tool permissions
+  - ✅ Added AUTO_CLAUDE_PROMPT for each agent type with appropriate templates and injection points
+  - ✅ Proper integration with generateProjectFiles() using Auto-Claude generators
+  - ✅ TypeScript build verification successful
+  - ✅ **Location**: packages/server/src/app/api/generate/route.ts
+
 🎯 **NEXT READY FOR:**
-**Subtask 4_5**: Create model-profiles CRUD endpoints
+**Phase 5: Import Wizard** [0/4] - Ready to start
+**Subtask 5_1**: Create models.py parser
 - Dependencies: Subtask 1_2 ✅ (Zod schemas completed)
-- Files to modify: packages/server/src/app/api/auto-claude/model-profiles/route.ts, [id]/route.ts
-- Full CRUD API for model profiles with phase-by-phase configuration
+- Files to modify: packages/server/src/lib/import/models-parser.ts
+- Parse Python AST to extract AGENT_CONFIGS dictionary into Component records
