@@ -31,10 +31,15 @@
 - [x] Identified key component types and their relationships
 
 ### Phase 1 - Schema & Types (Foundation) [1/6]
-- [x] **Subtask 1_1**: Define Auto-Claude TypeScript interfaces
-  - Created AutoClaudeAgentConfig, AutoClaudePrompt, AutoClaudeModelProfile, AutoClaudeProjectConfig interfaces
-  - All interfaces include comprehensive type definitions and JSDoc documentation
-  - Properly exported from packages/shared/src/types/index.ts
+- [x] **Subtask 1_1**: Define Auto-Claude TypeScript interfaces ✅ **COMPLETED**
+  - ✅ Created AutoClaudeAgentConfig interface (per-agent tool and MCP configuration)
+  - ✅ Created AutoClaudePrompt interface (agent persona prompts with injection points)
+  - ✅ Created AutoClaudeModelProfile interface (phase-based model and thinking configuration)
+  - ✅ Created AutoClaudeProjectConfig interface (project-level Auto-Claude settings)
+  - ✅ Added supporting types: ThinkingLevel, ClaudeModel, McpServerType, CustomMcpServer, AgentMcpOverride
+  - ✅ All interfaces include comprehensive type definitions and JSDoc documentation
+  - ✅ Properly exported from packages/shared/src/types/index.ts
+  - ✅ **Commit**: 3ca0f1a - "auto-claude: 1_1 - Create AutoClaudeAgentConfig, AutoClaudePrompt, AutoClaudeModelProfile, AutoClaudeProjectConfig interfaces"
 
 ## Key Deliverables Planned
 
@@ -52,11 +57,19 @@
 
 ## Next Steps
 
+🎯 **CURRENTLY READY FOR:**
 1. **Subtask 1_2**: Create Zod validation schemas for all Auto-Claude component types
+   - Dependencies: ✅ 1_1 (TypeScript interfaces)
+   - Files to create: packages/shared/src/schemas/auto-claude.ts
+
+🔄 **UPCOMING IN PHASE 1:**
 2. **Subtask 1_3**: Add Settings model to Prisma schema
-3. **Continue Phase 1** - Complete remaining schema and types work
-4. **Phase 2 - Settings Infrastructure**: Implement encryption and settings management
-5. **Continue sequentially** through remaining phases based on dependencies
+3. **Subtask 1_4**: Extend ComponentType enum
+4. **Subtask 1_5**: Extend Project model for Auto-Claude
+5. **Subtask 1_6**: Run Prisma migrations
+
+🚀 **PHASE 2 - Settings Infrastructure**: Implement encryption and settings management
+6. **Continue sequentially** through remaining phases based on dependencies
 
 ## Success Criteria
 - [ ] Import workflow successfully imports all 23 prompts and ~15 agent configs
