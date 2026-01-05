@@ -43,3 +43,37 @@ The main generateProjectFiles function now supports Auto-Claude components and c
 
 ## Phase Progress: Generators (6/6 Complete)
 All generator subtasks completed. Ready to proceed to Phase 4: API Routes.
+
+## Verified: autoClaudeEnabled flag in POST /api/generate (Subtask 4_6)
+
+**Description:** Add autoClaudeEnabled flag to POST /api/generate and include Auto-Claude files
+
+**Status:** ✅ ALREADY IMPLEMENTED AND VERIFIED
+
+**Current Implementation:**
+1. **Schema includes autoClaudeEnabled flag** - Line 7: `autoClaudeEnabled: z.boolean().optional()`
+2. **Auto-Claude component logic** - Lines 30-66: When `autoClaudeEnabled` is true and no Auto-Claude components exist:
+   - Adds AUTO_CLAUDE_PROJECT_CONFIG component with sensible defaults
+   - Adds AUTO_CLAUDE_MODEL_PROFILE component with 'balanced' configuration
+3. **File generation integration** - Components passed to generateProjectFiles() which generates Auto-Claude files
+
+**Generated Auto-Claude Files:**
+- `.auto-claude/.env` - Environment configuration with MCP settings
+- `.auto-claude/task_metadata.json` - Phase model and thinking configurations
+- `prompts/*.md` - Agent prompt files (if prompts exist)
+- `.auto-claude/AGENT_CONFIGS.json` - Agent configurations (if configs exist)
+
+**Verification:**
+- ✅ TypeScript build successful - No compilation errors
+- ✅ Schema validation includes autoClaudeEnabled flag
+- ✅ Logic adds default components when flag is true
+- ✅ Integration with Auto-Claude generators confirmed
+- ✅ Default configurations provide sensible starting point
+
+**Implementation Quality:**
+- Follows existing code patterns and conventions
+- Proper error handling with Zod schema validation
+- Clean separation of concerns between route and generator logic
+- Backward compatible - flag is optional
+
+The autoClaudeEnabled functionality is complete and working correctly. When enabled, it ensures Auto-Claude files are generated even for profiles without explicit Auto-Claude components.
