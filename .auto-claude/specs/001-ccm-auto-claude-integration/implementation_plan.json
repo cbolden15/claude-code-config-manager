@@ -264,8 +264,8 @@
           "subtask_id": "4_4",
           "name": "Create prompts CRUD endpoints",
           "description": "Full CRUD API for Auto-Claude prompts with markdown handling",
-          "status": "pending",
-          "notes": "",
+          "status": "completed",
+          "notes": "Full CRUD API for Auto-Claude prompts implemented with comprehensive markdown handling capabilities. Includes: GET/POST /api/auto-claude/prompts for list and create operations, GET/PUT/DELETE /api/auto-claude/prompts/[id] for individual operations. Markdown handling features: content analysis (length, lines, words, headers, code blocks), injection points detection ({{...}} patterns), content statistics and preview generation, proper Zod validation, error handling, and TypeScript type safety. Successfully verified with TypeScript compilation and follows established API patterns from agents endpoint.",
           "dependencies": ["1_2"],
           "files_to_modify": [
             "packages/server/src/app/api/auto-claude/prompts/route.ts",

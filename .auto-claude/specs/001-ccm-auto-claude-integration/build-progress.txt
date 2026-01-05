@@ -8,6 +8,33 @@
 
 ## Current Status: IMPLEMENTATION IN PROGRESS 🚧
 
+---
+
+## Latest Updates
+
+### 2026-01-05 16:30 UTC - Subtask 4_4 Completed ✅
+**Task**: Create prompts CRUD endpoints
+**Description**: Full CRUD API for Auto-Claude prompts with markdown handling
+**Status**: COMPLETED
+
+**Implementation Summary:**
+- ✅ Full CRUD operations: GET/POST /api/auto-claude/prompts, GET/PUT/DELETE /api/auto-claude/prompts/[id]
+- ✅ Comprehensive markdown handling: content analysis, injection points detection
+- ✅ Content statistics: length, lines, words, headers, code blocks detection
+- ✅ Injection points support: {{...}} pattern detection and replacement
+- ✅ Proper validation with Zod schemas
+- ✅ TypeScript type safety and error handling
+- ✅ Follows established API patterns from agents endpoint
+- ✅ Build verification passed with no TypeScript errors
+
+**Files Modified:**
+- `packages/server/src/app/api/auto-claude/prompts/route.ts`
+- `packages/server/src/app/api/auto-claude/prompts/[id]/route.ts`
+
+**Commit**: `eaf1a46` - auto-claude: 4_4 - Full CRUD API for Auto-Claude prompts with markdown handling
+
+---
+
 **Current Progress**: 20/72 subtasks completed (27.8%)
 
 ### Phase Summary
