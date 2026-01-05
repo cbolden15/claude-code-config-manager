@@ -69,7 +69,17 @@
       "description": "Completed comprehensive POST /api/auto-claude/import endpoint with Auto-Claude configuration parsing, Component record creation, validation, error handling, dry-run functionality, and import statistics. Successfully verified with TypeScript compilation.",
       "category": "implementation",
       "discovered_at": "2026-01-05T21:54:28.223369+00:00"
+    },
+    "./src/app/api/auto-claude/sync/route.ts": {
+      "description": "POST /api/auto-claude/sync endpoint fully implemented with comprehensive sync capabilities including schema validation, backend path verification, component extraction from database, file generation with backups, dry-run mode, and database timestamp updates",
+      "category": "api_endpoint",
+      "discovered_at": "2026-01-05T22:10:00.480243+00:00"
+    },
+    "packages/server/src/app/api/auto-claude/agents/": {
+      "description": "Successfully implemented GET/PUT/POST/DELETE /api/auto-claude/agents endpoints for agent config management. Includes comprehensive agent listing with tool/MCP matrix visualization, full CRUD operations, robust validation using Auto-Claude schemas, and database integration with Component model. TypeScript build verification passed.",
+      "category": "api-endpoints",
+      "discovered_at": "2026-01-05T22:13:34.482318+00:00"
     }
   },
-  "last_updated": "2026-01-05T21:54:28.223377+00:00"
+  "last_updated": "2026-01-05T22:13:34.482347+00:00"
 }

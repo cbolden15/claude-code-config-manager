@@ -241,8 +241,8 @@
           "subtask_id": "4_2",
           "name": "Create sync API endpoint",
           "description": "POST /api/auto-claude/sync to write agent configs and prompts to Auto-Claude backend",
-          "status": "pending",
-          "notes": "",
+          "status": "completed",
+          "notes": "POST /api/auto-claude/sync endpoint successfully implemented and verified. Comprehensive implementation includes: Zod schema validation for request parameters (backendPath, projectId, dryRun), backend path configuration and validation, Auto-Claude installation verification (checks for apps/backend directory), component extraction from database (AUTO_CLAUDE_PROMPT and AUTO_CLAUDE_AGENT_CONFIG), file generation using generator functions with backup support, dry-run mode for previewing changes without writing files, comprehensive error handling with proper HTTP status codes, database sync timestamp updates for projects, full integration with Auto-Claude generator functions (generateAutoClaudePrompts, generateAgentConfigs). Manual verification passed - endpoint responds correctly to requests, validates input parameters, checks backend path configuration, and returns appropriate error messages. Build verification successful with no TypeScript errors.",
           "dependencies": ["3_5"],
           "files_to_modify": [
             "packages/server/src/app/api/auto-claude/sync/route.ts"
@@ -252,8 +252,8 @@
           "subtask_id": "4_3",
           "name": "Create agents CRUD endpoints",
           "description": "GET/PUT /api/auto-claude/agents endpoints for agent config management",
-          "status": "pending",
-          "notes": "",
+          "status": "completed",
+          "notes": "Successfully implemented comprehensive GET/PUT /api/auto-claude/agents endpoints for agent config management. Both route files provide full functionality: packages/server/src/app/api/auto-claude/agents/route.ts contains GET endpoint with tool/MCP matrix visualization and POST for creation, packages/server/src/app/api/auto-claude/agents/[agentType]/route.ts contains GET/PUT/DELETE for individual agent management. Implementation features comprehensive Zod validation, partial updates support, config merging, error handling, and TypeScript typing. Build verification successful.",
           "dependencies": ["1_2"],
           "files_to_modify": [
             "packages/server/src/app/api/auto-claude/agents/route.ts",
