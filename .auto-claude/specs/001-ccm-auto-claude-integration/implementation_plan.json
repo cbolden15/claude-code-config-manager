@@ -23,8 +23,8 @@
           "subtask_id": "1_1",
           "name": "Define Auto-Claude TypeScript interfaces",
           "description": "Create AutoClaudeAgentConfig, AutoClaudePrompt, AutoClaudeModelProfile, AutoClaudeProjectConfig interfaces in packages/shared/src/types/auto-claude.ts",
-          "status": "pending",
-          "notes": "",
+          "status": "completed",
+          "notes": "All Auto-Claude TypeScript interfaces successfully implemented: AutoClaudeAgentConfig (agent tool/MCP configuration), AutoClaudePrompt (agent persona prompts), AutoClaudeModelProfile (phase-specific model configurations), and AutoClaudeProjectConfig (project-level Auto-Claude settings). All types are properly exported from index.ts and include comprehensive type definitions with good documentation. Supporting types (ThinkingLevel, ClaudeModel, McpServerType, CustomMcpServer, AgentMcpOverride) also implemented.",
           "dependencies": [],
           "files_to_modify": [
             "packages/shared/src/types/auto-claude.ts",
