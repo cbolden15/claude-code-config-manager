@@ -9,6 +9,7 @@ import {
   AutoClaudeModelProfileSchema,
   AutoClaudeProjectConfigSchema,
 } from '../../../../../../shared/src/schemas/auto-claude';
+import { parseModelsFile } from '@/lib/import/models-parser';
 
 const ImportRequestSchema = z.object({
   autoClaudeInstallPath: z.string().min(1, 'Auto-Claude installation path is required'),
@@ -37,83 +38,16 @@ interface ImportStats {
 }
 
 /**
- * Parse models.py file to extract AGENT_CONFIGS
+ * Parse models.py file using enhanced AST-like parser
  */
-async function parseModelsFile(modelsPath: string): Promise<Array<{ agentType: string; config: any }>> {
-  try {
-    const content = await fs.readFile(modelsPath, 'utf-8');
-    const agentConfigs: Array<{ agentType: string; config: any }> = [];
+async function parseModelsFileEnhanced(modelsPath: string): Promise<Array<{ agentType: string; config: any }>> {
+  const result = await parseModelsFile(modelsPath);
 
-    // Look for AGENT_CONFIGS dictionary definition
-    const agentConfigsMatch = content.match(/AGENT_CONFIGS\s*=\s*\{([\s\S]*?)\n\}/);
-    if (!agentConfigsMatch) {
-      throw new Error('AGENT_CONFIGS dictionary not found in models.py');
-    }
-
-    // Extract agent config entries - this is a simplified parser
-    // In a real implementation, you might want to use a Python AST parser
-    const configContent = agentConfigsMatch[1];
-
-    // Match individual agent entries like "coder": { ... },
-    const agentMatches = configContent.matchAll(/"([^"]+)":\s*\{([^}]+)\}/g);
-
-    for (const match of agentMatches) {
-      const agentType = match[1];
-      const configText = `{${match[2]}}`;
-
-      try {
-        // Parse basic agent config structure
-        // This is simplified - a real parser would be more robust
-        const tools: string[] = [];
-        const mcpServers: string[] = [];
-        const mcpServersOptional: string[] = [];
-        const autoClaudeTools: string[] = [];
-        let thinkingDefault = 'medium';
-
-        // Extract tools
-        const toolsMatch = configText.match(/"tools":\s*\[([^\]]+)\]/);
-        if (toolsMatch) {
-          const toolsList = toolsMatch[1].match(/"([^"]+)"/g);
-          if (toolsList) {
-            tools.push(...toolsList.map(t => t.replace(/"/g, '')));
-          }
-        }
-
-        // Extract MCP servers
-        const mcpMatch = configText.match(/"mcp_servers":\s*\[([^\]]+)\]/);
-        if (mcpMatch) {
-          const mcpList = mcpMatch[1].match(/"([^"]+)"/g);
-          if (mcpList) {
-            mcpServers.push(...mcpList.map(m => m.replace(/"/g, '')));
-          }
-        }
-
-        // Extract thinking default
-        const thinkingMatch = configText.match(/"thinking_default":\s*"([^"]+)"/);
-        if (thinkingMatch) {
-          thinkingDefault = thinkingMatch[1];
-        }
-
-        const config = {
-          agentType,
-          tools,
-          mcpServers,
-          mcpServersOptional,
-          autoClaudeTools,
-          thinkingDefault,
-        };
-
-        agentConfigs.push({ agentType, config });
-      } catch (error) {
-        console.warn(`Failed to parse agent config for ${agentType}:`, error);
-      }
-    }
-
-    return agentConfigs;
-  } catch (error) {
-    console.error('Error parsing models.py:', error);
-    throw new Error(`Failed to parse models.py: ${error instanceof Error ? error.message : String(error)}`);
+  if (result.errors.length > 0) {
+    console.warn('Errors during models.py parsing:', result.errors);
   }
+
+  return result.agentConfigs;
 }
 
 /**
@@ -288,7 +222,7 @@ async function parseAutoClaudeConfigs(installPath: string): Promise<ParsedAutoCl
   const modelsPath = path.join(installPath, 'apps', 'backend', 'models.py');
   try {
     await fs.access(modelsPath);
-    configs.agentConfigs = await parseModelsFile(modelsPath);
+    configs.agentConfigs = await parseModelsFileEnhanced(modelsPath);
   } catch (error) {
     console.warn('Could not find or parse models.py:', error);
   }
