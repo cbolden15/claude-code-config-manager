@@ -149,7 +149,7 @@ export class ModelsParser {
   }
 
   /**
-   * Parse a simple dictionary value (string, list, or boolean)
+   * Parse a dictionary value (string, list, nested dictionary, or boolean)
    */
   private parseValue(): any {
     this.skipWhitespaceAndComments();
@@ -166,6 +166,10 @@ export class ModelsParser {
       return this.parseList();
     }
 
+    if (char === '{') {
+      return this.parseDictionary();
+    }
+
     // Check for boolean values
     const remaining = this.content.substring(this.position);
     if (remaining.startsWith('True')) {
@@ -175,6 +179,19 @@ export class ModelsParser {
     if (remaining.startsWith('False')) {
       this.position += 5;
       return false;
+    }
+
+    // Check for None value
+    if (remaining.startsWith('None')) {
+      this.position += 4;
+      return null;
+    }
+
+    // Try to parse number
+    const numberMatch = remaining.match(/^-?\d+(\.\d+)?/);
+    if (numberMatch) {
+      this.position += numberMatch[0].length;
+      return numberMatch[0].includes('.') ? parseFloat(numberMatch[0]) : parseInt(numberMatch[0], 10);
     }
 
     // Try to parse identifier (for unquoted strings)
@@ -298,7 +315,7 @@ function convertToAgentConfig(agentType: string, rawConfig: Record<string, any>)
     // Validate the config using Zod schema
     return AutoClaudeAgentConfigSchema.parse(config);
   } catch (error) {
-    console.warn(`Failed to convert agent config for ${agentType}:`, error);
+    // Silently return null on validation errors - errors will be tracked by caller
     return null;
   }
 }
