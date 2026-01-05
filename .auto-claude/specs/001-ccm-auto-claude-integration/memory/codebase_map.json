@@ -14,7 +14,12 @@
       "description": "All required Auto-Claude TypeScript interfaces are already implemented: AutoClaudeAgentConfig (agent tool/MCP configuration), AutoClaudePrompt (agent persona prompts), AutoClaudeModelProfile (phase-specific model configurations), and AutoClaudeProjectConfig (project-level Auto-Claude settings). These types are properly exported from the index file and include comprehensive type definitions with good documentation.",
       "category": "implementation",
       "discovered_at": "2026-01-05T20:16:09.357226+00:00"
+    },
+    "packages/shared/src/schemas/auto-claude.ts": {
+      "description": "Comprehensive Zod validation schemas implemented for all Auto-Claude component types with robust validation rules, enum constraints, and custom refinement functions for complex validation logic.",
+      "category": "schemas",
+      "discovered_at": "2026-01-05T20:21:52.573010+00:00"
     }
   },
-  "last_updated": "2026-01-05T20:16:09.357235+00:00"
+  "last_updated": "2026-01-05T20:21:52.573019+00:00"
 }
