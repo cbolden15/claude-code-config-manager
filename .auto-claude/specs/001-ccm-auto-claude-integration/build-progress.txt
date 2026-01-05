@@ -8,7 +8,7 @@
 
 ## Current Status: IMPLEMENTATION IN PROGRESS 🚧
 
-**Current Progress**: 7/72 subtasks completed (9.7%)
+**Current Progress**: 20/72 subtasks completed (27.8%)
 
 ### Phase Summary
 1. **Phase 1** - Schema & Types (Foundation): 6 subtasks, 12 hours
@@ -203,8 +203,56 @@ Ready for subtask 2_3: Create settings API routes.
   - ✅ **Location**: packages/server/src/lib/generators/auto-claude/index.ts
   - ✅ **Commit**: f36e7a8 - "auto-claude: Export all Auto-Claude generators from main index file"
 
+- [x] **Subtask 3_6**: Integrate with main generator ✅ **COMPLETED**
+  - ✅ Updated main generateProjectFiles function to include Auto-Claude generators
+  - ✅ Enhanced integration with better condition checking using hasAutoClaudeComponents
+  - ✅ Always generates task_metadata.json with defaults if no model profile provided
+  - ✅ Improved data extraction from component configs with null safety
+  - ✅ Better injection context for prompts including project context
+  - ✅ TypeScript build verification passed successfully
+  - ✅ **Location**: packages/server/src/lib/generators/index.ts
+
+### Phase 4 - API Routes [4/6]
+- [x] **Subtask 4_1**: Create import API endpoint ✅ **COMPLETED**
+  - ✅ Implemented comprehensive POST /api/auto-claude/import endpoint
+  - ✅ Parses Auto-Claude installation directory and extracts agent configs from models.py
+  - ✅ Parses prompts directory for .md files with injection point detection
+  - ✅ Parses project config from .env files with MCP toggles and API keys
+  - ✅ Creates default model profiles (balanced, cost-optimized, quality-focused)
+  - ✅ Full validation using Auto-Claude schemas and database transaction support
+  - ✅ Dry-run mode for previewing imports and comprehensive error handling
+  - ✅ **Location**: packages/server/src/app/api/auto-claude/import/route.ts
+
+- [x] **Subtask 4_2**: Create sync API endpoint ✅ **COMPLETED**
+  - ✅ Implemented POST /api/auto-claude/sync endpoint for writing agent configs and prompts to Auto-Claude backend
+  - ✅ Comprehensive Zod schema validation for request parameters (backendPath, projectId, dryRun)
+  - ✅ Backend path configuration and validation with Auto-Claude installation verification
+  - ✅ Component extraction from database (AUTO_CLAUDE_PROMPT and AUTO_CLAUDE_AGENT_CONFIG)
+  - ✅ File generation using generator functions with backup support
+  - ✅ Dry-run mode for previewing changes and database sync timestamp updates
+  - ✅ **Location**: packages/server/src/app/api/auto-claude/sync/route.ts
+
+- [x] **Subtask 4_3**: Create agents CRUD endpoints ✅ **COMPLETED**
+  - ✅ Implemented comprehensive GET/PUT /api/auto-claude/agents endpoints for agent config management
+  - ✅ GET endpoint with tool/MCP matrix visualization and POST for creation
+  - ✅ Individual route with GET/PUT/DELETE for specific agent management
+  - ✅ Comprehensive Zod validation, partial updates support, config merging
+  - ✅ Proper error handling and TypeScript typing
+  - ✅ **Location**: packages/server/src/app/api/auto-claude/agents/route.ts, [agentType]/route.ts
+
+- [x] **Subtask 4_4**: Create prompts CRUD endpoints ✅ **COMPLETED**
+  - ✅ Implemented Full CRUD API for Auto-Claude prompts with markdown handling
+  - ✅ GET endpoint for listing all prompts with optional filtering by agent type, content preview/full content modes, injection point statistics
+  - ✅ POST endpoint for creating new prompts with validation and conflict detection
+  - ✅ GET endpoint for individual prompts with content analysis and statistics
+  - ✅ PUT endpoint for updating prompts with partial updates support
+  - ✅ DELETE endpoint for removing prompts
+  - ✅ All endpoints include comprehensive error handling, Zod validation, and markdown content handling
+  - ✅ TypeScript build verification passed successfully
+  - ✅ **Location**: packages/server/src/app/api/auto-claude/prompts/route.ts, [id]/route.ts
+
 🎯 **NEXT READY FOR:**
-**Subtask 3_6**: Integrate with main generator
-- Dependencies: Subtask 3_5 ✅ (generator index completed)
-- Files to modify: packages/server/src/lib/generators/index.ts
-- Update main generateProjectFiles function to include Auto-Claude generators
+**Subtask 4_5**: Create model-profiles CRUD endpoints
+- Dependencies: Subtask 1_2 ✅ (Zod schemas completed)
+- Files to modify: packages/server/src/app/api/auto-claude/model-profiles/route.ts, [id]/route.ts
+- Full CRUD API for model profiles with phase-by-phase configuration
