@@ -31,7 +31,13 @@
 - ✅ All generator functions properly integrated
 - ✅ Function signatures correctly matched
 
-**Commit:** 654482d - "auto-claude: 3_6 - Update main generateProjectFiles function to include Auto-Claude generators"
+**Commit:** 86b7971 - "auto-claude: 3_6 - Update main generateProjectFiles function to include Auto-Claude generators"
+
+**Key Fixes Applied:**
+1. Fixed generateTaskMetadata() call - Changed from `generateTaskMetadata(modelProfile)` to `generateTaskMetadata({ modelProfile })`
+2. Added settings parameter to generateAutoClaudeEnv() - Added empty settings object with TODO comment
+3. Added injectionContext parameter to generateAutoClaudePrompts() - Added empty injectionContext with TODO comment
+4. Fixed prompt file path handling - Removed redundant "prompts/" prefix since generator already includes correct path
 
 The main generateProjectFiles function now supports Auto-Claude components and can generate a complete Auto-Claude configuration alongside traditional Claude Code configurations.
 

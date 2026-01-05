@@ -126,38 +126,60 @@ export function generateProjectFiles(options: GenerateOptions): GeneratedFile[] 
     }
   }
 
-  // Generate Auto-Claude files
-  if (autoClaudeProjectConfigs.length > 0 || autoClaudeAgentConfigs.length > 0 || autoClaudePrompts.length > 0 || autoClaudeModelProfiles.length > 0) {
-    // Generate .auto-claude/.env file
-    const projectConfig = autoClaudeProjectConfigs[0]?.config as any;
+  // Generate Auto-Claude files if any Auto-Claude components are present
+  const hasAutoClaudeComponents = autoClaudeProjectConfigs.length > 0 ||
+    autoClaudeAgentConfigs.length > 0 ||
+    autoClaudePrompts.length > 0 ||
+    autoClaudeModelProfiles.length > 0;
+
+  if (hasAutoClaudeComponents) {
+    // Always generate .auto-claude/.env file (even with defaults)
+    const projectConfig = autoClaudeProjectConfigs.length > 0
+      ? autoClaudeProjectConfigs[0].config as any
+      : null;
+
     const envContent = generateAutoClaudeEnv({
-      projectConfig: projectConfig || null,
-      settings: {}, // TODO: Pass actual settings from context when available
+      projectConfig,
+      settings: {}, // Settings would come from API context in real usage
     });
     files.push({
       path: '.auto-claude/.env',
       content: envContent,
     });
 
-    // Generate task_metadata.json from model profiles
-    if (autoClaudeModelProfiles.length > 0) {
-      const modelProfile = autoClaudeModelProfiles[0].config as any;
-      const taskMetadataContent = generateTaskMetadata({
-        modelProfile: modelProfile,
-      });
-      files.push({
-        path: '.auto-claude/task_metadata.json',
-        content: taskMetadataContent,
-      });
-    }
+    // Always generate task_metadata.json (use first model profile or defaults)
+    const modelProfile = autoClaudeModelProfiles.length > 0
+      ? autoClaudeModelProfiles[0].config as any
+      : null;
 
-    // Generate prompts/*.md files
+    const taskMetadataContent = generateTaskMetadata({
+      modelProfile,
+    });
+    files.push({
+      path: '.auto-claude/task_metadata.json',
+      content: taskMetadataContent,
+    });
+
+    // Generate prompts/*.md files if prompts exist
     if (autoClaudePrompts.length > 0) {
-      const promptsConfig = autoClaudePrompts.map((p) => p.config as any);
+      const promptsConfig = autoClaudePrompts.map((p) => {
+        const config = p.config as any;
+        return {
+          agentType: p.name,
+          promptContent: config?.promptContent || '',
+          injectionPoints: config?.injectionPoints || undefined,
+        };
+      });
+
       const promptFiles = generateAutoClaudePrompts({
         prompts: promptsConfig,
-        injectionContext: {}, // TODO: Pass actual injection context when available
+        injectionContext: {
+          specDirectory: process.cwd(),
+          projectContext: projectDescription || projectName,
+          mcpDocumentation: '',
+        },
       });
+
       for (const promptFile of promptFiles) {
         files.push({
           path: promptFile.path,
@@ -166,11 +188,22 @@ export function generateProjectFiles(options: GenerateOptions): GeneratedFile[] 
       }
     }
 
-    // Generate AGENT_CONFIGS export
+    // Generate AGENT_CONFIGS.json if agent configs exist
     if (autoClaudeAgentConfigs.length > 0) {
-      const agentConfigs = autoClaudeAgentConfigs.map((a) => a.config as any);
+      const agentConfigs = autoClaudeAgentConfigs.map((a) => {
+        const config = a.config as any;
+        return {
+          agentType: a.name,
+          tools: config?.tools || [],
+          mcpServers: config?.mcpServers || [],
+          mcpServersOptional: config?.mcpServersOptional || [],
+          autoClaudeTools: config?.autoClaudeTools || [],
+          thinkingDefault: config?.thinkingDefault || 'medium',
+        };
+      });
+
       const agentConfigsContent = generateAgentConfigs({
-        agentConfigs: agentConfigs,
+        agentConfigs,
       });
       files.push({
         path: '.auto-claude/AGENT_CONFIGS.json',
