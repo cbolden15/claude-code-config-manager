@@ -230,8 +230,8 @@
           "subtask_id": "4_1",
           "name": "Create import API endpoint",
           "description": "POST /api/auto-claude/import to parse existing Auto-Claude configs and create Component records",
-          "status": "pending",
-          "notes": "",
+          "status": "completed",
+          "notes": "Successfully implemented comprehensive POST /api/auto-claude/import endpoint. Features include: parsing of Auto-Claude installation directory, extracting agent configs from models.py with simplified Python AST parsing, parsing prompts directory for .md files with injection point detection, parsing project config from .env files with MCP toggles and API keys, creation of default model profiles (balanced, cost-optimized, quality-focused), full validation using Auto-Claude schemas, database transaction support for atomic imports, dry-run mode for previewing imports, comprehensive error handling and statistics reporting. Implementation follows established code patterns and passed TypeScript build verification successfully.",
           "dependencies": ["1_2", "2_2"],
           "files_to_modify": [
             "packages/server/src/app/api/auto-claude/import/route.ts"

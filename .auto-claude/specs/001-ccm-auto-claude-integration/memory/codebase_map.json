@@ -64,7 +64,12 @@
       "description": "Successfully implemented POST /api/auto-claude/import endpoint with comprehensive Auto-Claude configuration parsing and database import capabilities. Includes request validation, file parsing for models.py/prompts/.env, transaction-based Component creation, error handling, and dry-run functionality.",
       "category": "API Implementation",
       "discovered_at": "2026-01-05T21:51:31.485785+00:00"
+    },
+    "src/app/api/auto-claude/import/route.ts": {
+      "description": "Completed comprehensive POST /api/auto-claude/import endpoint with Auto-Claude configuration parsing, Component record creation, validation, error handling, dry-run functionality, and import statistics. Successfully verified with TypeScript compilation.",
+      "category": "implementation",
+      "discovered_at": "2026-01-05T21:54:28.223369+00:00"
     }
   },
-  "last_updated": "2026-01-05T21:51:31.485793+00:00"
+  "last_updated": "2026-01-05T21:54:28.223377+00:00"
 }
