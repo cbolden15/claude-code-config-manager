@@ -1,0 +1,40 @@
+version: '3.8'
+
+# Production docker-compose for homelab deployment
+# Usage: docker-compose -f docker-compose.homelab.yml up -d
+
+services:
+  ccm-server:
+    image: ghcr.io/calebbolden/ccm-server:latest
+    # Or build locally:
+    # build:
+    #   context: ..
+    #   dockerfile: docker/Dockerfile
+    container_name: ccm-server
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=file:/app/data/ccm.db
+      # Optional: Set for CORS if needed
+      # - ALLOWED_ORIGINS=https://ccm.homelab.bream-python.ts.net
+    volumes:
+      # Persist SQLite database
+      - /opt/ccm/data:/app/data
+    networks:
+      - proxy
+    labels:
+      # Nginx Proxy Manager labels (if using)
+      - "com.centurylinklabs.watchtower.enable=true"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  proxy:
+    external: true
+    name: nginx-proxy-manager_default

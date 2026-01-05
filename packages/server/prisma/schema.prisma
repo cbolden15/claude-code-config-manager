@@ -1,0 +1,89 @@
+// Prisma schema for CCM
+// See docs/SPECIFICATION.md section 8 for full data model
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Component types enum is handled via string field
+// MCP_SERVER, SUBAGENT, SKILL, COMMAND, HOOK, CLAUDE_MD_TEMPLATE
+
+model Component {
+  id          String   @id @default(cuid())
+  type        String   // ComponentType enum as string
+  name        String
+  description String
+  config      String   // JSON stored as TEXT
+  sourceUrl   String?
+  version     String?
+  tags        String   @default("")
+  enabled     Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  profiles ProfileComponent[]
+
+  @@unique([type, name])
+}
+
+model Profile {
+  id               String   @id @default(cuid())
+  name             String   @unique
+  description      String
+  claudeMdTemplate String?  // CLAUDE.md template content
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  components ProfileComponent[]
+  projects   Project[]
+}
+
+model ProfileComponent {
+  profileId   String
+  componentId String
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  profile   Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  component Component @relation(fields: [componentId], references: [id], onDelete: Cascade)
+
+  @@id([profileId, componentId])
+}
+
+model Project {
+  id           String    @id @default(cuid())
+  name         String
+  path         String
+  machine      String
+  profileId    String?
+  lastSyncedAt DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  profile Profile? @relation(fields: [profileId], references: [id], onDelete: SetNull)
+
+  @@unique([path, machine])
+}
+
+model MonitoringEntry {
+  id        String   @id @default(cuid())
+  source    String   // e.g., "claude-code-changelog", "mcp-servers"
+  title     String
+  content   String   // Full content or summary
+  url       String?
+  severity  String   @default("info") // info, warning, important
+  isRead    Boolean  @default(false)
+  fetchedAt DateTime @default(now())
+  createdAt DateTime @default(now())
+}
+
+model Setting {
+  key       String   @id
+  value     String   // JSON stored as TEXT
+  updatedAt DateTime @updatedAt
+}
