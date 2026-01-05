@@ -29,7 +29,12 @@
       "description": "Successfully generated and applied Prisma migration for Auto-Claude schema changes: Settings table for encrypted credential storage, Project model extended with autoClaudeEnabled/autoClaudeConfigId/modelProfileId/lastAutoClaudeSync fields. Database structure now supports Auto-Claude integration.",
       "category": "database-migration",
       "discovered_at": "2026-01-05T20:31:55.271228+00:00"
+    },
+    "packages/server/src/lib/encryption.ts": {
+      "description": "Completed subtask 2_1: Implemented comprehensive encryption utility using AES-256-GCM with Node.js crypto module. Features include encrypt() and decrypt() functions using scrypt key derivation, random salt/IV generation, authentication tags, and isEncrypted() detection utility. Requires CCM_ENCRYPTION_KEY environment variable for secure credential storage. Successfully tested with symmetric encryption/decryption verification.",
+      "category": "encryption",
+      "discovered_at": "2026-01-05T20:38:11.018764+00:00"
     }
   },
-  "last_updated": "2026-01-05T20:31:55.271238+00:00"
+  "last_updated": "2026-01-05T20:38:11.018773+00:00"
 }
