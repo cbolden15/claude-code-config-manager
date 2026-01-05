@@ -82,8 +82,11 @@ model MonitoringEntry {
   createdAt DateTime @default(now())
 }
 
-model Setting {
-  key       String   @id
-  value     String   // JSON stored as TEXT
+model Settings {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String   // JSON or plain text
+  encrypted Boolean  @default(false)
+  createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
