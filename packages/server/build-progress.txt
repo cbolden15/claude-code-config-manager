@@ -1,0 +1,39 @@
+# Build Progress Update
+
+## Completed: Auto-Claude Generator Integration (Subtask 3_6)
+
+**Description:** Update main generateProjectFiles function to include Auto-Claude generators
+
+**Status:** ✅ COMPLETED
+
+**Changes Made:**
+1. **Added Auto-Claude generator imports** - Imported all four generator functions: generateAutoClaudeEnv, generateTaskMetadata, generateAutoClaudePrompts, generateAgentConfigs from ./auto-claude module
+
+2. **Added component filtering** - Added filtering logic for all Auto-Claude component types:
+   - AUTO_CLAUDE_AGENT_CONFIG
+   - AUTO_CLAUDE_PROMPT
+   - AUTO_CLAUDE_MODEL_PROFILE
+   - AUTO_CLAUDE_PROJECT_CONFIG
+
+3. **Added generation logic** - Implemented Auto-Claude file generation:
+   - `.auto-claude/.env` - Environment configuration with MCP toggles and API keys
+   - `.auto-claude/task_metadata.json` - Task metadata from model profiles
+   - `prompts/*.md` - Prompt files with injection point replacement
+   - `.auto-claude/AGENT_CONFIGS.json` - Agent configurations export
+
+4. **Updated generateSummary function** - Added Auto-Claude component types to typeMap for proper counting
+
+5. **Updated module exports** - Added all Auto-Claude generator functions to module exports
+
+**Verification:**
+- ✅ TypeScript build successful
+- ✅ No compilation errors
+- ✅ All generator functions properly integrated
+- ✅ Function signatures correctly matched
+
+**Commit:** 654482d - "auto-claude: 3_6 - Update main generateProjectFiles function to include Auto-Claude generators"
+
+The main generateProjectFiles function now supports Auto-Claude components and can generate a complete Auto-Claude configuration alongside traditional Claude Code configurations.
+
+## Phase Progress: Generators (6/6 Complete)
+All generator subtasks completed. Ready to proceed to Phase 4: API Routes.

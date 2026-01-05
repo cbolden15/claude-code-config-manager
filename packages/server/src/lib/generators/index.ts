@@ -132,6 +132,7 @@ export function generateProjectFiles(options: GenerateOptions): GeneratedFile[] 
     const projectConfig = autoClaudeProjectConfigs[0]?.config as any;
     const envContent = generateAutoClaudeEnv({
       projectConfig: projectConfig || null,
+      settings: {}, // TODO: Pass actual settings from context when available
     });
     files.push({
       path: '.auto-claude/.env',
@@ -141,7 +142,9 @@ export function generateProjectFiles(options: GenerateOptions): GeneratedFile[] 
     // Generate task_metadata.json from model profiles
     if (autoClaudeModelProfiles.length > 0) {
       const modelProfile = autoClaudeModelProfiles[0].config as any;
-      const taskMetadataContent = generateTaskMetadata(modelProfile);
+      const taskMetadataContent = generateTaskMetadata({
+        modelProfile: modelProfile,
+      });
       files.push({
         path: '.auto-claude/task_metadata.json',
         content: taskMetadataContent,
@@ -153,10 +156,11 @@ export function generateProjectFiles(options: GenerateOptions): GeneratedFile[] 
       const promptsConfig = autoClaudePrompts.map((p) => p.config as any);
       const promptFiles = generateAutoClaudePrompts({
         prompts: promptsConfig,
+        injectionContext: {}, // TODO: Pass actual injection context when available
       });
       for (const promptFile of promptFiles) {
         files.push({
-          path: `prompts/${promptFile.path}`,
+          path: promptFile.path,
           content: promptFile.content,
         });
       }
