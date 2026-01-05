@@ -308,8 +308,8 @@
           "subtask_id": "5_1",
           "name": "Create models.py parser",
           "description": "Parse Python AST to extract AGENT_CONFIGS dictionary into Component records",
-          "status": "pending",
-          "notes": "",
+          "status": "completed",
+          "notes": "Enhanced ModelsParser class with comprehensive Python AST parsing capabilities. Key improvements: fixed nested dictionary parsing in parseValue() method to handle agent config structures, added support for nested dictionaries, numbers, and None values, removed console.warn debugging statement for production readiness, enhanced error handling throughout. The parser now correctly extracts complete AGENT_CONFIGS structure from Python models.py files and converts them into proper AutoClaudeAgentConfig TypeScript types with full validation support.",
           "dependencies": ["1_2"],
           "files_to_modify": [
             "packages/server/src/lib/import/models-parser.ts"
@@ -319,8 +319,8 @@
           "subtask_id": "5_2",
           "name": "Create prompts parser",
           "description": "Read and parse all .md files from prompts directory",
-          "status": "pending",
-          "notes": "",
+          "status": "completed",
+          "notes": "Prompts parser successfully implemented with comprehensive functionality: parsePromptsDirectory() function for reading all .md files from prompts directory, parsePromptFile() for individual file parsing, front matter parsing support, injection point detection ({{specDirectory}}, {{projectContext}}, {{mcpDocumentation}}), filename-based agent type extraction, Zod validation using AutoClaudePromptSchema, comprehensive error handling and reporting, validation functions (validateParsedPrompts), default prompt configurations (getDefaultPrompts), and support for both basic markdown and advanced features like front matter. Fixed TypeScript compilation issues with proper type inference and validation. Implementation follows established code patterns from models-parser.ts and passes full build verification.",
           "dependencies": ["1_2"],
           "files_to_modify": [
             "packages/server/src/lib/import/prompts-parser.ts"
@@ -330,8 +330,8 @@
           "subtask_id": "5_3",
           "name": "Create env parser",
           "description": "Parse .auto-claude/.env for project configuration settings",
-          "status": "pending",
-          "notes": "",
+          "status": "completed",
+          "notes": "Successfully implemented comprehensive .auto-claude/.env parser with AutoClaudeProjectConfig extraction. Features include: parseEnvFile() function for reading .env files, parseEnvVars() for key-value parsing, conversion to AutoClaudeProjectConfig format with MCP toggles, API keys, custom servers, and agent overrides, Zod validation with AutoClaudeProjectConfigSchema, comprehensive error handling and validation, utility functions (validateParsedEnvConfig, getDefaultEnvConfig), support for both file reading and direct content parsing, preservation of non-config environment variables. Implementation follows established patterns from models-parser and prompts-parser, passes TypeScript build verification, and includes robust parsing for boolean values, custom MCP servers, and agent-specific MCP overrides.",
           "dependencies": ["1_2"],
           "files_to_modify": [
             "packages/server/src/lib/import/env-parser.ts"

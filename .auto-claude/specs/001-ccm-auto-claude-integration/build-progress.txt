@@ -35,7 +35,7 @@
 
 ---
 
-**Current Progress**: 22/72 subtasks completed (30.6%)
+**Current Progress**: 23/72 subtasks completed (31.9%)
 
 ### Phase Summary
 1. **Phase 1** - Schema & Types (Foundation): 6 subtasks, 12 hours
@@ -296,9 +296,53 @@ Ready for subtask 2_3: Create settings API routes.
   - ✅ TypeScript build verification successful
   - ✅ **Location**: packages/server/src/app/api/generate/route.ts
 
+### Phase 5 - Import Wizard [3/4]
+- [x] **Subtask 5_1**: Create models.py parser ✅ **COMPLETED**
+  - ✅ **Enhanced ModelsParser class** with comprehensive Python AST parsing capabilities
+  - ✅ **Fixed nested dictionary parsing** - Updated parseValue() method to handle nested dictionaries ('{' character)
+  - ✅ **Enhanced value type support** - Added support for numbers (int/float), None values, and nested structures
+  - ✅ **Production ready** - Removed console.warn debugging statement for production deployment
+  - ✅ **Robust error handling** - Improved error handling with proper null returns and validation
+  - ✅ **Type safety** - Full TypeScript type safety and Zod schema validation maintained
+  - ✅ **Testing verified** - Parser correctly extracts complete AGENT_CONFIGS structure from Python models.py files
+  - ✅ **Conversion support** - Converts parsed data into proper AutoClaudeAgentConfig TypeScript types
+  - ✅ **Integration ready** - Ready for use with import API endpoints and Auto-Claude migration
+  - ✅ **Location**: packages/server/src/lib/import/models-parser.ts
+  - ✅ **Commit**: 5fca1a8 - "auto-claude: 5_1 - Parse Python AST to extract AGENT_CONFIGS dictionary into Component records"
+
+- [x] **Subtask 5_2**: Create prompts parser ✅ **COMPLETED**
+  - ✅ **Comprehensive prompts directory parsing** - parsePromptsDirectory() function for reading all .md files from prompts directory
+  - ✅ **Individual file parsing** - parsePromptFile() for processing single markdown files with validation
+  - ✅ **Front matter support** - parseFrontMatter() for extracting YAML-like metadata from markdown headers
+  - ✅ **Injection point detection** - Automatic detection of {{specDirectory}}, {{projectContext}}, {{mcpDocumentation}} patterns
+  - ✅ **Agent type extraction** - filename-based agent type extraction from .md files (e.g., coder.md → coder)
+  - ✅ **Zod validation** - Full validation using AutoClaudePromptSchema for type safety
+  - ✅ **Error handling** - Comprehensive error handling and reporting for parse failures
+  - ✅ **Validation functions** - validateParsedPrompts() and duplicate detection
+  - ✅ **Default configurations** - getDefaultPrompts() for fallback prompt configurations
+  - ✅ **TypeScript build verified** - Fixed compilation issues with proper type inference
+  - ✅ **Location**: packages/server/src/lib/import/prompts-parser.ts
+
+- [x] **Subtask 5_3**: Create env parser ✅ **COMPLETED**
+  - ✅ **Comprehensive .env parsing** - parseEnvFile() function for reading .auto-claude/.env files
+  - ✅ **Environment variable extraction** - parseEnvVars() for key-value parsing with comment and empty line handling
+  - ✅ **AutoClaudeProjectConfig conversion** - convertToProjectConfig() for mapping env vars to typed config object
+  - ✅ **MCP toggles support** - Parsing for context7Enabled, linearMcpEnabled, electronMcpEnabled, puppeteerMcpEnabled, graphitiEnabled
+  - ✅ **Integration settings** - Support for API keys (linearApiKey, linearTeamId, githubToken, githubRepo)
+  - ✅ **Custom MCP servers** - parseCustomMcpServers() for parsing CUSTOM_MCP_* environment variables
+  - ✅ **Agent MCP overrides** - parseAgentMcpOverrides() for per-agent MCP additions and removals
+  - ✅ **Zod validation** - Full validation using AutoClaudeProjectConfigSchema
+  - ✅ **Boolean parsing** - parseBooleanEnv() helper for proper boolean value conversion
+  - ✅ **Error handling** - Comprehensive error handling with detailed error messages
+  - ✅ **Utility functions** - validateParsedEnvConfig(), getDefaultEnvConfig(), extractNonConfigEnvVars()
+  - ✅ **Content parsing** - parseEnvContent() for direct content parsing without file system access
+  - ✅ **TypeScript build verified** - Follows established patterns from models-parser and prompts-parser
+  - ✅ **Location**: packages/server/src/lib/import/env-parser.ts
+  - ✅ **Commit**: 6de7bb4 - "auto-claude: 5_3 - Parse .auto-claude/.env for project configuration"
+
 🎯 **NEXT READY FOR:**
-**Phase 5: Import Wizard** [0/4] - Ready to start
-**Subtask 5_1**: Create models.py parser
-- Dependencies: Subtask 1_2 ✅ (Zod schemas completed)
-- Files to modify: packages/server/src/lib/import/models-parser.ts
-- Parse Python AST to extract AGENT_CONFIGS dictionary into Component records
+**Phase 5: Import Wizard** [3/4] - Almost complete
+**Subtask 5_4**: Create import wizard UI
+- Dependencies: Subtask 4_1 ✅ (import API endpoint completed)
+- Files to modify: packages/server/src/app/auto-claude/import/page.tsx, packages/server/src/app/auto-claude/import/components/
+- Multi-step wizard for Auto-Claude import with preview and validation

@@ -61,9 +61,9 @@
       "discovered_at": "2026-01-05T21:28:25.119578+00:00"
     },
     "packages/server/src/app/api/auto-claude/import/route.ts": {
-      "description": "Successfully implemented POST /api/auto-claude/import endpoint with comprehensive Auto-Claude configuration parsing and database import capabilities. Includes request validation, file parsing for models.py/prompts/.env, transaction-based Component creation, error handling, and dry-run functionality.",
-      "category": "API Implementation",
-      "discovered_at": "2026-01-05T21:51:31.485785+00:00"
+      "description": "Successfully integrated Python AST-like parser from models-parser.ts into Auto-Claude import route, replacing simplified regex-based parser with robust ModelsParser class for reliable AGENT_CONFIGS extraction",
+      "category": "integration",
+      "discovered_at": "2026-01-05T23:10:32.859620+00:00"
     },
     "src/app/api/auto-claude/import/route.ts": {
       "description": "Completed comprehensive POST /api/auto-claude/import endpoint with Auto-Claude configuration parsing, Component record creation, validation, error handling, dry-run functionality, and import statistics. Successfully verified with TypeScript compilation.",
@@ -89,7 +89,17 @@
       "description": "Subtask 4_6 completed: Added autoClaudeEnabled flag to POST /api/generate endpoint with comprehensive Auto-Claude integration. When enabled, automatically adds default Auto-Claude components (project config, model profile, 4 agent configs, and prompts) if none exist. Integrates with Auto-Claude generators to produce .auto-claude/.env, task_metadata.json, AGENT_CONFIGS.json, and prompts/*.md files. Build verification passed successfully.",
       "category": "API Enhancement",
       "discovered_at": "2026-01-05T22:49:11.647053+00:00"
+    },
+    "packages/server/src/lib/import/models-parser.ts": {
+      "description": "Completed comprehensive models.py parser implementation with enhanced Python AST-like parsing capabilities for extracting AGENT_CONFIGS dictionary into Component records. Features ModelsParser class with robust dictionary parsing, proper string/escape handling, conversion to AutoClaudeAgentConfig format, comprehensive error handling, and validation functions.",
+      "category": "Import Wizard",
+      "discovered_at": "2026-01-05T23:05:22.637565+00:00"
+    },
+    "packages/server/src/lib/import/prompts-parser.ts": {
+      "description": "Comprehensive prompts parser for Auto-Claude .md files implementation completed. Features: parsePromptsDirectory() for parsing all .md files, injection point detection ({{specDirectory}}, {{projectContext}}, {{mcpDocumentation}}), front matter parsing, agent type extraction from filenames, validation using Auto-Claude schemas, error handling following models-parser patterns, and default prompts for fallback scenarios. Ready for integration with Auto-Claude import functionality.",
+      "category": "import",
+      "discovered_at": "2026-01-05T23:18:12.322455+00:00"
     }
   },
-  "last_updated": "2026-01-05T22:49:11.647061+00:00"
+  "last_updated": "2026-01-05T23:18:12.322462+00:00"
 }
