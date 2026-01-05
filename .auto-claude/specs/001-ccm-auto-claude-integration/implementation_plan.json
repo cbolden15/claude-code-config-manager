@@ -1,0 +1,718 @@
+{
+  "project_id": "001-ccm-auto-claude-integration",
+  "title": "CCM + Auto-Claude Integration",
+  "description": "Extend Claude Code Config Manager to become the single source of truth for both Claude Code and Auto-Claude configurations",
+  "total_phases": 9,
+  "total_subtasks": 72,
+  "estimated_hours": 144,
+  "complexity": "complex",
+  "qa": {
+    "status": "pending",
+    "tests_passed": "",
+    "issues": ""
+  },
+  "phases": [
+    {
+      "phase_id": "phase_1",
+      "name": "Schema & Types (Foundation)",
+      "description": "TypeScript interfaces, Zod schemas, Prisma models for Auto-Claude components",
+      "status": "pending",
+      "estimated_hours": 12,
+      "subtasks": [
+        {
+          "subtask_id": "1_1",
+          "name": "Define Auto-Claude TypeScript interfaces",
+          "description": "Create AutoClaudeAgentConfig, AutoClaudePrompt, AutoClaudeModelProfile, AutoClaudeProjectConfig interfaces in packages/shared/src/types/auto-claude.ts",
+          "status": "pending",
+          "notes": "",
+          "dependencies": [],
+          "files_to_modify": [
+            "packages/shared/src/types/auto-claude.ts",
+            "packages/shared/src/types/index.ts"
+          ]
+        },
+        {
+          "subtask_id": "1_2",
+          "name": "Create Zod validation schemas",
+          "description": "Implement Zod schemas for all Auto-Claude component types with validation rules",
+          "status": "pending",
+          "notes": "",
+          "dependencies": ["1_1"],
+          "files_to_modify": [
+            "packages/shared/src/schemas/auto-claude.ts",
+            "packages/shared/src/schemas/index.ts"
+          ]
+        },
+        {
+          "subtask_id": "1_3",
+          "name": "Add Settings model to Prisma schema",
+          "description": "Create Settings table for encrypted credential storage with key-value pairs",
+          "status": "pending",
+          "notes": "",
+          "dependencies": [],
+          "files_to_modify": [
+            "packages/server/prisma/schema.prisma"
+          ]
+        },
+        {
+          "subtask_id": "1_4",
+          "name": "Extend ComponentType enum",
+          "description": "Add AUTO_CLAUDE_AGENT_CONFIG, AUTO_CLAUDE_PROMPT, AUTO_CLAUDE_MODEL_PROFILE, AUTO_CLAUDE_PROJECT_CONFIG to enum",
+          "status": "pending",
+          "notes": "",
+          "dependencies": [],
+          "files_to_modify": [
+            "packages/server/prisma/schema.prisma"
+          ]
+        },
+        {
+          "subtask_id": "1_5",
+          "name": "Extend Project model for Auto-Claude",
+          "description": "Add autoClaudeEnabled, autoClaudeConfigId, modelProfileId, lastAutoClaudeSync fields",
+          "status": "pending",
+          "notes": "",
+          "dependencies": ["1_3", "1_4"],
+          "files_to_modify": [
+            "packages/server/prisma/schema.prisma"
+          ]
+        },
+        {
+          "subtask_id": "1_6",
+          "name": "Run Prisma migrations",
+          "description": "Generate and apply database migrations for new schema changes",
+          "status": "pending",
+          "notes": "",
+          "dependencies": ["1_3", "1_4", "1_5"],
+          "files_to_modify": [
+            "packages/server/prisma/migrations/"
+          ]
+        }
+      ]
+    },
+    {
+      "phase_id": "phase_2",
+      "name": "Settings Infrastructure",
+      "description": "Encryption utility, settings service, API routes for secure credential management",
+      "status": "pending",
+      "estimated_hours": 8,
+      "subtasks": [
+        {
+          "subtask_id": "2_1",
+          "name": "Create encryption utility",
+          "description": "Implement encrypt/decrypt functions using Node.js crypto module with AES-256-GCM",
+          "status": "pending",
+          "notes": "",
+          "dependencies": [],
+          "files_to_modify": [
+            "packages/server/src/lib/encryption.ts"
+          ]
+        },
+        {
+          "subtask_id": "2_2",
+          "name": "Implement settings service",
+          "description": "Create service layer for settings CRUD with automatic encryption for sensitive keys",
+          "status": "pending",
+          "notes": "",
+          "dependencies": ["2_1"],
+          "files_to_modify": [
+            "packages/server/src/lib/settings.ts"
+          ]
+        },
+        {
+          "subtask_id": "2_3",
+          "name": "Create settings API routes",
+          "description": "Implement GET/PUT/DELETE /api/settings endpoints with encryption handling",
+          "status": "pending",
+          "notes": "",
+          "dependencies": ["2_2"],
+          "files_to_modify": [
+            "packages/server/src/app/api/settings/route.ts",
+            "packages/server/src/app/api/settings/[key]/route.ts"
+          ]
+        },
+        {
+          "subtask_id": "2_4",
+          "name": "Create settings UI page",
+          "description": "Build settings management page with masked credential inputs and validation",
+          "status": "pending",
+          "notes": "",
+          "dependencies": ["2_3"],
+          "files_to_modify": [
+            "packages/server/src/app/settings/page.tsx",
+            "packages/server/src/app/settings/components/"
+          ]
+        }
+      ]
+    },
+    {
+      "phase_id": "phase_3",
+      "name": "Generators",
+      "description": "File generators for .env, prompts, model profiles, agent configs",
+      "status": "pending",
+      "estimated_hours": 12,
+      "subtasks": [
+        {
+          "subtask_id": "3_1",
+          "name": "Create env-file generator",
+          "description": "Generate .auto-claude/.env with MCP toggles, API keys, custom servers",
+          "status": "pending",
+          "notes": "",
+          "dependencies": ["1_1", "2_2"],
+          "files_to_modify": [
+            "packages/server/src/lib/generators/auto-claude/env-file.ts"
+          ]
+        },
+        {
+          "subtask_id": "3_2",
+          "name": "Create model-profile generator",
+          "description": "Generate task_metadata.json with phase models and thinking configurations",
+          "status": "pending",
+          "notes": "",
+          "dependencies": ["1_1"],
+          "files_to_modify": [
+            "packages/server/src/lib/generators/auto-claude/model-profile.ts"
+          ]
+        },
+        {
+          "subtask_id": "3_3",
+          "name": "Create prompts generator",
+          "description": "Generate prompts/*.md files with injection point replacement",
+          "status": "pending",
+          "notes": "",
+          "dependencies": ["1_1"],
+          "files_to_modify": [
+            "packages/server/src/lib/generators/auto-claude/prompts.ts"
+          ]
+        },
+        {
+          "subtask_id": "3_4",
+          "name": "Create agent-configs generator",
+          "description": "Generate JSON export of AGENT_CONFIGS with tool permissions and MCP dependencies",
+          "status": "pending",
+          "notes": "",
+          "dependencies": ["1_1"],
+          "files_to_modify": [
+            "packages/server/src/lib/generators/auto-claude/agent-configs.ts"
+          ]
+        },
+        {
+          "subtask_id": "3_5",
+          "name": "Create generator index",
+          "description": "Export all Auto-Claude generators from main index file",
+          "status": "pending",
+          "notes": "",
+          "dependencies": ["3_1", "3_2", "3_3", "3_4"],
+          "files_to_modify": [
+            "packages/server/src/lib/generators/auto-claude/index.ts"
+          ]
+        },
+        {
+          "subtask_id": "3_6",
+          "name": "Integrate with main generator",
+          "description": "Update main generateProjectFiles function to include Auto-Claude generators",
+          "status": "pending",
+          "notes": "",
+          "dependencies": ["3_5"],
+          "files_to_modify": [
+            "packages/server/src/lib/generators/index.ts"
+          ]
+        }
+      ]
+    },
+    {
+      "phase_id": "phase_4",
+      "name": "API Routes",
+      "description": "Import, sync, CRUD endpoints for all Auto-Claude components",
+      "status": "pending",
+      "estimated_hours": 12,
+      "subtasks": [
+        {
+          "subtask_id": "4_1",
+          "name": "Create import API endpoint",
+          "description": "POST /api/auto-claude/import to parse existing Auto-Claude configs and create Component records",
+          "status": "pending",
+          "notes": "",
+          "dependencies": ["1_2", "2_2"],
+          "files_to_modify": [
+            "packages/server/src/app/api/auto-claude/import/route.ts"
+          ]
+        },
+        {
+          "subtask_id": "4_2",
+          "name": "Create sync API endpoint",
+          "description": "POST /api/auto-claude/sync to write agent configs and prompts to Auto-Claude backend",
+          "status": "pending",
+          "notes": "",
+          "dependencies": ["3_5"],
+          "files_to_modify": [
+            "packages/server/src/app/api/auto-claude/sync/route.ts"
+          ]
+        },
+        {
+          "subtask_id": "4_3",
+          "name": "Create agents CRUD endpoints",
+          "description": "GET/PUT /api/auto-claude/agents endpoints for agent config management",
+          "status": "pending",
+          "notes": "",
+          "dependencies": ["1_2"],
+          "files_to_modify": [
+            "packages/server/src/app/api/auto-claude/agents/route.ts",
+            "packages/server/src/app/api/auto-claude/agents/[agentType]/route.ts"
+          ]
+        },
+        {
+          "subtask_id": "4_4",
+          "name": "Create prompts CRUD endpoints",
+          "description": "Full CRUD API for Auto-Claude prompts with markdown handling",
+          "status": "pending",
+          "notes": "",
+          "dependencies": ["1_2"],
+          "files_to_modify": [
+            "packages/server/src/app/api/auto-claude/prompts/route.ts",
+            "packages/server/src/app/api/auto-claude/prompts/[id]/route.ts"
+          ]
+        },
+        {
+          "subtask_id": "4_5",
+          "name": "Create model-profiles CRUD endpoints",
+          "description": "Full CRUD API for model profiles with phase-by-phase configuration",
+          "status": "pending",
+          "notes": "",
+          "dependencies": ["1_2"],
+          "files_to_modify": [
+            "packages/server/src/app/api/auto-claude/model-profiles/route.ts",
+            "packages/server/src/app/api/auto-claude/model-profiles/[id]/route.ts"
+          ]
+        },
+        {
+          "subtask_id": "4_6",
+          "name": "Extend generate endpoint",
+          "description": "Add autoClaudeEnabled flag to POST /api/generate and include Auto-Claude files",
+          "status": "pending",
+          "notes": "",
+          "dependencies": ["3_6"],
+          "files_to_modify": [
+            "packages/server/src/app/api/generate/route.ts"
+          ]
+        }
+      ]
+    },
+    {
+      "phase_id": "phase_5",
+      "name": "Import Wizard",
+      "description": "Parsers for models.py, prompts, .env files plus UI wizard",
+      "status": "pending",
+      "estimated_hours": 8,
+      "subtasks": [
+        {
+          "subtask_id": "5_1",
+          "name": "Create models.py parser",
+          "description": "Parse Python AST to extract AGENT_CONFIGS dictionary into Component records",
+          "status": "pending",
+          "notes": "",
+          "dependencies": ["1_2"],
+          "files_to_modify": [
+            "packages/server/src/lib/import/models-parser.ts"
+          ]
+        },
+        {
+          "subtask_id": "5_2",
+          "name": "Create prompts parser",
+          "description": "Read and parse all .md files from prompts directory",
+          "status": "pending",
+          "notes": "",
+          "dependencies": ["1_2"],
+          "files_to_modify": [
+            "packages/server/src/lib/import/prompts-parser.ts"
+          ]
+        },
+        {
+          "subtask_id": "5_3",
+          "name": "Create env parser",
+          "description": "Parse .auto-claude/.env for project configuration settings",
+          "status": "pending",
+          "notes": "",
+          "dependencies": ["1_2"],
+          "files_to_modify": [
+            "packages/server/src/lib/import/env-parser.ts"
+          ]
+        },
+        {
+          "subtask_id": "5_4",
+          "name": "Create import wizard UI",
+          "description": "Multi-step wizard for Auto-Claude import with preview and validation",
+          "status": "pending",
+          "notes": "",
+          "dependencies": ["4_1"],
+          "files_to_modify": [
+            "packages/server/src/app/auto-claude/import/page.tsx",
+            "packages/server/src/app/auto-claude/import/components/"
+          ]
+        }
+      ]
+    },
+    {
+      "phase_id": "phase_6",
+      "name": "CLI Commands",
+      "description": "auto-claude command group with all subcommands",
+      "status": "pending",
+      "estimated_hours": 16,
+      "subtasks": [
+        {
+          "subtask_id": "6_1",
+          "name": "Create base auto-claude command",
+          "description": "Setup auto-claude command group structure and help text",
+          "status": "pending",
+          "notes": "",
+          "dependencies": [],
+          "files_to_modify": [
+            "packages/cli/src/commands/auto-claude.ts"
+          ]
+        },
+        {
+          "subtask_id": "6_2",
+          "name": "Implement config subcommand",
+          "description": "ccm auto-claude config --path for setting Auto-Claude backend path",
+          "status": "pending",
+          "notes": "",
+          "dependencies": ["6_1", "2_2"],
+          "files_to_modify": [
+            "packages/cli/src/commands/auto-claude.ts"
+          ]
+        },
+        {
+          "subtask_id": "6_3",
+          "name": "Implement import subcommand",
+          "description": "ccm auto-claude import with --source and --dry-run options",
+          "status": "pending",
+          "notes": "",
+          "dependencies": ["6_1", "4_1"],
+          "files_to_modify": [
+            "packages/cli/src/commands/auto-claude.ts"
+          ]
+        },
+        {
+          "subtask_id": "6_4",
+          "name": "Implement sync subcommand",
+          "description": "ccm auto-claude sync with --backend option for one-way sync",
+          "status": "pending",
+          "notes": "",
+          "dependencies": ["6_1", "4_2"],
+          "files_to_modify": [
+            "packages/cli/src/commands/auto-claude.ts"
+          ]
+        },
+        {
+          "subtask_id": "6_5",
+          "name": "Implement profiles subcommands",
+          "description": "ccm auto-claude profiles list/show/apply for model profile management",
+          "status": "pending",
+          "notes": "",
+          "dependencies": ["6_1", "4_5"],
+          "files_to_modify": [
+            "packages/cli/src/commands/auto-claude.ts"
+          ]
+        },
+        {
+          "subtask_id": "6_6",
+          "name": "Implement agents subcommands",
+          "description": "ccm auto-claude agents list/show for agent config management",
+          "status": "pending",
+          "notes": "",
+          "dependencies": ["6_1", "4_3"],
+          "files_to_modify": [
+            "packages/cli/src/commands/auto-claude.ts"
+          ]
+        },
+        {
+          "subtask_id": "6_7",
+          "name": "Update init command",
+          "description": "Add --auto-claude flag to ccm init command",
+          "status": "pending",
+          "notes": "",
+          "dependencies": ["3_6"],
+          "files_to_modify": [
+            "packages/cli/src/commands/init.ts"
+          ]
+        },
+        {
+          "subtask_id": "6_8",
+          "name": "Update CLI help system",
+          "description": "Add auto-claude commands to main help and command discovery",
+          "status": "pending",
+          "notes": "",
+          "dependencies": ["6_1", "6_2", "6_3", "6_4", "6_5", "6_6", "6_7"],
+          "files_to_modify": [
+            "packages/cli/src/index.ts",
+            "packages/cli/src/commands/index.ts"
+          ]
+        }
+      ]
+    },
+    {
+      "phase_id": "phase_7",
+      "name": "Seed Data",
+      "description": "Seed script with defaults from Auto-Claude",
+      "status": "pending",
+      "estimated_hours": 10,
+      "subtasks": [
+        {
+          "subtask_id": "7_1",
+          "name": "Create default agent configs seed",
+          "description": "Import ~15 agent configs from Auto-Claude AGENT_CONFIGS (spec_gatherer, planner, coder, qa_reviewer, etc.)",
+          "status": "pending",
+          "notes": "",
+          "dependencies": ["1_2"],
+          "files_to_modify": [
+            "packages/server/prisma/seed-auto-claude.ts"
+          ]
+        },
+        {
+          "subtask_id": "7_2",
+          "name": "Create default prompts seed",
+          "description": "Import all 23 prompts from Auto-Claude apps/backend/prompts/",
+          "status": "pending",
+          "notes": "",
+          "dependencies": ["1_2"],
+          "files_to_modify": [
+            "packages/server/prisma/seed-auto-claude.ts"
+          ]
+        },
+        {
+          "subtask_id": "7_3",
+          "name": "Create default model profiles seed",
+          "description": "Create balanced, cost-optimized, and quality-focused model profiles",
+          "status": "pending",
+          "notes": "",
+          "dependencies": ["1_2"],
+          "files_to_modify": [
+            "packages/server/prisma/seed-auto-claude.ts"
+          ]
+        },
+        {
+          "subtask_id": "7_4",
+          "name": "Create default project config seed",
+          "description": "Create sensible default Auto-Claude project configuration",
+          "status": "pending",
+          "notes": "",
+          "dependencies": ["1_2"],
+          "files_to_modify": [
+            "packages/server/prisma/seed-auto-claude.ts"
+          ]
+        },
+        {
+          "subtask_id": "7_5",
+          "name": "Integrate with main seed script",
+          "description": "Call Auto-Claude seed from main Prisma seed script",
+          "status": "pending",
+          "notes": "",
+          "dependencies": ["7_1", "7_2", "7_3", "7_4"],
+          "files_to_modify": [
+            "packages/server/prisma/seed.ts"
+          ]
+        }
+      ]
+    },
+    {
+      "phase_id": "phase_8",
+      "name": "Web UI",
+      "description": "Dashboard, agent configs, prompts editor, profiles, project settings",
+      "status": "pending",
+      "estimated_hours": 18,
+      "subtasks": [
+        {
+          "subtask_id": "8_1",
+          "name": "Create Auto-Claude dashboard",
+          "description": "Overview page at /auto-claude with cards for configs, prompts, profiles and sync status",
+          "status": "pending",
+          "notes": "",
+          "dependencies": ["4_2", "4_3", "4_4", "4_5"],
+          "files_to_modify": [
+            "packages/server/src/app/auto-claude/page.tsx",
+            "packages/server/src/app/auto-claude/components/Dashboard.tsx"
+          ]
+        },
+        {
+          "subtask_id": "8_2",
+          "name": "Create agent configs page",
+          "description": "List and edit agent types at /auto-claude/agents with tool/MCP matrix",
+          "status": "pending",
+          "notes": "",
+          "dependencies": ["4_3"],
+          "files_to_modify": [
+            "packages/server/src/app/auto-claude/agents/page.tsx",
+            "packages/server/src/app/auto-claude/agents/components/"
+          ]
+        },
+        {
+          "subtask_id": "8_3",
+          "name": "Create prompts editor page",
+          "description": "Monaco editor at /auto-claude/prompts with live preview and injection points",
+          "status": "pending",
+          "notes": "",
+          "dependencies": ["4_4"],
+          "files_to_modify": [
+            "packages/server/src/app/auto-claude/prompts/page.tsx",
+            "packages/server/src/app/auto-claude/prompts/components/"
+          ]
+        },
+        {
+          "subtask_id": "8_4",
+          "name": "Create model profiles page",
+          "description": "Card view at /auto-claude/profiles with phase-by-phase config and cost estimation",
+          "status": "pending",
+          "notes": "",
+          "dependencies": ["4_5"],
+          "files_to_modify": [
+            "packages/server/src/app/auto-claude/profiles/page.tsx",
+            "packages/server/src/app/auto-claude/profiles/components/"
+          ]
+        },
+        {
+          "subtask_id": "8_5",
+          "name": "Create project settings page",
+          "description": "Per-project MCP toggles at /auto-claude/projects with credential overrides",
+          "status": "pending",
+          "notes": "",
+          "dependencies": ["2_4"],
+          "files_to_modify": [
+            "packages/server/src/app/auto-claude/projects/page.tsx",
+            "packages/server/src/app/auto-claude/projects/components/"
+          ]
+        },
+        {
+          "subtask_id": "8_6",
+          "name": "Update components page",
+          "description": "Add filter for Auto-Claude component types and badges",
+          "status": "pending",
+          "notes": "",
+          "dependencies": ["1_4"],
+          "files_to_modify": [
+            "packages/server/src/app/components/page.tsx"
+          ]
+        },
+        {
+          "subtask_id": "8_7",
+          "name": "Update profiles page",
+          "description": "Add Auto-Claude Enabled toggle and show Auto-Claude components",
+          "status": "pending",
+          "notes": "",
+          "dependencies": ["1_5"],
+          "files_to_modify": [
+            "packages/server/src/app/profiles/page.tsx"
+          ]
+        },
+        {
+          "subtask_id": "8_8",
+          "name": "Create Auto-Claude layout",
+          "description": "Shared layout for Auto-Claude pages with navigation",
+          "status": "pending",
+          "notes": "",
+          "dependencies": [],
+          "files_to_modify": [
+            "packages/server/src/app/auto-claude/layout.tsx"
+          ]
+        },
+        {
+          "subtask_id": "8_9",
+          "name": "Update main navigation",
+          "description": "Add Auto-Claude section to main app navigation",
+          "status": "pending",
+          "notes": "",
+          "dependencies": ["8_8"],
+          "files_to_modify": [
+            "packages/server/src/app/components/Navigation.tsx"
+          ]
+        }
+      ]
+    },
+    {
+      "phase_id": "phase_9",
+      "name": "Integration & Testing",
+      "description": "End-to-end validation, testing, and documentation",
+      "status": "pending",
+      "estimated_hours": 14,
+      "subtasks": [
+        {
+          "subtask_id": "9_1",
+          "name": "Write unit tests for generators",
+          "description": "Test all Auto-Claude generator functions with various input scenarios",
+          "status": "pending",
+          "notes": "",
+          "dependencies": ["3_5"],
+          "files_to_modify": [
+            "packages/server/__tests__/generators/auto-claude/"
+          ]
+        },
+        {
+          "subtask_id": "9_2",
+          "name": "Write API integration tests",
+          "description": "Test all Auto-Claude API endpoints with real database operations",
+          "status": "pending",
+          "notes": "",
+          "dependencies": ["4_1", "4_2", "4_3", "4_4", "4_5", "4_6"],
+          "files_to_modify": [
+            "packages/server/__tests__/api/auto-claude/"
+          ]
+        },
+        {
+          "subtask_id": "9_3",
+          "name": "Write CLI integration tests",
+          "description": "Test all auto-claude CLI commands with mock API responses",
+          "status": "pending",
+          "notes": "",
+          "dependencies": ["6_8"],
+          "files_to_modify": [
+            "packages/cli/__tests__/commands/auto-claude.test.ts"
+          ]
+        },
+        {
+          "subtask_id": "9_4",
+          "name": "Write end-to-end tests",
+          "description": "Test complete workflows: import → edit → sync → generate",
+          "status": "pending",
+          "notes": "",
+          "dependencies": ["8_9"],
+          "files_to_modify": [
+            "__tests__/e2e/auto-claude.test.ts"
+          ]
+        },
+        {
+          "subtask_id": "9_5",
+          "name": "Test Auto-Claude compatibility",
+          "description": "Verify generated files work with actual Auto-Claude installation",
+          "status": "pending",
+          "notes": "",
+          "dependencies": ["9_4"],
+          "files_to_modify": [
+            "__tests__/integration/auto-claude-compatibility.test.ts"
+          ]
+        },
+        {
+          "subtask_id": "9_6",
+          "name": "Update documentation",
+          "description": "Update README with Auto-Claude integration guide and CLI reference",
+          "status": "pending",
+          "notes": "",
+          "dependencies": ["9_5"],
+          "files_to_modify": [
+            "README.md",
+            "docs/AUTO_CLAUDE_INTEGRATION.md"
+          ]
+        },
+        {
+          "subtask_id": "9_7",
+          "name": "Performance optimization and final validation",
+          "description": "Optimize import/sync performance, validate all acceptance criteria",
+          "status": "pending",
+          "notes": "",
+          "dependencies": ["9_6"],
+          "files_to_modify": [
+            "packages/server/src/lib/import/",
+            "packages/server/src/lib/generators/"
+          ]
+        }
+      ]
+    }
+  ]
+}

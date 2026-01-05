@@ -1,0 +1,326 @@
+{
+  "task_description": "Integrate Claude Code Config Manager with Auto-Claude to enable centralized configuration management for both systems through a unified CLI and web UI",
+  "user_requirements": {
+    "core_functionality": [
+      "Single source of truth for all Claude Code and Auto-Claude configurations",
+      "One-way sync from CCM to Auto-Claude (CCM is authoritative)",
+      "Web UI for visual configuration editing",
+      "CLI commands for scripting and automation",
+      "Import wizard for migrating existing Auto-Claude installations"
+    ],
+    "component_types": [
+      "AUTO_CLAUDE_AGENT_CONFIG - Define tools, MCP servers, and thinking levels per agent type",
+      "AUTO_CLAUDE_PROMPT - Store agent persona prompts with injection point support",
+      "AUTO_CLAUDE_MODEL_PROFILE - Configure models and thinking levels per phase",
+      "AUTO_CLAUDE_PROJECT_CONFIG - Manage per-project MCP toggles and credentials"
+    ],
+    "generators": [
+      "Generate .auto-claude/.env from project config and settings",
+      "Generate task_metadata.json from model profile",
+      "Generate prompts/*.md from prompt components",
+      "Generate agent_configs.json from agent config components"
+    ],
+    "api_endpoints": [
+      "POST /api/auto-claude/import - Import existing configs from Auto-Claude",
+      "POST /api/auto-claude/sync - Sync configs to Auto-Claude backend",
+      "Full CRUD for agents, prompts, and model profiles",
+      "Extended /api/generate to include Auto-Claude files"
+    ],
+    "cli_commands": [
+      "ccm auto-claude config --path <path> - Set Auto-Claude backend path",
+      "ccm auto-claude import - Run import wizard",
+      "ccm auto-claude sync - Sync configs to backend",
+      "ccm auto-claude agents list|show - View agent configs",
+      "ccm auto-claude profiles list|show|apply - Manage model profiles",
+      "ccm init --auto-claude - Initialize project with Auto-Claude support"
+    ],
+    "web_ui_pages": [
+      "/auto-claude - Dashboard with overview cards and sync status",
+      "/auto-claude/agents - Agent config list with tool/MCP matrix",
+      "/auto-claude/prompts - Prompt editor with Monaco and live preview",
+      "/auto-claude/profiles - Model profile manager with phase configuration",
+      "/auto-claude/projects - Per-project settings and MCP toggles",
+      "/auto-claude/import - Import wizard for existing configs",
+      "/settings - Global settings including Auto-Claude backend path and API keys"
+    ],
+    "security": [
+      "Encrypted storage for sensitive credentials (Linear API key, GitHub token)",
+      "Settings masked in UI responses",
+      "Secure key management with environment variable storage"
+    ],
+    "data_migration": [
+      "One-time import from existing Auto-Claude installation",
+      "Parse models.py to extract AGENT_CONFIGS",
+      "Read all prompts/*.md files",
+      "Parse .auto-claude/.env for project configs",
+      "Create default seed data (23 prompts, ~15 agent configs, 3 model profiles)"
+    ],
+    "validation": [
+      "Zod schemas for all Auto-Claude component types",
+      "Runtime validation on API requests",
+      "File format validation before sync",
+      "Path validation for Auto-Claude backend"
+    ]
+  },
+  "technical_requirements": {
+    "database": {
+      "new_models": [
+        "Settings - Global configuration key-value store with encryption support"
+      ],
+      "model_updates": [
+        "Project - Add autoClaudeEnabled, autoClaudeConfigId, modelProfileId, lastAutoClaudeSync"
+      ],
+      "enum_updates": [
+        "ComponentType - Add AUTO_CLAUDE_AGENT_CONFIG, AUTO_CLAUDE_PROMPT, AUTO_CLAUDE_MODEL_PROFILE, AUTO_CLAUDE_PROJECT_CONFIG"
+      ]
+    },
+    "file_generation": {
+      "env_file": {
+        "path": ".auto-claude/.env",
+        "content": [
+          "MCP toggle flags (CONTEXT7_ENABLED, LINEAR_MCP_ENABLED, etc.)",
+          "API keys from settings (LINEAR_API_KEY, GITHUB_TOKEN, etc.)",
+          "Custom MCP server configurations",
+          "Per-agent MCP overrides"
+        ]
+      },
+      "model_profile": {
+        "path": "task_metadata.json",
+        "content": [
+          "Phase model mappings (spec, planning, coding, qa)",
+          "Thinking token budgets per phase",
+          "Auto-Claude compatible format"
+        ]
+      },
+      "prompts": {
+        "path": "apps/backend/prompts/*.md",
+        "content": [
+          "Agent-specific markdown files",
+          "Injection point replacements ({{specDirectory}}, {{projectContext}}, {{mcpDocumentation}})",
+          "Preserved formatting and special characters"
+        ]
+      },
+      "agent_configs": {
+        "path": "agent_configs.json or models.py integration",
+        "content": [
+          "Tool permissions per agent",
+          "MCP server dependencies",
+          "Thinking level defaults",
+          "Auto-Claude AGENT_CONFIGS format"
+        ]
+      }
+    },
+    "import_parsers": {
+      "models_py": "Parse Python AST to extract AGENT_CONFIGS dictionary",
+      "prompts": "Read all .md files from prompts/ directory",
+      "env_file": "Parse .auto-claude/.env for MCP toggles and credentials"
+    },
+    "encryption": {
+      "algorithm": "AES-256-GCM",
+      "key_storage": "Environment variable (ENCRYPTION_KEY)",
+      "encrypted_fields": [
+        "linearApiKey",
+        "githubToken",
+        "graphitiMcpUrl (if contains credentials)"
+      ]
+    },
+    "validation_schemas": {
+      "location": "packages/shared/src/schemas/auto-claude.ts",
+      "schemas": [
+        "agentConfigSchema",
+        "promptSchema",
+        "modelProfileSchema",
+        "projectConfigSchema"
+      ]
+    }
+  },
+  "acceptance_criteria": {
+    "import_workflow": [
+      "User can import all 23 prompts from Auto-Claude",
+      "User can import ~15 agent configs from AGENT_CONFIGS",
+      "Import wizard shows preview before creating records",
+      "Import completes in < 10 seconds",
+      "Imported components visible in web UI immediately"
+    ],
+    "edit_workflow": [
+      "User can edit agent config (add/remove tools, change thinking level)",
+      "User can edit prompts with Monaco editor and live preview",
+      "Changes persist to database",
+      "Changes reflected in UI after page refresh",
+      "Validation errors show helpful messages"
+    ],
+    "sync_workflow": [
+      "Sync writes prompts/*.md to Auto-Claude backend",
+      "Sync writes agent_configs.json or updates models.py",
+      "File contents match database state exactly",
+      "lastAutoClaudeSync timestamp updated on success",
+      "Sync completes in < 5 seconds"
+    ],
+    "project_init_workflow": [
+      ".auto-claude/.env generated with MCP toggles",
+      "task_metadata.json generated with selected model profile",
+      "API keys included from global settings",
+      "Standard Claude Code configs also generated",
+      "Project registered in database with autoClaudeEnabled=true"
+    ],
+    "auto_claude_compatibility": [
+      "Generated .env file works with Auto-Claude runtime",
+      "Generated prompts load correctly in Auto-Claude agents",
+      "Model profile applies to all phases (spec, planning, coding, qa)",
+      "MCP servers load based on toggles",
+      "Auto-Claude build completes without errors"
+    ],
+    "ui_requirements": [
+      "All pages match CCM styling and layout patterns",
+      "Agent config matrix clearly shows tool/MCP assignments",
+      "Prompt editor has syntax highlighting and preview",
+      "Model profile editor shows cost estimation",
+      "Settings page masks sensitive values",
+      "Error messages are actionable and clear"
+    ],
+    "cli_requirements": [
+      "All commands have --help text",
+      "Commands provide progress feedback",
+      "Errors show helpful troubleshooting tips",
+      "Dry-run mode available where applicable",
+      "Config persists to ~/.ccm/config.json"
+    ],
+    "performance": [
+      "Web UI pages load in < 1 second",
+      "Import completes in < 10 seconds",
+      "Sync completes in < 5 seconds",
+      "Database queries optimized with proper indexes",
+      "No N+1 query issues"
+    ],
+    "testing": [
+      "All 72 subtasks completed",
+      "Unit tests for generators (> 80% coverage)",
+      "Integration tests for API endpoints",
+      "End-to-end tests for all workflows",
+      "Auto-Claude compatibility verified"
+    ]
+  },
+  "out_of_scope": {
+    "v1_exclusions": [
+      "Two-way sync (Auto-Claude → CCM)",
+      "Multi-user support with authentication",
+      "Cloud sync across machines",
+      "Auto-Claude execution from CCM UI",
+      "Real-time collaboration features",
+      "Advanced version control for prompts/configs",
+      "A/B testing for model profiles",
+      "Cost tracking and analytics per profile"
+    ],
+    "future_enhancements": [
+      "Bi-directional sync with conflict resolution",
+      "Team collaboration features",
+      "Cloud-hosted CCM instance",
+      "Integrated Auto-Claude runner",
+      "Prompt versioning and rollback",
+      "Cost monitoring dashboard",
+      "Usage analytics and insights"
+    ]
+  },
+  "dependencies": {
+    "external": [
+      "Auto-Claude installation at configurable path (default: ~/Projects/Auto-Claude)",
+      "SQLite database (Prisma managed)",
+      "Node.js >= 18.x",
+      "pnpm package manager",
+      "Python 3.12+ (for Auto-Claude compatibility testing)"
+    ],
+    "internal_packages": [
+      "packages/shared - Shared types and schemas",
+      "packages/server - API, generators, database, web UI",
+      "packages/cli - CLI commands and API client"
+    ],
+    "npm_packages": [
+      "zod - Runtime validation",
+      "monaco-editor - Prompt editor",
+      "react-markdown - Markdown preview",
+      "@prisma/client - Database ORM",
+      "commander - CLI framework"
+    ]
+  },
+  "migration_strategy": {
+    "first_time_setup": [
+      "Step 1: Configure Auto-Claude backend path (ccm auto-claude config --path)",
+      "Step 2: Run import wizard (ccm auto-claude import)",
+      "Step 3: Verify imported configs in web UI (/auto-claude)",
+      "Step 4: Optionally edit configs as needed",
+      "Step 5: Run initial sync (ccm auto-claude sync)"
+    ],
+    "ongoing_workflow": [
+      "Step 1: Edit configs in CCM (web UI or CLI)",
+      "Step 2: Sync to Auto-Claude (ccm auto-claude sync)",
+      "Step 3: Use Auto-Claude normally (configs auto-loaded)"
+    ],
+    "rollback_procedure": [
+      "If sync generates incorrect files:",
+      "1. Restore Auto-Claude files from git",
+      "2. Fix CCM database records via web UI",
+      "3. Re-run sync to regenerate files"
+    ]
+  },
+  "success_metrics": {
+    "adoption": {
+      "prompts_imported": "23 (100% of Auto-Claude defaults)",
+      "agent_configs_imported": "~15 (all AGENT_CONFIGS)",
+      "model_profiles_available": "3 (balanced, cost-optimized, quality-focused)"
+    },
+    "functionality": {
+      "subtasks_completed": "72/72",
+      "acceptance_criteria_met": "100%",
+      "critical_bugs": "0"
+    },
+    "quality": {
+      "code_coverage": "> 80%",
+      "e2e_tests_passing": "100%",
+      "documentation_complete": "Yes"
+    }
+  },
+  "risks_and_mitigation": [
+    {
+      "risk": "Parsing models.py fails due to complex Python syntax",
+      "impact": "High",
+      "probability": "Medium",
+      "mitigation": "Use Python AST parser, fallback to regex, manual import option"
+    },
+    {
+      "risk": "File sync overwrites user edits in Auto-Claude",
+      "impact": "Medium",
+      "probability": "Low",
+      "mitigation": "Clear documentation, backup reminder, git integration"
+    },
+    {
+      "risk": "Auto-Claude breaking changes in future versions",
+      "impact": "High",
+      "probability": "Low",
+      "mitigation": "Pin to specific version, compatibility checks, update guide"
+    },
+    {
+      "risk": "Encryption key loss prevents credential recovery",
+      "impact": "High",
+      "probability": "Low",
+      "mitigation": "Key backup instructions, re-entry option in UI"
+    }
+  ],
+  "timeline": {
+    "phase_1": "Schema & Types - 1-2 days",
+    "phase_2": "Settings Infrastructure - 1 day",
+    "phase_3": "Generators - 2-3 days",
+    "phase_4": "API Routes - 2-3 days",
+    "phase_5": "Import Wizard - 2 days",
+    "phase_6": "CLI Commands - 2-3 days",
+    "phase_7": "Seed Data - 1 day",
+    "phase_8": "Web UI - 4-5 days",
+    "phase_9": "Integration & Testing - 2-3 days",
+    "total_estimate": "17-24 days"
+  },
+  "contact_information": {
+    "project_owner": "calebbolden",
+    "ccm_repo": "~/Projects/claude-code-config-manager",
+    "auto_claude_repo": "~/Projects/Auto-Claude",
+    "spec_id": "001-ccm-auto-claude-integration"
+  }
+}

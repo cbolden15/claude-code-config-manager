@@ -1,0 +1,15 @@
+{
+  "discovered_files": {
+    "./.auto-claude/specs/001-ccm-auto-claude-integration/implementation_plan.json": {
+      "description": "Created comprehensive implementation plan with 9 phases and 72 subtasks for CCM + Auto-Claude Integration project",
+      "category": "project_planning",
+      "discovered_at": "2026-01-05T20:00:26.964689+00:00"
+    },
+    "./packages/shared/src/types/auto-claude.ts": {
+      "description": "Created comprehensive Auto-Claude TypeScript interfaces including AutoClaudeAgentConfig, AutoClaudePrompt, AutoClaudeModelProfile, and AutoClaudeProjectConfig with all supporting types and enums as specified in the requirements",
+      "category": "schema",
+      "discovered_at": "2026-01-05T20:02:44.390174+00:00"
+    }
+  },
+  "last_updated": "2026-01-05T20:02:44.390183+00:00"
+}

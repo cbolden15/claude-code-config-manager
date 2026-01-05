@@ -1,0 +1,73 @@
+# Build Progress - CCM + Auto-Claude Integration
+
+## Project Overview
+**Project ID**: 001-ccm-auto-claude-integration
+**Title**: CCM + Auto-Claude Integration
+**Complexity**: Complex (9 phases, 72 subtasks)
+**Estimated Effort**: 144 hours
+
+## Current Status: PLANNING COMPLETED ✅
+
+### Phase Summary
+1. **Phase 1** - Schema & Types (Foundation): 6 subtasks, 12 hours
+2. **Phase 2** - Settings Infrastructure: 4 subtasks, 8 hours
+3. **Phase 3** - Generators: 6 subtasks, 12 hours
+4. **Phase 4** - API Routes: 6 subtasks, 12 hours
+5. **Phase 5** - Import Wizard: 4 subtasks, 8 hours
+6. **Phase 6** - CLI Commands: 8 subtasks, 16 hours
+7. **Phase 7** - Seed Data: 5 subtasks, 10 hours
+8. **Phase 8** - Web UI: 9 subtasks, 18 hours
+9. **Phase 9** - Integration & Testing: 7 subtasks, 14 hours
+
+## Completed Tasks
+
+### Planning Phase ✅
+- [x] Read and analyzed comprehensive specification (spec.md)
+- [x] Created detailed implementation plan with 72 subtasks across 9 phases
+- [x] Documented dependencies between subtasks
+- [x] Estimated time requirements for each phase
+- [x] Identified key component types and their relationships
+
+## Key Deliverables Planned
+
+### New Component Types
+- **AUTO_CLAUDE_AGENT_CONFIG**: Per-agent tool and MCP access configuration
+- **AUTO_CLAUDE_PROMPT**: Agent persona prompts with injection points
+- **AUTO_CLAUDE_MODEL_PROFILE**: Model and thinking configuration per phase
+- **AUTO_CLAUDE_PROJECT_CONFIG**: Project-level Auto-Claude settings
+
+### Architecture
+- **One-way sync**: CCM → Auto-Claude (CCM is authoritative)
+- **Encryption**: Secure credential management for API keys
+- **Generators**: Automatic file generation (.auto-claude/.env, task_metadata.json, prompts/*.md)
+- **Import wizard**: One-time migration from existing Auto-Claude installations
+
+## Next Steps
+
+1. **Phase 1 - Schema & Types**: Start with TypeScript interfaces and Prisma schema updates
+2. **Phase 2 - Settings Infrastructure**: Implement encryption and settings management
+3. **Continue sequentially** through remaining phases based on dependencies
+
+## Success Criteria
+- [ ] Import workflow successfully imports all 23 prompts and ~15 agent configs
+- [ ] Edit workflow persists changes to database and UI
+- [ ] Sync workflow writes correct files to Auto-Claude backend
+- [ ] Generated configs work with Auto-Claude runtime
+- [ ] All security and performance requirements met
+
+## Technical Notes
+
+### Database Schema Changes
+- New Settings model for encrypted credential storage
+- Extended ComponentType enum for Auto-Claude component types
+- Extended Project model with Auto-Claude fields
+
+### Key Integration Points
+- CCM database as single source of truth
+- Auto-Claude backend file generation
+- Web UI for visual configuration management
+- CLI commands for automation and sync
+
+---
+**Last Updated**: 2026-01-05
+**Status**: Ready for implementation
