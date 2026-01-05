@@ -9,17 +9,17 @@
     "failed": 0
   },
   "phase": {
-    "current": "Settings Infrastructure",
+    "current": "Generators",
     "id": null,
-    "total": 4
+    "total": 6
   },
   "workers": {
     "active": 0,
     "max": 1
   },
   "session": {
-    "number": 24,
+    "number": 25,
     "started_at": "2026-01-05T13:56:37.927289"
   },
-  "last_update": "2026-01-05T15:03:06.699205"
+  "last_update": "2026-01-05T15:05:49.977529"
 }
