@@ -35,7 +35,7 @@
 
 ---
 
-**Current Progress**: 28/72 subtasks completed (38.9%)
+**Current Progress**: 29/72 subtasks completed (40.3%)
 
 ### Phase Summary
 1. **Phase 1** - Schema & Types (Foundation): 6 subtasks, 12 hours
@@ -340,7 +340,7 @@ Ready for subtask 2_3: Create settings API routes.
   - ✅ **Location**: packages/server/src/lib/import/env-parser.ts
   - ✅ **Commit**: 6de7bb4 - "auto-claude: 5_3 - Parse .auto-claude/.env for project configuration"
 
-### Phase 6 - CLI Commands [1/8] 🚧
+### Phase 6 - CLI Commands [3/8] 🚧
 - [x] **Subtask 6_1**: Create base auto-claude command ✅ **COMPLETED**
   - ✅ **Command Group Structure** - Created comprehensive auto-claude command group with proper help text and subcommand placeholders
   - ✅ **createAutoClaudeCommand() Function** - Returns Commander.js Command instance with all planned subcommands (config, import, sync, profiles, agents)
@@ -368,11 +368,26 @@ Ready for subtask 2_3: Create settings API routes.
   - ✅ **Location**: packages/cli/src/commands/auto-claude.ts, packages/cli/src/lib/api.ts
   - ✅ **Commit**: acb3be8 - "auto-claude: unknown - ccm auto-claude config --path for setting Auto-Cla"
 
+- [x] **Subtask 6_3**: Implement import subcommand ✅ **COMPLETED**
+  - ✅ **Auto-Claude Import Command** - Fully implemented `ccm auto-claude import --source <path>` command with comprehensive functionality
+  - ✅ **--source Parameter Validation** - Required parameter validation with helpful error messages and usage examples
+  - ✅ **--dry-run Support** - Preview mode that shows import statistics without making database changes
+  - ✅ **Installation Validation** - Comprehensive Auto-Claude installation path validation (apps/backend/prompts structure)
+  - ✅ **API Integration** - Calls /api/auto-claude/import endpoint with proper request/response handling
+  - ✅ **User-friendly Output** - Comprehensive console output for both dry-run preview and actual import results
+  - ✅ **Error Handling** - Proper error handling with helpful guidance for invalid installations
+  - ✅ **Help Text** - Complete help documentation with usage examples and parameter descriptions
+  - ✅ **CLI Testing Verified** - All functionality tested via CLI including parameter validation, path validation, and error scenarios
+  - ✅ **TypeScript Build Verified** - Code compiles without errors and follows existing CLI patterns
+  - ✅ **Location**: packages/cli/src/commands/auto-claude.ts (autoClaudeImportCommand function)
+  - ✅ **Commit**: e36e940 - "auto-claude: CLI import command with --source and --dry-run options"
+
 🎯 **NEXT READY FOR:**
-**Subtask 6_3**: Implement import subcommand
-- Dependencies: Subtask 6_1 ✅ (base auto-claude command completed), Subtask 4_1 ✅ (import API endpoint completed)
+**Phase 6: CLI Commands** [3/8] - In Progress
+**Subtask 6_4**: Implement sync subcommand
+- Dependencies: Subtask 6_1 ✅ (base auto-claude command completed), Subtask 4_2 ✅ (sync API endpoint completed)
 - Files to modify: packages/cli/src/commands/auto-claude.ts
-- ccm auto-claude import with --source and --dry-run options
+- ccm auto-claude sync with --backend option for one-way sync
 
 **Phase 5: Import Wizard** [3/4] - Almost complete
 **Subtask 5_4**: Create import wizard UI
