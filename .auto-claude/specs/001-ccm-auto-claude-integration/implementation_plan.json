@@ -100,8 +100,8 @@
           "subtask_id": "2_1",
           "name": "Create encryption utility",
           "description": "Implement encrypt/decrypt functions using Node.js crypto module with AES-256-GCM",
-          "status": "pending",
-          "notes": "",
+          "status": "completed",
+          "notes": "Successfully implemented encrypt/decrypt functions using Node.js crypto module with AES-256-GCM. Implementation includes: secure key derivation with scrypt, random salt and IV generation, proper authentication tag handling, comprehensive error handling, environment variable for encryption key (CCM_ENCRYPTION_KEY), and utility functions for encryption detection and testing. All functions follow industry best practices for AES-256-GCM encryption.",
           "dependencies": [],
           "files_to_modify": [
             "packages/server/src/lib/encryption.ts"
