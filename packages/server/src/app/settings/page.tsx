@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/db';
+import { getAllSettings } from '@/lib/settings';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,14 +10,21 @@ import { SettingsForm } from './settings-form';
 import { ExportImportSection } from './export-import-section';
 
 async function getSettings() {
-  const settings = await prisma.setting.findMany();
+  // Use the settings service which handles encryption automatically
+  const settings = await getAllSettings(false); // Don't include sensitive values in UI by default
+
+  // Convert string values back to appropriate types (JSON parse where applicable)
   const settingsMap: Record<string, unknown> = {};
 
-  for (const setting of settings) {
-    try {
-      settingsMap[setting.key] = JSON.parse(setting.value);
-    } catch {
-      settingsMap[setting.key] = setting.value;
+  for (const [key, value] of Object.entries(settings)) {
+    if (value === '[ENCRYPTED]') {
+      settingsMap[key] = value;
+    } else {
+      try {
+        settingsMap[key] = JSON.parse(value);
+      } catch {
+        settingsMap[key] = value;
+      }
     }
   }
 

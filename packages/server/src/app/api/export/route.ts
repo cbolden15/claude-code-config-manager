@@ -23,7 +23,7 @@ export async function GET() {
         orderBy: { fetchedAt: 'desc' },
         take: 100, // Limit monitoring entries in export
       }),
-      prisma.setting.findMany(),
+      prisma.settings.findMany(),
     ]);
 
     // Parse JSON fields
