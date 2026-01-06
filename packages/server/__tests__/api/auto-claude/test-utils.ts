@@ -67,17 +67,22 @@ export const testProjectConfig: AutoClaudeProjectConfig = {
  * Clean up test data from database
  */
 export async function cleanupTestData() {
-  // Delete test components with specific naming pattern
-  await prisma.component.deleteMany({
+  // Clean up profiles and their relations first (due to foreign key constraints)
+  const testProfiles = await prisma.profile.findMany({
     where: {
       OR: [
         { name: { startsWith: 'test-' } },
-        { name: { contains: 'test' } },
-        { description: { contains: 'test' } },
-        { type: { startsWith: 'AUTO_CLAUDE_' } }
+        { name: { contains: 'test' } }
       ]
     }
   });
+
+  // Delete profile-component relationships
+  for (const profile of testProfiles) {
+    await prisma.profileComponent.deleteMany({
+      where: { profileId: profile.id }
+    });
+  }
 
   // Delete test profiles
   await prisma.profile.deleteMany({
@@ -98,18 +103,46 @@ export async function cleanupTestData() {
       ]
     }
   });
+
+  // Delete test components with specific naming pattern (be more precise)
+  await prisma.component.deleteMany({
+    where: {
+      OR: [
+        { name: { startsWith: 'test_' } },
+        { name: { startsWith: 'test-' } },
+        { name: { contains: 'test' } },
+        { description: { contains: 'Test' } },
+        { description: { contains: 'test' } },
+        // Only delete Auto-Claude components that are explicitly test-related
+        { AND: [
+            { type: { startsWith: 'AUTO_CLAUDE_' } },
+            { OR: [
+                { name: { contains: 'test' } },
+                { description: { contains: 'test' } },
+                { description: { contains: 'Test' } }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  });
 }
 
 /**
  * Create test components in database
  */
 export async function createTestComponents() {
+  // Generate unique suffix to avoid naming conflicts
+  const timestamp = Date.now();
+  const uniqueSuffix = `test-${timestamp}`;
+
   // Create test agent config
   const agentComponent = await prisma.component.create({
     data: {
       type: 'AUTO_CLAUDE_AGENT_CONFIG',
-      name: testAgentConfig.agentType,
-      description: 'Test agent configuration',
+      name: `${testAgentConfig.agentType}-${uniqueSuffix}`,
+      description: 'Test agent configuration for API testing',
       config: JSON.stringify(testAgentConfig),
       enabled: true,
       tags: 'test,auto-claude,agent-config'
@@ -120,8 +153,8 @@ export async function createTestComponents() {
   const promptComponent = await prisma.component.create({
     data: {
       type: 'AUTO_CLAUDE_PROMPT',
-      name: 'test-prompt',
-      description: 'Test prompt configuration',
+      name: `test-prompt-${uniqueSuffix}`,
+      description: 'Test prompt configuration for API testing',
       config: JSON.stringify(testPrompt),
       enabled: true,
       tags: 'test,auto-claude,prompt'
@@ -132,8 +165,8 @@ export async function createTestComponents() {
   const modelProfileComponent = await prisma.component.create({
     data: {
       type: 'AUTO_CLAUDE_MODEL_PROFILE',
-      name: 'test-model-profile',
-      description: 'Test model profile configuration',
+      name: `test-model-profile-${uniqueSuffix}`,
+      description: 'Test model profile configuration for API testing',
       config: JSON.stringify(testModelProfile),
       enabled: true,
       tags: 'test,auto-claude,model-profile'
@@ -144,8 +177,8 @@ export async function createTestComponents() {
   const projectConfigComponent = await prisma.component.create({
     data: {
       type: 'AUTO_CLAUDE_PROJECT_CONFIG',
-      name: 'test-project-config',
-      description: 'Test project configuration',
+      name: `test-project-config-${uniqueSuffix}`,
+      description: 'Test project configuration for API testing',
       config: JSON.stringify(testProjectConfig),
       enabled: true,
       tags: 'test,auto-claude,project-config'
@@ -166,9 +199,13 @@ export async function createTestComponents() {
 export async function createTestProfile() {
   const components = await createTestComponents();
 
+  // Generate unique suffix to avoid naming conflicts
+  const timestamp = Date.now();
+  const uniqueSuffix = `test-${timestamp}`;
+
   const profile = await prisma.profile.create({
     data: {
-      name: 'test-profile',
+      name: `test-profile-${uniqueSuffix}`,
       description: 'Test profile for API testing'
     }
   });
@@ -190,9 +227,13 @@ export async function createTestProfile() {
  * Create test project for testing project-related endpoints
  */
 export async function createTestProject() {
+  // Generate unique suffix to avoid naming conflicts
+  const timestamp = Date.now();
+  const uniqueSuffix = `test-${timestamp}`;
+
   const project = await prisma.project.create({
     data: {
-      name: 'test-project',
+      name: `test-project-${uniqueSuffix}`,
       description: 'Test project for API testing',
       autoClaudeEnabled: true
     }
