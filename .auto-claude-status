@@ -9,17 +9,17 @@
     "failed": 0
   },
   "phase": {
-    "current": "Seed Data",
+    "current": "Web UI",
     "id": null,
-    "total": 5
+    "total": 9
   },
   "workers": {
     "active": 0,
     "max": 1
   },
   "session": {
-    "number": 97,
+    "number": 102,
     "started_at": "2026-01-05T13:56:37.927289"
   },
-  "last_update": "2026-01-05T19:28:35.800769"
+  "last_update": "2026-01-05T19:44:24.573049"
 }

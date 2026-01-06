@@ -493,8 +493,8 @@
           "subtask_id": "7_4",
           "name": "Create default project config seed",
           "description": "Create sensible default Auto-Claude project configuration",
-          "status": "pending",
-          "notes": "",
+          "status": "completed",
+          "notes": "Successfully implemented sensible default Auto-Claude project configuration. Added AUTO_CLAUDE_PROJECT_CONFIG component to seed data with: context7 MCP server enabled by default (most commonly used), other MCP servers disabled by default for conservative approach, empty agent MCP overrides and custom servers (users can customize), undefined API keys and integration settings for security (users must configure). Configuration follows AutoClaudeProjectConfig interface with proper validation and follows established seed patterns. TypeScript build verification passed successfully.",
           "dependencies": ["1_2"],
           "files_to_modify": [
             "packages/server/prisma/seed-auto-claude.ts"
@@ -504,8 +504,8 @@
           "subtask_id": "7_5",
           "name": "Integrate with main seed script",
           "description": "Call Auto-Claude seed from main Prisma seed script",
-          "status": "pending",
-          "notes": "",
+          "status": "completed",
+          "notes": "Successfully integrated Auto-Claude seed function with main Prisma seed script. Added import for seedAutoClaudeComponents() and call before final logging. Tested successfully - seeds 15 agent configs, 23 prompts, 3 model profiles, and 1 project config. Total component count is now 55.",
           "dependencies": ["7_1", "7_2", "7_3", "7_4"],
           "files_to_modify": [
             "packages/server/prisma/seed.ts"
