@@ -219,7 +219,12 @@
       "description": "Auto-Claude layout is already fully implemented and functional. Features comprehensive navigation with breadcrumbs and secondary tabs, follows project patterns perfectly, includes proper icons and active states, and passes TypeScript build verification.",
       "category": "ui",
       "discovered_at": "2026-01-06T03:23:00.809824+00:00"
+    },
+    "packages/server/src/components/layout/sidebar.tsx": {
+      "description": "Auto-Claude navigation section is already fully implemented in the main sidebar with comprehensive structure including main dashboard link, sub-items (Agents, Prompts, Model Profiles, Projects, Import), proper styling and icons",
+      "category": "navigation",
+      "discovered_at": "2026-01-06T03:42:39.756586+00:00"
     }
   },
-  "last_updated": "2026-01-06T03:23:00.809832+00:00"
+  "last_updated": "2026-01-06T03:42:39.756593+00:00"
 }
