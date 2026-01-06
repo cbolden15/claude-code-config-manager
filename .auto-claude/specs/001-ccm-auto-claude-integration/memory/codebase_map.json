@@ -184,7 +184,22 @@
       "description": "Subtask 8_3 completed: Monaco editor with live preview and injection points is fully implemented and working correctly. Implementation includes MonacoEditor.tsx (complete Monaco editor with dynamic loading, injection point autocomplete/hover, markdown support), PromptsList.tsx (comprehensive prompts management with two-panel layout, Monaco integration, live preview), MarkdownPreview.tsx (live preview with injection point highlighting), and PromptEditDialog.tsx (prompt metadata editing). Features include Monaco editor with syntax highlighting, live preview toggle, injection point autocomplete ({{specDirectory}}, {{projectContext}}, {{mcpDocumentation}}), highlighting and hover documentation, real-time validation, full API integration, and responsive design. TypeScript build verification passed successfully.",
       "category": "implementation",
       "discovered_at": "2026-01-06T02:40:52.264580+00:00"
+    },
+    "packages/server/src/app/auto-claude/prompts/components/MonacoEditor.tsx": {
+      "description": "Comprehensive Monaco editor implementation with dynamic loading, injection point autocomplete, hover documentation, and fallback functionality. Supports {{specDirectory}}, {{projectContext}}, and {{mcpDocumentation}} injection points with intelligent completion and tooltips.",
+      "category": "UI Component",
+      "discovered_at": "2026-01-06T02:48:06.995016+00:00"
+    },
+    "packages/server/src/app/auto-claude/prompts/components/MarkdownPreview.tsx": {
+      "description": "Live markdown preview component with injection point highlighting and summary. Processes markdown in real-time, highlights injection points with color-coded badges, and provides comprehensive injection point information with tooltips. Includes custom styling for enhanced readability.",
+      "category": "UI Component",
+      "discovered_at": "2026-01-06T02:48:11.345025+00:00"
+    },
+    "./src/app/auto-claude/profiles": {
+      "description": "Subtask 8_4 completed: Card view at /auto-claude/profiles with phase-by-phase config and cost estimation is fully implemented. ProfilesList.tsx provides statistics dashboard, error handling, and responsive grid layout. ProfileCard.tsx shows comprehensive phase-by-phase visualization with cost estimation badges, quality indicators, model distribution analysis, and CRUD operations. Build verification passed successfully.",
+      "category": "implementation",
+      "discovered_at": "2026-01-06T02:55:20.533310+00:00"
     }
   },
-  "last_updated": "2026-01-06T02:40:52.264588+00:00"
+  "last_updated": "2026-01-06T02:55:20.533319+00:00"
 }
