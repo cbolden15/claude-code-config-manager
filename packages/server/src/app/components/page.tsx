@@ -15,6 +15,10 @@ const typeLabels: Record<string, string> = {
   COMMAND: 'Command',
   HOOK: 'Hook',
   CLAUDE_MD_TEMPLATE: 'Template',
+  AUTO_CLAUDE_AGENT_CONFIG: 'Auto-Claude Agent',
+  AUTO_CLAUDE_PROMPT: 'Auto-Claude Prompt',
+  AUTO_CLAUDE_MODEL_PROFILE: 'Auto-Claude Profile',
+  AUTO_CLAUDE_PROJECT_CONFIG: 'Auto-Claude Project',
 };
 
 const typeColors: Record<string, string> = {
@@ -24,6 +28,10 @@ const typeColors: Record<string, string> = {
   COMMAND: 'bg-amber-100 text-amber-800',
   HOOK: 'bg-rose-100 text-rose-800',
   CLAUDE_MD_TEMPLATE: 'bg-gray-100 text-gray-800',
+  AUTO_CLAUDE_AGENT_CONFIG: 'bg-indigo-100 text-indigo-800',
+  AUTO_CLAUDE_PROMPT: 'bg-purple-100 text-purple-800',
+  AUTO_CLAUDE_MODEL_PROFILE: 'bg-teal-100 text-teal-800',
+  AUTO_CLAUDE_PROJECT_CONFIG: 'bg-cyan-100 text-cyan-800',
 };
 
 async function getComponents() {
@@ -91,6 +99,10 @@ export default async function ComponentsPage() {
     COMMAND: components.filter((c) => c.type === 'COMMAND'),
     HOOK: components.filter((c) => c.type === 'HOOK'),
     CLAUDE_MD_TEMPLATE: components.filter((c) => c.type === 'CLAUDE_MD_TEMPLATE'),
+    AUTO_CLAUDE_AGENT_CONFIG: components.filter((c) => c.type === 'AUTO_CLAUDE_AGENT_CONFIG'),
+    AUTO_CLAUDE_PROMPT: components.filter((c) => c.type === 'AUTO_CLAUDE_PROMPT'),
+    AUTO_CLAUDE_MODEL_PROFILE: components.filter((c) => c.type === 'AUTO_CLAUDE_MODEL_PROFILE'),
+    AUTO_CLAUDE_PROJECT_CONFIG: components.filter((c) => c.type === 'AUTO_CLAUDE_PROJECT_CONFIG'),
   };
 
   return (
@@ -115,6 +127,10 @@ export default async function ComponentsPage() {
             <TabsTrigger value="COMMAND">Commands ({componentsByType.COMMAND.length})</TabsTrigger>
             <TabsTrigger value="HOOK">Hooks ({componentsByType.HOOK.length})</TabsTrigger>
             <TabsTrigger value="CLAUDE_MD_TEMPLATE">Templates ({componentsByType.CLAUDE_MD_TEMPLATE.length})</TabsTrigger>
+            <TabsTrigger value="AUTO_CLAUDE_AGENT_CONFIG">AC Agents ({componentsByType.AUTO_CLAUDE_AGENT_CONFIG.length})</TabsTrigger>
+            <TabsTrigger value="AUTO_CLAUDE_PROMPT">AC Prompts ({componentsByType.AUTO_CLAUDE_PROMPT.length})</TabsTrigger>
+            <TabsTrigger value="AUTO_CLAUDE_MODEL_PROFILE">AC Profiles ({componentsByType.AUTO_CLAUDE_MODEL_PROFILE.length})</TabsTrigger>
+            <TabsTrigger value="AUTO_CLAUDE_PROJECT_CONFIG">AC Projects ({componentsByType.AUTO_CLAUDE_PROJECT_CONFIG.length})</TabsTrigger>
           </TabsList>
 
           {Object.entries(componentsByType).map(([type, items]) => (
