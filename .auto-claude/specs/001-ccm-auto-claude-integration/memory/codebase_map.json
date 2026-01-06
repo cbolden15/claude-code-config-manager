@@ -199,7 +199,12 @@
       "description": "Subtask 8_4 completed: Card view at /auto-claude/profiles with phase-by-phase config and cost estimation is fully implemented. ProfilesList.tsx provides statistics dashboard, error handling, and responsive grid layout. ProfileCard.tsx shows comprehensive phase-by-phase visualization with cost estimation badges, quality indicators, model distribution analysis, and CRUD operations. Build verification passed successfully.",
       "category": "implementation",
       "discovered_at": "2026-01-06T02:55:20.533310+00:00"
+    },
+    "./packages/server/src/app/auto-claude/projects/page.tsx": {
+      "description": "Per-project MCP toggles at /auto-claude/projects with credential overrides fully implemented. Features comprehensive project management UI with MCP server toggles (Context7, Linear, Electron, Puppeteer, Graphiti), credential management for API keys, custom MCP server configuration, and model profile selection. Includes enhanced API support for Auto-Claude component types and project data fetching.",
+      "category": "Auto-Claude Web UI",
+      "discovered_at": "2026-01-06T03:04:23.179102+00:00"
     }
   },
-  "last_updated": "2026-01-06T02:55:20.533319+00:00"
+  "last_updated": "2026-01-06T03:04:23.179111+00:00"
 }
