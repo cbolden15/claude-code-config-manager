@@ -53,6 +53,7 @@ program
   .option('-d, --description <desc>', 'Project description')
   .option('--dry-run', 'Preview without writing files')
   .option('-f, --force', 'Overwrite existing configuration')
+  .option('--auto-claude', 'Enable Auto-Claude integration')
   .action(async (name, options) => {
     try {
       await initCommand(name, options);

@@ -241,6 +241,7 @@ interface GenerateRequest {
   profileName?: string;
   projectName: string;
   projectDescription?: string;
+  autoClaudeEnabled?: boolean;
 }
 
 interface GenerateResponse {
