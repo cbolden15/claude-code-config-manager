@@ -39,7 +39,7 @@
 - `packages/cli/src/lib/api.ts` (added agents API methods and types)
 - `packages/cli/src/commands/auto-claude.ts` (implemented agents list/show commands)
 
-**Commit**: `1f16d1e` - auto-claude: 6_6 - ccm auto-claude agents list/show for agent config management
+**Commit**: `bf29b15` - auto-claude: 6_6 - ccm auto-claude agents list/show for agent config management - verified implementation complete
 
 ### Previous: 2026-01-05 17:50 UTC - Subtask 6_3 Completed ✅
 **Task**: Implement import subcommand
