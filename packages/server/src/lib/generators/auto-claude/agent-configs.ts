@@ -1,4 +1,4 @@
-import { AutoClaudeAgentConfig } from '../../types/auto-claude';
+import { AutoClaudeAgentConfig } from '../../types/auto-claude.js';
 
 interface AgentConfigsOptions {
   agentConfigs: AutoClaudeAgentConfig[];

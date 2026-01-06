@@ -1,4 +1,4 @@
-import { AutoClaudeModelProfile, ClaudeModel, ThinkingLevel } from '../../types/auto-claude';
+import { AutoClaudeModelProfile, ClaudeModel, ThinkingLevel } from '../../types/auto-claude.js';
 
 interface ModelProfileOptions {
   modelProfile?: AutoClaudeModelProfile | null;
