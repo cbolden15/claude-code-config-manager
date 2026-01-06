@@ -112,6 +112,16 @@ class ApiClient {
     return this.post(`/api/projects/${id}/sync`);
   }
 
+  async updateProject(id: string, data: Partial<{
+    name: string;
+    path: string;
+    machine: string;
+    profileId: string | null;
+    modelProfileId: string | null;
+  }>): Promise<ApiResponse<Project>> {
+    return this.put(`/api/projects/${id}`, data);
+  }
+
   // Generate
   async generate(data: GenerateRequest): Promise<ApiResponse<GenerateResponse>> {
     return this.post('/api/generate', data);

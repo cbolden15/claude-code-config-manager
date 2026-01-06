@@ -836,16 +836,8 @@ async function autoClaudeProfilesApplyCommand(profile: string, options: { projec
     console.log(`Profile: ${chalk.cyan(profile)}`);
     console.log();
 
-    // Note: The actual profile application would require an API endpoint to update project.modelProfileId
-    // For now, we'll show what would happen
-    console.log(chalk.yellow('Note: Model profile application is not yet fully implemented.'));
-    console.log();
-    console.log('This would:');
-    console.log(`  ${chalk.gray('1.')} Update project to use model profile '${profile}'`);
-    console.log(`  ${chalk.gray('2.')} Generate task_metadata.json with profile settings when running ${chalk.cyan('ccm generate')}`);
-    console.log(`  ${chalk.gray('3.')} Apply the following phase configuration:`);
-    console.log();
-
+    // Show what will be applied
+    console.log('Profile Configuration:');
     const phases = ['spec', 'planning', 'coding', 'qa'] as const;
     for (const phase of phases) {
       const model = targetProfile.config.phaseModels[phase];
@@ -854,11 +846,29 @@ async function autoClaudeProfilesApplyCommand(profile: string, options: { projec
       const thinkingColor = thinking === 'ultrathink' ? chalk.red :
                            thinking === 'high' ? chalk.yellow :
                            thinking === 'medium' ? chalk.blue : chalk.green;
-      console.log(`      ${phase.padEnd(9)}: ${modelColor(model)} + ${thinkingColor(thinking)} thinking`);
+      console.log(`  ${phase.padEnd(9)}: ${modelColor(model)} + ${thinkingColor(thinking)} thinking`);
+    }
+    console.log();
+
+    // Apply the model profile to the project
+    console.log(chalk.gray('Applying model profile to project...'));
+
+    const updateResult = await api.updateProject(targetProject.id, {
+      modelProfileId: targetProfile.id,
+    });
+
+    if (updateResult.error) {
+      console.log(chalk.red('Failed to apply model profile:'), updateResult.error);
+      process.exit(1);
     }
 
+    console.log(chalk.green.bold('✓ Model profile applied successfully!'));
     console.log();
-    console.log(chalk.gray('To implement project-profile association, the API needs to be extended.'));
+    console.log('What happens next:');
+    console.log(`  ${chalk.gray('•')} Model profile '${profile}' is now linked to project '${targetProject.name}'`);
+    console.log(`  ${chalk.gray('•')} Run ${chalk.cyan(`ccm generate --profile-id ${targetProject.profileId || '<profile>'}`)} to generate task_metadata.json with these settings`);
+    console.log(`  ${chalk.gray('•')} Auto-Claude will use these model and thinking configurations for each phase`);
+    console.log();
     console.log(`Visit ${chalk.cyan('/auto-claude/profiles')} to manage profiles through the web interface.`);
 
   } catch (error) {
