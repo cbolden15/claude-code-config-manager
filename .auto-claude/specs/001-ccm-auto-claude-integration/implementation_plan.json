@@ -670,8 +670,8 @@
           "subtask_id": "9_4",
           "name": "Write end-to-end tests",
           "description": "Test complete workflows: import → edit → sync → generate",
-          "status": "pending",
-          "notes": "",
+          "status": "completed",
+          "notes": "Successfully implemented comprehensive end-to-end tests for complete Auto-Claude workflows. The test suite covers the full integration: Import → Edit → Sync → Generate. Features include: real database operations with proper setup/cleanup, mock Auto-Claude installation creation with models.py, prompts/*.md, and .env files, comprehensive workflow testing (import configs, edit through APIs, sync to backend, generate projects), validation of Auto-Claude file generation (.env, task_metadata.json, AGENT_CONFIGS.json, prompts), database integrity checks throughout workflow, proper error handling and cleanup, detailed logging and progress reporting. The test validates that the complete Auto-Claude integration works end-to-end from initial import through final project generation with Auto-Claude support enabled.",
           "dependencies": ["8_9"],
           "files_to_modify": [
             "__tests__/e2e/auto-claude.test.ts"
