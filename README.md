@@ -13,11 +13,12 @@ A powerful configuration management tool for **Claude Code** and **Auto-Claude**
 - **Templates**: Generate project-specific `CLAUDE.md` files
 
 ### Auto-Claude Integration ✨ NEW
-- **Agent Configs**: Define tool and MCP access per agent type
-- **Prompts**: Manage agent persona prompts with injection points
-- **Model Profiles**: Configure phase-specific models and thinking levels
+- **Agent Configs**: Define tool and MCP access per agent type (15+ default configs)
+- **Prompts**: Manage agent persona prompts with injection points (23 default prompts)
+- **Model Profiles**: Configure phase-specific models and thinking levels (3 default profiles)
 - **Project Configs**: Set up MCP toggles and API keys per project
 - **One-Way Sync**: Auto-Claude configs generated from CCM database
+- **Rich Seed Data**: Comprehensive defaults from Auto-Claude for immediate use
 
 ## 📦 Architecture
 
@@ -222,8 +223,10 @@ CCM includes secure credential management for Auto-Claude integration:
 ```bash
 # Auto-Claude Integration
 AUTO_CLAUDE_BACKEND_PATH=/path/to/auto-claude
-LINEAR_API_KEY=lin_xxx (encrypted)
-GITHUB_TOKEN=ghp_xxx (encrypted)
+LINEAR_API_KEY=lin_xxx (encrypted with AES-256-GCM)
+LINEAR_TEAM_ID=team-id
+GITHUB_TOKEN=ghp_xxx (encrypted with AES-256-GCM)
+GITHUB_REPO=your-org/your-repo
 
 # CCM Configuration
 CCM_SERVER_URL=http://localhost:3000
