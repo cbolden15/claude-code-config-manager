@@ -439,8 +439,8 @@
           "subtask_id": "6_8",
           "name": "Update CLI help system",
           "description": "Add auto-claude commands to main help and command discovery",
-          "status": "pending",
-          "notes": "",
+          "status": "completed",
+          "notes": "Auto-claude commands are fully integrated into CLI help system. Verified that: (1) main help shows auto-claude command, (2) auto-claude help shows all subcommands with examples, (3) all subcommands are properly discoverable (config, import, sync, profiles, agents), (4) command integration working through createAutoClaudeCommand() in index.ts, (5) exports properly configured in commands/index.ts. CLI help system integration is complete and working correctly.",
           "dependencies": ["6_1", "6_2", "6_3", "6_4", "6_5", "6_6", "6_7"],
           "files_to_modify": [
             "packages/cli/src/index.ts",
@@ -460,8 +460,8 @@
           "subtask_id": "7_1",
           "name": "Create default agent configs seed",
           "description": "Import ~15 agent configs from Auto-Claude AGENT_CONFIGS (spec_gatherer, planner, coder, qa_reviewer, etc.)",
-          "status": "pending",
-          "notes": "",
+          "status": "completed",
+          "notes": "Successfully created seed-auto-claude.ts with 15 comprehensive agent configurations from Auto-Claude AGENT_CONFIGS. Includes core agents (coder, planner, qa_reviewer, spec_gatherer) plus specialized agents (test_writer, documentation_writer, debug_specialist, performance_optimizer, security_auditor, ui_ux_designer, api_developer, data_analyst, devops_engineer, reviewer, researcher). All agent configs follow Auto-Claude patterns with proper tool permissions, MCP server dependencies, and thinking level defaults. TypeScript compilation verified successfully.",
           "dependencies": ["1_2"],
           "files_to_modify": [
             "packages/server/prisma/seed-auto-claude.ts"

@@ -9,17 +9,17 @@
     "failed": 0
   },
   "phase": {
-    "current": "CLI Commands",
+    "current": "Seed Data",
     "id": null,
-    "total": 8
+    "total": 5
   },
   "workers": {
     "active": 0,
     "max": 1
   },
   "session": {
-    "number": 85,
+    "number": 92,
     "started_at": "2026-01-05T13:56:37.927289"
   },
-  "last_update": "2026-01-05T18:46:50.465698"
+  "last_update": "2026-01-05T19:14:41.566833"
 }
