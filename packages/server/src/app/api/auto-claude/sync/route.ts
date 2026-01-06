@@ -232,7 +232,8 @@ async function getAutoClaudeComponents(): Promise<{
 
       return result;
     },
-    promptComponents.length + agentConfigComponents.length // items processed
+    undefined, // items processed will be calculated inside
+    undefined  // errors will be calculated inside
   );
 
   return result;

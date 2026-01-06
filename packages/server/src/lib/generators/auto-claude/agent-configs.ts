@@ -20,8 +20,9 @@ interface AgentConfigsExport {
  * Generates JSON export of AGENT_CONFIGS with tool permissions and MCP dependencies - optimized version
  */
 export function generateAgentConfigs(options: AgentConfigsOptions): string {
+  const { agentConfigs } = options;
+
   const { result } = timeOperationSync('agent-configs generation', () => {
-    const { agentConfigs } = options;
     const agentConfigsExport: AgentConfigsExport = {};
 
     // Optimize for large numbers of configs

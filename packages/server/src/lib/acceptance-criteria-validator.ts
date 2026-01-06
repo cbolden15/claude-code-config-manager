@@ -243,8 +243,8 @@ async function validatePerformanceRequirements(): Promise<ValidationResult> {
   const importThreshold = 10000; // 10 seconds
   const syncThreshold = 5000;    // 5 seconds
 
-  const importPerformanceOk = result.importCount === 0 || result.avgDuration < importThreshold;
-  const syncPerformanceOk = result.syncCount === 0 || result.avgDuration < syncThreshold;
+  const importPerformanceOk = result.importCount === 0 || result.importAvgDuration < importThreshold;
+  const syncPerformanceOk = result.syncCount === 0 || result.syncAvgDuration < syncThreshold;
   const passed = importPerformanceOk && syncPerformanceOk;
 
   return {

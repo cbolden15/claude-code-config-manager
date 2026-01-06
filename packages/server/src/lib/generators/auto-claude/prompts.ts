@@ -19,8 +19,9 @@ interface GeneratedPromptFile {
  * Generates prompts/*.md files with injection point replacement - optimized version
  */
 export function generateAutoClaudePrompts(options: PromptsOptions): GeneratedPromptFile[] {
+  const { prompts, injectionContext = {} } = options;
+
   const { result } = timeOperationSync('prompts generation', () => {
-    const { prompts, injectionContext = {} } = options;
     const generatedFiles: GeneratedPromptFile[] = [];
 
     // Pre-allocate array for better performance
