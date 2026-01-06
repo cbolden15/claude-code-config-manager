@@ -617,11 +617,11 @@
           "subtask_id": "8_9",
           "name": "Update main navigation",
           "description": "Add Auto-Claude section to main app navigation",
-          "status": "pending",
-          "notes": "",
+          "status": "completed",
+          "notes": "Auto-Claude section already fully implemented in main app navigation (Sidebar component). Includes proper section header, main dashboard link, and all sub-navigation items (agents, prompts, profiles, projects, import) with hierarchical styling, active state highlighting, and proper icons. Implementation follows existing navigation patterns and provides comprehensive access to Auto-Claude functionality.",
           "dependencies": ["8_8"],
           "files_to_modify": [
-            "packages/server/src/app/components/Navigation.tsx"
+            "packages/server/src/components/layout/sidebar.tsx"
           ]
         }
       ]
@@ -637,8 +637,8 @@
           "subtask_id": "9_1",
           "name": "Write unit tests for generators",
           "description": "Test all Auto-Claude generator functions with various input scenarios",
-          "status": "pending",
-          "notes": "",
+          "status": "completed",
+          "notes": "Successfully verified comprehensive Auto-Claude generator test suite with 62 individual tests across 4 generators. All tests pass with extensive coverage including: env-file generator (basic/custom configs, validation, edge cases), model-profile generator (different profiles, JSON validation, formatting), prompts generator (injection points, front matter preservation, multi-prompts), agent-configs generator (single/multiple configs, validation, merging, standard tools/MCP). Test execution time: 4ms total. Ready for integration with main CCM system.",
           "dependencies": ["3_5"],
           "files_to_modify": [
             "packages/server/__tests__/generators/auto-claude/"
