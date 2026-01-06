@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { prisma } from '@/lib/db';
+import { Header } from '@/components/layout/header';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -174,39 +175,41 @@ export default async function Dashboard() {
   const { agents, prompts, modelProfiles, projects } = await getAutoClaudeData();
 
   return (
-    <div className="p-6">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Auto-Claude Dashboard</h1>
-        <p className="text-gray-600">
-          Manage Auto-Claude configurations, prompts, and model profiles
-        </p>
-      </div>
-
-      {/* Quick Actions */}
-      <div className="mb-8">
-        <div className="flex flex-wrap gap-2">
+    <>
+      <Header
+        title="Auto-Claude Dashboard"
+        description="Manage Auto-Claude configurations, prompts, and model profiles"
+        actions={
           <Link href="/auto-claude/import">
-            <Button variant="outline">
+            <Button>
               Import Configs
             </Button>
           </Link>
-          <Link href="/auto-claude/agents">
-            <Button variant="outline">
-              Manage Agents
-            </Button>
-          </Link>
-          <Link href="/auto-claude/prompts">
-            <Button variant="outline">
-              Edit Prompts
-            </Button>
-          </Link>
-          <Link href="/auto-claude/profiles">
-            <Button variant="outline">
-              Model Profiles
-            </Button>
-          </Link>
+        }
+      />
+
+      <div className="p-6">
+
+        {/* Quick Actions */}
+        <div className="mb-8">
+          <div className="flex flex-wrap gap-2">
+            <Link href="/auto-claude/agents">
+              <Button variant="outline">
+                Manage Agents
+              </Button>
+            </Link>
+            <Link href="/auto-claude/prompts">
+              <Button variant="outline">
+                Edit Prompts
+              </Button>
+            </Link>
+            <Link href="/auto-claude/profiles">
+              <Button variant="outline">
+                Model Profiles
+              </Button>
+            </Link>
+          </div>
         </div>
-      </div>
 
       {/* Overview Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
@@ -284,6 +287,7 @@ export default async function Dashboard() {
           </div>
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </>
   );
 }
