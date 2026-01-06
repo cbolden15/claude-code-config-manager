@@ -2,6 +2,7 @@ import * as fs from 'fs/promises';
 import { z } from 'zod';
 import { AutoClaudeAgentConfigSchema } from '../../../../shared/src/schemas/auto-claude';
 import type { AutoClaudeAgentConfig } from '../../../../shared/src/types/auto-claude';
+import { timeOperation } from '../performance-monitor';
 
 /**
  * Validation schema for parsed agent config
@@ -435,8 +436,22 @@ export class ModelsParser {
   }
 }
 
-// Conversion cache for agent configs
+// Conversion cache for agent configs with LRU eviction
 const conversionCache = new Map<string, AutoClaudeAgentConfig | null>();
+const MAX_CACHE_SIZE = 1000; // Limit cache size to prevent memory leaks
+
+/**
+ * Implement LRU cache eviction for memory management
+ */
+function evictLRUCacheIfNeeded(): void {
+  if (conversionCache.size >= MAX_CACHE_SIZE) {
+    // Remove first (oldest) entry in Map
+    const firstKey = conversionCache.keys().next().value;
+    if (firstKey) {
+      conversionCache.delete(firstKey);
+    }
+  }
+}
 
 /**
  * Convert parsed dictionary values to proper AutoClaudeAgentConfig format - optimized with caching
@@ -445,9 +460,13 @@ function convertToAgentConfig(agentType: string, rawConfig: Record<string, any>)
   // Create cache key from config structure
   const cacheKey = `${agentType}:${JSON.stringify(rawConfig)}`;
 
-  // Check cache first
+  // Check cache first and move to end for LRU behavior
   if (conversionCache.has(cacheKey)) {
-    return conversionCache.get(cacheKey) ?? null;
+    const result = conversionCache.get(cacheKey) ?? null;
+    // Re-insert to move to end (most recently used)
+    conversionCache.delete(cacheKey);
+    conversionCache.set(cacheKey, result);
+    return result;
   }
 
   try {
@@ -463,11 +482,13 @@ function convertToAgentConfig(agentType: string, rawConfig: Record<string, any>)
     // Validate the config using Zod schema
     const validatedConfig = AutoClaudeAgentConfigSchema.parse(config);
 
-    // Cache the result
+    // Cache the result with LRU eviction
+    evictLRUCacheIfNeeded();
     conversionCache.set(cacheKey, validatedConfig);
     return validatedConfig;
   } catch (error) {
-    // Cache the null result to avoid re-processing
+    // Cache the null result to avoid re-processing with LRU eviction
+    evictLRUCacheIfNeeded();
     conversionCache.set(cacheKey, null);
     return null;
   }
@@ -484,64 +505,75 @@ export function clearConversionCache(): void {
  * Parse models.py file to extract AGENT_CONFIGS dictionary - optimized version
  */
 export async function parseModelsFile(modelsPath: string): Promise<ModelsParseResult> {
-  const startTime = performance.now();
-  const result: ModelsParseResult = {
-    agentConfigs: [],
-    errors: [],
-  };
+  const { result } = await timeOperation(
+    'models.py parsing',
+    async () => {
+      const result: ModelsParseResult = {
+        agentConfigs: [],
+        errors: [],
+      };
 
-  try {
-    // Read the file with better error handling
-    const content = await fs.readFile(modelsPath, 'utf-8');
+      try {
+        // Read the file with better error handling
+        const content = await fs.readFile(modelsPath, 'utf-8');
 
-    // Early return for empty files
-    if (content.trim().length === 0) {
-      result.errors.push('models.py file is empty');
-      return result;
-    }
-
-    // Parse using enhanced parser
-    const parser = new ModelsParser(content);
-    const agentConfigsDict = parser.parseAgentConfigs();
-
-    if (!agentConfigsDict) {
-      result.errors.push('AGENT_CONFIGS dictionary not found in models.py');
-      return result;
-    }
-
-    // Convert configs using efficient processing with batched operations
-    const configEntries = Object.entries(agentConfigsDict);
-
-    // Process configs in batches for better memory management with large files
-    const batchSize = 10;
-    for (let i = 0; i < configEntries.length; i += batchSize) {
-      const batch = configEntries.slice(i, i + batchSize);
-
-      for (const [agentType, rawConfig] of batch) {
-        if (typeof rawConfig === 'object' && rawConfig !== null) {
-          const config = convertToAgentConfig(agentType, rawConfig);
-
-          if (config) {
-            result.agentConfigs.push({ agentType, config });
-          } else {
-            result.errors.push(`Failed to parse agent config for '${agentType}': Invalid configuration structure`);
-          }
-        } else {
-          result.errors.push(`Failed to parse agent config for '${agentType}': Expected object, got ${typeof rawConfig}`);
+        // Early return for empty files
+        if (content.trim().length === 0) {
+          result.errors.push('models.py file is empty');
+          return result;
         }
+
+        // Parse using enhanced parser
+        const parser = new ModelsParser(content);
+        const agentConfigsDict = parser.parseAgentConfigs();
+
+        if (!agentConfigsDict) {
+          result.errors.push('AGENT_CONFIGS dictionary not found in models.py');
+          return result;
+        }
+
+        // Convert configs using efficient processing with batched operations
+        const configEntries = Object.entries(agentConfigsDict);
+
+        // Adaptive batch size based on memory usage
+        const memoryUsage = process.memoryUsage().heapUsed / 1024 / 1024; // MB
+        const batchSize = memoryUsage > 200 ? 5 : 10;
+
+        for (let i = 0; i < configEntries.length; i += batchSize) {
+          const batch = configEntries.slice(i, i + batchSize);
+
+          for (const [agentType, rawConfig] of batch) {
+            if (typeof rawConfig === 'object' && rawConfig !== null) {
+              const config = convertToAgentConfig(agentType, rawConfig);
+
+              if (config) {
+                result.agentConfigs.push({ agentType, config });
+              } else {
+                result.errors.push(`Failed to parse agent config for '${agentType}': Invalid configuration structure`);
+              }
+            } else {
+              result.errors.push(`Failed to parse agent config for '${agentType}': Expected object, got ${typeof rawConfig}`);
+            }
+          }
+
+          // Force garbage collection for large files
+          if (configEntries.length > 50 && i % (batchSize * 5) === 0) {
+            if (global.gc) {
+              global.gc();
+            }
+          }
+        }
+
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        result.errors.push(`Failed to read or parse models.py: ${errorMessage}`);
       }
-    }
 
-    // Log performance metrics for monitoring
-    const duration = performance.now() - startTime;
-    if (duration > 100) { // Only log if parsing takes more than 100ms
-      console.log(`[PERF] models.py parsing completed in ${Math.round(duration)}ms (${result.agentConfigs.length} configs, ${result.errors.length} errors)`);
-    }
-
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    result.errors.push(`Failed to read or parse models.py: ${errorMessage}`);
-  }
+      return result;
+    },
+    undefined, // itemsProcessed will be set by caller
+    undefined  // errors will be set by caller
+  );
 
   return result;
 }

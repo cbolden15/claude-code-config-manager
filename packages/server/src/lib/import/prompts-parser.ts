@@ -205,8 +205,10 @@ export async function parsePromptsDirectory(promptsPath: string): Promise<Prompt
       return result;
     }
 
-    // Limit concurrency to prevent overwhelming the system with large prompt directories
-    const concurrencyLimit = Math.min(5, markdownFiles.length);
+    // Adaptive concurrency based on system resources and file count
+    const memoryUsage = process.memoryUsage().heapUsed / 1024 / 1024; // MB
+    const baseLimit = Math.min(5, markdownFiles.length);
+    const concurrencyLimit = memoryUsage > 200 ? Math.max(2, baseLimit - 2) : baseLimit;
     const filePaths = markdownFiles.map(file => path.join(promptsPath, file));
 
     // Process files in controlled batches
