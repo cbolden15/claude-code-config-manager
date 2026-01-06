@@ -181,7 +181,7 @@ Successfully verified and confirmed that all 23 Auto-Claude prompts are implemen
 
 ---
 
-**Current Progress**: 40/72 subtasks completed (55.6%)
+**Current Progress**: 41/72 subtasks completed (56.9%)
 
 ### Phase Summary
 1. **Phase 1** - Schema & Types (Foundation): 6 subtasks, 12 hours ✅ **COMPLETED**
@@ -558,7 +558,18 @@ Successfully verified and confirmed that all 23 Auto-Claude prompts are implemen
 ## Next Steps
 
 🎯 **CURRENTLY WORKING ON:**
-**Phase 7: Seed Data** [2/5] - In Progress! ✅ Agent configs & prompts completed
+**Phase 8: Web UI** [1/9] - Started! ✅ Dashboard completed
+- ✅ 8_1: Auto-Claude dashboard (overview page with cards for configs, prompts, profiles, sync status)
+- 🔲 8_2: Agent configs page (list and edit agent types with tool/MCP matrix)
+- 🔲 8_3: Prompts editor page (Monaco editor with live preview and injection points)
+- 🔲 8_4: Model profiles page (card view with phase-by-phase config and cost estimation)
+- 🔲 8_5: Project settings page (per-project MCP toggles with credential overrides)
+- 🔲 8_6: Update components page (filter for Auto-Claude component types and badges)
+- 🔲 8_7: Update profiles page (Auto-Claude Enabled toggle and show Auto-Claude components)
+- 🔲 8_8: Auto-Claude layout (shared layout for Auto-Claude pages with navigation)
+- 🔲 8_9: Update main navigation (add Auto-Claude section to main app navigation)
+
+**Phase 7: Seed Data** [2/5] - Nearly complete! ✅ Agent configs & prompts completed
 - ✅ 7_1: Default agent configs seed (15 Auto-Claude agent configurations)
 - ✅ 7_2: Default prompts seed (23 prompts from Auto-Claude apps/backend/prompts/)
 - 🔲 7_3: Default model profiles seed (balanced, cost-optimized, quality-focused)
@@ -566,7 +577,7 @@ Successfully verified and confirmed that all 23 Auto-Claude prompts are implemen
 - 🔲 7_5: Integration with main seed script (call Auto-Claude seed from main seed)
 
 **Next Phase:**
-**Phase 8: Web UI** [0/9] - Ready after Phase 7
+**Phase 8: Web UI** [1/9] - In Progress
 **Phase 9: Integration & Testing** [0/7] - Final phase
 
 ## Success Criteria
