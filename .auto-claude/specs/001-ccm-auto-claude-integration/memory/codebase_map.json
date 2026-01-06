@@ -111,10 +111,10 @@
       "discovered_at": "2026-01-05T23:56:22.580763+00:00"
     },
     "./packages/cli/src/commands/auto-claude.ts": {
-      "description": "Successfully implemented autoClaudeImportCommand with --source and --dry-run options. Uses existing validateAutoClaudePath function and api.autoClaudeImport method with comprehensive error handling and user feedback.",
-      "category": "implementation",
-      "discovered_at": "2026-01-05T23:47:52.440606+00:00"
+      "description": "Successfully implemented ccm auto-claude sync command with --backend option for one-way sync. Features include: backend path configuration/override, Auto-Claude validation, dry-run mode, API integration, comprehensive error handling, and detailed progress reporting. Implementation follows established patterns and passed TypeScript build verification.",
+      "category": "CLI Implementation",
+      "discovered_at": "2026-01-06T00:03:54.296088+00:00"
     }
   },
-  "last_updated": "2026-01-05T23:56:22.580772+00:00"
+  "last_updated": "2026-01-06T00:03:54.296097+00:00"
 }
