@@ -2,6 +2,7 @@ import * as fs from 'fs/promises';
 import { z } from 'zod';
 import { AutoClaudeProjectConfigSchema } from '../../../../shared/src/schemas/auto-claude';
 import type { AutoClaudeProjectConfig, CustomMcpServer, AgentMcpOverride } from '../../../../shared/src/types/auto-claude';
+import { timeOperation } from '../performance-monitor';
 
 /**
  * Validation schema for parsed env config
@@ -208,42 +209,51 @@ function convertToProjectConfig(envVars: Record<string, string>): AutoClaudeProj
  * Parse .auto-claude/.env file to extract project configuration settings
  */
 export async function parseEnvFile(envPath: string): Promise<EnvParseResult> {
-  const result: EnvParseResult = {
-    config: null,
-    errors: [],
-  };
+  const { result } = await timeOperation(
+    'env file parsing',
+    async () => {
+      const result: EnvParseResult = {
+        config: null,
+        errors: [],
+      };
 
-  try {
-    // Read the file
-    const content = await fs.readFile(envPath, 'utf-8');
+      try {
+        // Read the file
+        const content = await fs.readFile(envPath, 'utf-8');
 
-    if (content.trim().length === 0) {
-      result.errors.push('Environment file is empty');
+        if (content.trim().length === 0) {
+          result.errors.push('Environment file is empty');
+          return result;
+        }
+
+        // Parse environment variables
+        const envVars = parseEnvVars(content);
+
+        if (Object.keys(envVars).length === 0) {
+          result.errors.push('No environment variables found in file');
+          return result;
+        }
+
+        // Convert to project config
+        const projectConfig = convertToProjectConfig(envVars);
+
+        if (!projectConfig) {
+          result.errors.push('Failed to parse environment variables: Invalid configuration structure or validation failed');
+          return result;
+        }
+
+        result.config = { projectConfig };
+
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        result.errors.push(`Failed to read or parse .env file: ${errorMessage}`);
+      }
+
       return result;
-    }
-
-    // Parse environment variables
-    const envVars = parseEnvVars(content);
-
-    if (Object.keys(envVars).length === 0) {
-      result.errors.push('No environment variables found in file');
-      return result;
-    }
-
-    // Convert to project config
-    const projectConfig = convertToProjectConfig(envVars);
-
-    if (!projectConfig) {
-      result.errors.push('Failed to parse environment variables: Invalid configuration structure or validation failed');
-      return result;
-    }
-
-    result.config = { projectConfig };
-
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    result.errors.push(`Failed to read or parse .env file: ${errorMessage}`);
-  }
+    },
+    1, // 1 file processed
+    undefined // errors will be set from result
+  );
 
   return result;
 }

@@ -3,6 +3,7 @@ import * as path from 'path';
 import { z } from 'zod';
 import { AutoClaudePromptSchema } from '../../../../shared/src/schemas/auto-claude';
 import type { AutoClaudePrompt } from '../../../../shared/src/types/auto-claude';
+import { timeOperation } from '../performance-monitor';
 
 // Type inference from Zod schema
 type ValidatedAutoClaudePrompt = z.infer<typeof AutoClaudePromptSchema>;
@@ -182,79 +183,81 @@ export async function parsePromptFile(filePath: string): Promise<{ prompt: Parse
  * Parse all .md files from prompts directory - optimized with parallel processing and concurrency control
  */
 export async function parsePromptsDirectory(promptsPath: string): Promise<PromptsParseResult> {
-  const startTime = performance.now();
-  const result: PromptsParseResult = {
-    prompts: [],
-    errors: [],
-  };
+  const { result } = await timeOperation(
+    'prompts directory parsing',
+    async () => {
+      const result: PromptsParseResult = {
+        prompts: [],
+        errors: [],
+      };
 
-  try {
-    // Check if directory exists
-    const stat = await fs.stat(promptsPath);
-    if (!stat.isDirectory()) {
-      result.errors.push(`Prompts path is not a directory: ${promptsPath}`);
-      return result;
-    }
+      try {
+        // Check if directory exists
+        const stat = await fs.stat(promptsPath);
+        if (!stat.isDirectory()) {
+          result.errors.push(`Prompts path is not a directory: ${promptsPath}`);
+          return result;
+        }
 
-    // Read directory contents
-    const files = await fs.readdir(promptsPath);
-    const markdownFiles = files.filter(file => file.endsWith('.md'));
+        // Read directory contents
+        const files = await fs.readdir(promptsPath);
+        const markdownFiles = files.filter(file => file.endsWith('.md'));
 
-    if (markdownFiles.length === 0) {
-      result.errors.push(`No .md files found in prompts directory: ${promptsPath}`);
-      return result;
-    }
+        if (markdownFiles.length === 0) {
+          result.errors.push(`No .md files found in prompts directory: ${promptsPath}`);
+          return result;
+        }
 
-    // Adaptive concurrency based on system resources and file count
-    const memoryUsage = process.memoryUsage().heapUsed / 1024 / 1024; // MB
-    const baseLimit = Math.min(5, markdownFiles.length);
-    const concurrencyLimit = memoryUsage > 200 ? Math.max(2, baseLimit - 2) : baseLimit;
-    const filePaths = markdownFiles.map(file => path.join(promptsPath, file));
+        // Adaptive concurrency based on system resources and file count
+        const memoryUsage = process.memoryUsage().heapUsed / 1024 / 1024; // MB
+        const baseLimit = Math.min(5, markdownFiles.length);
+        const concurrencyLimit = memoryUsage > 200 ? Math.max(2, baseLimit - 2) : baseLimit;
+        const filePaths = markdownFiles.map(file => path.join(promptsPath, file));
 
-    // Process files in controlled batches
-    const parseResults: Array<{ prompt: ParsedPrompt | null; error: string | null }> = [];
+        // Process files in controlled batches
+        const parseResults: Array<{ prompt: ParsedPrompt | null; error: string | null }> = [];
 
-    for (let i = 0; i < filePaths.length; i += concurrencyLimit) {
-      const batch = filePaths.slice(i, i + concurrencyLimit);
+        for (let i = 0; i < filePaths.length; i += concurrencyLimit) {
+          const batch = filePaths.slice(i, i + concurrencyLimit);
 
-      const batchResults = await Promise.all(
-        batch.map(async (filePath) => {
-          try {
-            return await parsePromptFile(filePath);
-          } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : String(error);
-            return { prompt: null, error: `Failed to parse ${path.basename(filePath)}: ${errorMessage}` };
+          const batchResults = await Promise.all(
+            batch.map(async (filePath) => {
+              try {
+                return await parsePromptFile(filePath);
+              } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : String(error);
+                return { prompt: null, error: `Failed to parse ${path.basename(filePath)}: ${errorMessage}` };
+              }
+            })
+          );
+
+          parseResults.push(...batchResults);
+        }
+
+        // Collect results efficiently
+        let promptCount = 0;
+        let errorCount = 0;
+
+        for (const parseResult of parseResults) {
+          if (parseResult.prompt) {
+            result.prompts.push(parseResult.prompt);
+            promptCount++;
+          } else if (parseResult.error) {
+            result.errors.push(parseResult.error);
+            errorCount++;
           }
-        })
-      );
+        }
 
-      parseResults.push(...batchResults);
-    }
-
-    // Collect results efficiently
-    let promptCount = 0;
-    let errorCount = 0;
-
-    for (const parseResult of parseResults) {
-      if (parseResult.prompt) {
-        result.prompts.push(parseResult.prompt);
-        promptCount++;
-      } else if (parseResult.error) {
-        result.errors.push(parseResult.error);
-        errorCount++;
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        result.errors.push(`Failed to read prompts directory ${promptsPath}: ${errorMessage}`);
       }
-    }
 
-    // Log performance metrics for monitoring
-    const duration = performance.now() - startTime;
-    if (duration > 50) { // Log if parsing takes more than 50ms
-      console.log(`[PERF] Prompts directory parsing completed in ${Math.round(duration)}ms (${promptCount} prompts, ${errorCount} errors)`);
-    }
-
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    result.errors.push(`Failed to read prompts directory ${promptsPath}: ${errorMessage}`);
-  }
+      return result;
+    },
+    undefined, // itemsProcessed will be set by caller
+    undefined  // errors will be set by caller
+  );
 
   return result;
 }
