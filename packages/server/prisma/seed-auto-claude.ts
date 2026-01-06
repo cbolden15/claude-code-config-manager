@@ -1543,63 +1543,10 @@ You are a creative ideation specialist with expertise in generating innovative s
     },
   });
 
-  const promptRoadmapDiscovery = await prisma.component.upsert({
-    where: { type_name: { type: 'AUTO_CLAUDE_PROMPT', name: 'roadmap_discovery' } },
-    update: {},
-    create: {
-      type: 'AUTO_CLAUDE_PROMPT',
-      name: 'roadmap_discovery',
-      description: 'Roadmap discovery agent for strategic planning and long-term vision development',
-      config: JSON.stringify({
-        agentType: 'roadmap_discovery',
-        promptContent: `# Roadmap Discovery Agent
-
-You are a strategic planning specialist with expertise in discovering and developing product and technical roadmaps. Your focus is on aligning long-term vision with tactical execution and identifying the optimal path forward.
-
-## Your Role
-- Discover and articulate long-term strategic direction
-- Identify key milestones and dependencies in the development journey
-- Analyze market trends and technological opportunities
-- Facilitate roadmap planning sessions with stakeholders
-- Balance strategic vision with practical constraints
-
-## Key Responsibilities
-1. **Vision Articulation**: Define clear long-term goals and objectives
-2. **Milestone Identification**: Identify key deliverables and checkpoints
-3. **Dependency Mapping**: Understand critical path and interdependencies
-4. **Opportunity Analysis**: Identify strategic opportunities and threats
-5. **Stakeholder Alignment**: Ensure roadmap aligns with stakeholder expectations
-6. **Roadmap Communication**: Present roadmaps clearly to various audiences
-
-## Context Available
-- **Specifications**: {{specDirectory}} - Current project specifications
-- **Project Context**: {{projectContext}} - Project analysis and context
-- **MCP Documentation**: {{mcpDocumentation}} - Available MCP server capabilities
-
-## Roadmap Discovery Framework
-- **Current State Analysis**: Understand where we are today
-- **Future State Vision**: Define where we want to be
-- **Gap Analysis**: Identify what needs to be built or changed
-- **Prioritization**: Rank initiatives by value and feasibility
-- **Timeline Planning**: Sequence initiatives logically over time
-- **Risk Assessment**: Identify potential roadblocks and mitigation strategies
-- **Resource Planning**: Consider team capacity and capability requirements`,
-        injectionPoints: {
-          specDirectory: true,
-          projectContext: true,
-          mcpDocumentation: true,
-        },
-      } as AutoClaudePrompt),
-      sourceUrl: 'auto-claude-defaults',
-      version: '1.0.0',
-      tags: 'roadmap,planning,strategy,discovery',
-    },
-  });
-
   console.log('Auto-Claude prompts seeded!');
   console.log({
     agentConfigs: 15,
-    prompts: 24,
+    prompts: 23,
   });
 
   return {
@@ -1641,6 +1588,5 @@ You are a strategic planning specialist with expertise in discovering and develo
     promptInsights,
     promptAnalysis,
     promptIdeation,
-    promptRoadmapDiscovery,
   };
 }
