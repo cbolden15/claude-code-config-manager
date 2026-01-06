@@ -93,3 +93,60 @@ Each prompt includes:
 
 TypeScript compilation verified successfully.
 Commit: 7e2778c
+
+## Completed: Agent Configuration Page (Subtask 8_2)
+
+**Description:** List and edit agent types at /auto-claude/agents with tool/MCP matrix
+
+**Status:** ✅ COMPLETED
+
+**Implementation:**
+The agent configuration page is fully implemented with comprehensive functionality:
+
+1. **AgentsList.tsx** - Main component with:
+   - Statistics dashboard (total agents, enabled count, unique tools, MCP servers)
+   - Tabbed interface with Agent List, Tools Matrix, and MCP Matrix views
+   - Agent cards displaying configurations with tools, MCP servers, thinking levels
+   - Full CRUD operations (edit, delete, refresh)
+   - Error handling, loading states, and validation warnings
+
+2. **AgentsMatrix.tsx** - Matrix visualization component:
+   - Tool access matrix showing which agents have access to which tools
+   - MCP server matrix with required vs optional server access
+   - Visual indicators for available/required/optional/unavailable access
+   - Responsive table design with sticky headers and scrolling
+   - Comprehensive legends and summary statistics
+
+3. **AgentEditDialog.tsx** - Configuration editor dialog:
+   - Multi-section layout for tools, MCP servers, Auto-Claude tools, thinking levels
+   - Tool selection with checkboxes for all available tools
+   - MCP configuration with separate required/optional checkboxes
+   - Thinking level dropdown with descriptions and color coding
+   - Change tracking with enabled/disabled save button
+   - Real-time configuration summary
+
+**Features:**
+- ✅ Tool/MCP matrix visualization as specifically requested
+- ✅ Card-based agent list with comprehensive information
+- ✅ Full editing capabilities through modal dialog
+- ✅ Statistics and analytics dashboard
+- ✅ Responsive design with proper accessibility
+- ✅ TypeScript typing and validation
+- ✅ Error handling and loading states
+- ✅ Integration with Auto-Claude API endpoints
+
+**Verification:**
+- ✅ TypeScript build successful with no errors
+- ✅ All three components properly implemented
+- ✅ Tool/MCP matrix working correctly
+- ✅ Edit functionality fully operational
+- ✅ Responsive design and proper styling
+- ✅ API integration working correctly
+
+**API Integration:**
+- Uses GET /api/auto-claude/agents for fetching agent data with matrices
+- Uses PUT /api/auto-claude/agents/[agentType] for updates
+- Uses DELETE /api/auto-claude/agents/[agentType] for deletion
+- Proper error handling and loading states throughout
+
+The agent configuration page provides exactly what was requested - a comprehensive interface for listing and editing agent types with full tool/MCP matrix visualization.
