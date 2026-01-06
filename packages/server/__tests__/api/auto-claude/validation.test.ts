@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 import assert from 'node:assert';
-import { prisma } from '../../../src/lib/db.js';
-import { cleanupTestData } from './test-utils.js';
-import { POST as AgentsPOST } from '../../../src/app/api/auto-claude/agents/route.js';
-import { POST as PromptsPOST } from '../../../src/app/api/auto-claude/prompts/route.js';
-import { POST as ProfilesPOST } from '../../../src/app/api/auto-claude/model-profiles/route.js';
+import { prisma } from '../../../src/lib/db.ts';
+import { cleanupTestData } from './test-utils.ts';
+import { POST as AgentsPOST } from '../../../src/app/api/auto-claude/agents/route.ts';
+import { POST as PromptsPOST } from '../../../src/app/api/auto-claude/prompts/route.ts';
+import { POST as ProfilesPOST } from '../../../src/app/api/auto-claude/model-profiles/route.ts';
 
 /**
  * Helper to create mock NextRequest

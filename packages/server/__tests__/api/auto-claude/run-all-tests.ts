@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-import { runAutoClaudeAPITests } from './index.test.js';
-import { runImportTests } from './import.test.js';
-import { runValidationTests } from './validation.test.js';
+import { runAutoClaudeAPITests } from './index.test.ts';
+import { runImportTests } from './import.test.ts';
+import { runValidationTests } from './validation.test.ts';
 
 /**
  * Main test runner for all Auto-Claude API tests

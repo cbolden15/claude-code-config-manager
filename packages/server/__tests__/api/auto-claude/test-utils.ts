@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { prisma } from '../../../src/lib/db.js';
+import { prisma } from '../../../src/lib/db.ts';
 import type { AutoClaudeAgentConfig, AutoClaudePrompt, AutoClaudeModelProfile, AutoClaudeProjectConfig } from '../../../../../shared/src/types/auto-claude';
 
 /**

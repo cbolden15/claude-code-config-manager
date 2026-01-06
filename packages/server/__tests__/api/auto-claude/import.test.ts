@@ -2,9 +2,9 @@
 import assert from 'node:assert';
 import fs from 'node:fs';
 import path from 'node:path';
-import { prisma } from '../../../src/lib/db.js';
-import { cleanupTestData } from './test-utils.js';
-import { POST as ImportPOST } from '../../../src/app/api/auto-claude/import/route.js';
+import { prisma } from '../../../src/lib/db.ts';
+import { cleanupTestData } from './test-utils.ts';
+import { POST as ImportPOST } from '../../../src/app/api/auto-claude/import/route.ts';
 
 /**
  * Helper to create mock NextRequest

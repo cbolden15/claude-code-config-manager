@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import assert from 'node:assert';
-import { prisma } from '../../../src/lib/db.js';
+import { prisma } from '../../../src/lib/db.ts';
 import {
   cleanupTestData,
   createTestComponents,
@@ -10,18 +10,18 @@ import {
   testPrompt,
   testModelProfile,
   testProjectConfig
-} from './test-utils.js';
+} from './test-utils.ts';
 
 // Import API route handlers for direct testing
-import { GET as AgentsGET, POST as AgentsPOST } from '../../../src/app/api/auto-claude/agents/route.js';
-import { GET as AgentGET, PUT as AgentPUT, DELETE as AgentDELETE } from '../../../src/app/api/auto-claude/agents/[agentType]/route.js';
-import { GET as PromptsGET, POST as PromptsPOST } from '../../../src/app/api/auto-claude/prompts/route.js';
-import { GET as PromptGET, PUT as PromptPUT, DELETE as PromptDELETE } from '../../../src/app/api/auto-claude/prompts/[id]/route.js';
-import { GET as ProfilesGET, POST as ProfilesPOST } from '../../../src/app/api/auto-claude/model-profiles/route.js';
-import { GET as ProfileGET, PUT as ProfilePUT, DELETE as ProfileDELETE } from '../../../src/app/api/auto-claude/model-profiles/[id]/route.js';
-import { POST as ImportPOST } from '../../../src/app/api/auto-claude/import/route.js';
-import { POST as SyncPOST } from '../../../src/app/api/auto-claude/sync/route.js';
-import { POST as GeneratePOST } from '../../../src/app/api/generate/route.js';
+import { GET as AgentsGET, POST as AgentsPOST } from '../../../src/app/api/auto-claude/agents/route.ts';
+import { GET as AgentGET, PUT as AgentPUT, DELETE as AgentDELETE } from '../../../src/app/api/auto-claude/agents/[agentType]/route.ts';
+import { GET as PromptsGET, POST as PromptsPOST } from '../../../src/app/api/auto-claude/prompts/route.ts';
+import { GET as PromptGET, PUT as PromptPUT, DELETE as PromptDELETE } from '../../../src/app/api/auto-claude/prompts/[id]/route.ts';
+import { GET as ProfilesGET, POST as ProfilesPOST } from '../../../src/app/api/auto-claude/model-profiles/route.ts';
+import { GET as ProfileGET, PUT as ProfilePUT, DELETE as ProfileDELETE } from '../../../src/app/api/auto-claude/model-profiles/[id]/route.ts';
+import { POST as ImportPOST } from '../../../src/app/api/auto-claude/import/route.ts';
+import { POST as SyncPOST } from '../../../src/app/api/auto-claude/sync/route.ts';
+import { POST as GeneratePOST } from '../../../src/app/api/generate/route.ts';
 
 /**
  * Helper to create mock NextRequest
