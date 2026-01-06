@@ -346,6 +346,17 @@ const commandActions = {
     return output.trim();
   },
 
+  profilesApply: async (profileName: string, projectName: string): Promise<string> => {
+    // Mock implementation of profiles apply command
+    const result = await mockApi.listAutoClaudeModelProfiles({ profileName });
+    if (result.error || result.data.modelProfiles.length === 0) {
+      throw new Error(`Model profile '${profileName}' not found`);
+    }
+
+    // Mock successful application
+    return `✓ Applied model profile '${profileName}' to project '${projectName}'\nThe project will now use this profile for Auto-Claude operations.`;
+  },
+
   // Agents command actions
   agentsList: async (verbose = false, format = 'table'): Promise<string> => {
     const result = await mockApi.listAutoClaudeAgents();
@@ -634,19 +645,85 @@ async function runTests() {
     assert(parsed.description, 'Should include description in JSON output');
   });
 
-  // Test 7: API response validation
-  test('Mock API responses are properly structured', async () => {
-    const settingsResult = await mockApi.getSetting('autoClaudeBackendPath');
-    assert(settingsResult.data?.value, 'Settings API should return data');
+  // Test 7: Additional CLI functionality
+  test('Profiles apply command functionality', async () => {
+    // Test applying a model profile to a project (mock implementation)
+    const result = await commandActions.profilesApply('balanced', 'test-project');
+    assert(result.includes('✓ Applied model profile'), 'Should show success message');
+    assert(result.includes('balanced'), 'Should include profile name');
+    assert(result.includes('test-project'), 'Should include project name');
+  });
 
-    const importResult = await mockApi.autoClaudeImport({ dryRun: true });
-    assert(importResult.data?.preview, 'Import API should return preview for dry run');
+  test('Config command with no backend path configured', async () => {
+    // Test showing config when no backend path is set
+    const originalGetSetting = mockApi.getSetting;
+    mockApi.getSetting = (key: string) => {
+      if (key === 'autoClaudeBackendPath') {
+        return Promise.resolve({ error: 'Setting not found' });
+      }
+      return originalGetSetting(key);
+    };
 
-    const profilesResult = await mockApi.listAutoClaudeModelProfiles();
-    assert(profilesResult.data?.modelProfiles, 'Profiles API should return profiles array');
+    try {
+      const result = await commandActions.configShow();
+      assert(result.includes('No configuration found'), 'Should show no configuration message');
+    } finally {
+      mockApi.getSetting = originalGetSetting;
+    }
+  });
 
-    const agentsResult = await mockApi.listAutoClaudeAgents();
-    assert(agentsResult.data?.agentConfigs, 'Agents API should return configs array');
+  test('API error handling in commands', async () => {
+    // Test how commands handle API errors
+    const originalListProfiles = mockApi.listAutoClaudeModelProfiles;
+    mockApi.listAutoClaudeModelProfiles = (options: any = {}) => {
+      return Promise.resolve({ error: 'API connection failed' });
+    };
+
+    try {
+      await commandActions.profilesList();
+      assert(false, 'Should have thrown an error for API failure');
+    } catch (error) {
+      assert((error as Error).message.includes('API connection failed'), 'Should show API error message');
+    } finally {
+      mockApi.listAutoClaudeModelProfiles = originalListProfiles;
+    }
+  });
+
+  test('Command help text structure', () => {
+    const autoClaudeCmd = createMockAutoClaudeCommand();
+
+    // Verify command descriptions are properly set
+    assert(autoClaudeCmd.description() === 'Auto-Claude integration commands', 'Main command should have description');
+
+    // Verify all subcommands have descriptions
+    const configCmd = autoClaudeCmd.commands.find(cmd => cmd.name() === 'config');
+    assert(configCmd?.description() === 'Configure Auto-Claude backend path', 'Config command should have description');
+
+    const importCmd = autoClaudeCmd.commands.find(cmd => cmd.name() === 'import');
+    assert(importCmd?.description() === 'Import existing configurations', 'Import command should have description');
+
+    const syncCmd = autoClaudeCmd.commands.find(cmd => cmd.name() === 'sync');
+    assert(syncCmd?.description() === 'Sync configurations to backend', 'Sync command should have description');
+  });
+
+  test('Sync command error when no backend path available', async () => {
+    // Test sync command when no backend path is configured and none provided
+    const originalGetSetting = mockApi.getSetting;
+    mockApi.getSetting = (key: string) => {
+      if (key === 'autoClaudeBackendPath') {
+        return Promise.resolve({ error: 'Setting not found' });
+      }
+      return originalGetSetting(key);
+    };
+
+    try {
+      await commandActions.syncExecute('', false);
+      assert(false, 'Should have thrown an error for missing backend path');
+    } catch (error) {
+      assert((error as Error).message.includes('No Auto-Claude backend path configured'), 'Should show missing config error');
+    } finally {
+      mockApi.getSetting = originalGetSetting;
+    }
   });
 
   // Wait for async tests to complete
@@ -667,13 +744,13 @@ async function runTests() {
     console.log(chalk.green('\n🎉 All tests passed!'));
     console.log(chalk.gray('\nTest Coverage:'));
     console.log(chalk.gray('  ✓ Command structure validation'));
-    console.log(chalk.gray('  ✓ Config command (show/set/validation)'));
+    console.log(chalk.gray('  ✓ Config command (show/set/validation/no-config)'));
     console.log(chalk.gray('  ✓ Import command (dry-run/execute/validation)'));
-    console.log(chalk.gray('  ✓ Sync command (backend path/dry-run/validation)'));
-    console.log(chalk.gray('  ✓ Profiles commands (list/show/formats)'));
+    console.log(chalk.gray('  ✓ Sync command (backend path/dry-run/validation/error-handling)'));
+    console.log(chalk.gray('  ✓ Profiles commands (list/show/apply/formats)'));
     console.log(chalk.gray('  ✓ Agents commands (list/show/formats)'));
-    console.log(chalk.gray('  ✓ Error handling scenarios'));
-    console.log(chalk.gray('  ✓ Mock API response validation'));
+    console.log(chalk.gray('  ✓ Error handling scenarios and API failures'));
+    console.log(chalk.gray('  ✓ Command help text validation'));
     console.log(chalk.gray('  ✓ JSON and table output formats'));
   }
 }
