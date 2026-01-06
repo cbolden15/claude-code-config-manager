@@ -406,8 +406,8 @@
           "subtask_id": "6_5",
           "name": "Implement profiles subcommands",
           "description": "ccm auto-claude profiles list/show/apply for model profile management",
-          "status": "pending",
-          "notes": "",
+          "status": "completed",
+          "notes": "Successfully implemented ccm auto-claude profiles list/show/apply commands for model profile management. All three commands are fully functional: autoClaudeProfilesListCommand (lists all model profiles with optional verbose mode showing phase analysis, supports table and JSON output), autoClaudeProfilesShowCommand (shows detailed information for specific profile including phase configuration, analysis summary, distributions), autoClaudeProfilesApplyCommand (applies model profiles to projects by updating project.modelProfileId). Enhanced API support by adding modelProfileId to project update schema, implemented updateProject API client function, and completed CLI command to actually update projects with selected model profiles. TypeScript build verification passed successfully.",
           "dependencies": ["6_1", "4_5"],
           "files_to_modify": [
             "packages/cli/src/commands/auto-claude.ts"
