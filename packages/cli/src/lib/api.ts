@@ -144,6 +144,23 @@ class ApiClient {
   async autoClaudeSync(data: AutoClaudeSyncRequest): Promise<ApiResponse<AutoClaudeSyncResponse>> {
     return this.post('/api/auto-claude/sync', data);
   }
+
+  // Auto-Claude Model Profiles
+  async listAutoClaudeModelProfiles(options: {
+    profileName?: string;
+    includePhaseDetails?: boolean;
+  } = {}): Promise<ApiResponse<AutoClaudeModelProfilesResponse>> {
+    const query = new URLSearchParams();
+    if (options.profileName) query.set('profileName', options.profileName);
+    if (options.includePhaseDetails) query.set('includePhaseDetails', 'true');
+
+    const queryString = query.toString();
+    return this.get(`/api/auto-claude/model-profiles${queryString ? `?${queryString}` : ''}`);
+  }
+
+  async getAutoClaudeModelProfile(id: string): Promise<ApiResponse<AutoClaudeModelProfileDetail>> {
+    return this.get(`/api/auto-claude/model-profiles/${id}`);
+  }
 }
 
 // Types
@@ -248,5 +265,106 @@ interface AutoClaudeSyncResponse {
   dryRun?: boolean;
 }
 
+// Auto-Claude Model Profile interfaces
+interface AutoClaudeModelProfile {
+  name: string;
+  description: string;
+  phaseModels: {
+    spec: string;
+    planning: string;
+    coding: string;
+    qa: string;
+  };
+  phaseThinking: {
+    spec: string;
+    planning: string;
+    coding: string;
+    qa: string;
+  };
+}
+
+interface AutoClaudeModelProfileResponse {
+  id: string;
+  name: string;
+  description: string;
+  config: AutoClaudeModelProfile;
+  enabled: boolean;
+  tags: string | null;
+  version: string | null;
+  sourceUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
+  phaseAnalysis?: {
+    modelDistribution: Record<string, number>;
+    thinkingDistribution: Record<string, number>;
+    costEstimate: string;
+    qualityLevel: string;
+  };
+}
+
+interface AutoClaudeModelProfilesResponse {
+  modelProfiles: AutoClaudeModelProfileResponse[];
+  matrices: {
+    phases: string[];
+    profiles: string[];
+    models: string[];
+    thinkingLevels: string[];
+    matrix: Record<string, {
+      models: { spec: string; planning: string; coding: string; qa: string };
+      thinking: { spec: string; planning: string; coding: string; qa: string };
+    }>;
+  };
+  stats: {
+    total: number;
+    enabled: number;
+    uniqueModels: number;
+    uniqueThinkingLevels: number;
+    phases: number;
+  };
+  errors?: string[];
+}
+
+interface AutoClaudeModelProfileDetail extends AutoClaudeModelProfileResponse {
+  analysis: {
+    models: {
+      distribution: Record<string, number>;
+      phases: { spec: string; planning: string; coding: string; qa: string };
+    };
+    thinking: {
+      distribution: Record<string, number>;
+      phases: { spec: string; planning: string; coding: string; qa: string };
+    };
+    cost: {
+      perPhase: Record<string, number>;
+      total: number;
+    };
+    quality: {
+      perPhase: Record<string, number>;
+    };
+    characteristics: {
+      costEstimate: string;
+      qualityLevel: string;
+      totalPhases: number;
+      uniformModels: boolean;
+      uniformThinking: boolean;
+    };
+  };
+}
+
 export const api = new ApiClient();
-export type { Component, Profile, ProfileDetail, Project, GenerateRequest, GenerateResponse, AutoClaudeImportRequest, AutoClaudeImportResponse, AutoClaudeSyncRequest, AutoClaudeSyncResponse };
+export type {
+  Component,
+  Profile,
+  ProfileDetail,
+  Project,
+  GenerateRequest,
+  GenerateResponse,
+  AutoClaudeImportRequest,
+  AutoClaudeImportResponse,
+  AutoClaudeSyncRequest,
+  AutoClaudeSyncResponse,
+  AutoClaudeModelProfile,
+  AutoClaudeModelProfileResponse,
+  AutoClaudeModelProfilesResponse,
+  AutoClaudeModelProfileDetail
+};

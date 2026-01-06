@@ -2,7 +2,7 @@ import chalk from 'chalk';
 import { Command } from 'commander';
 import { existsSync, statSync } from 'fs';
 import { join, resolve } from 'path';
-import { api, type AutoClaudeImportRequest, type AutoClaudeImportResponse, type AutoClaudeSyncRequest, type AutoClaudeSyncResponse } from '../lib/api.js';
+import { api, type AutoClaudeImportRequest, type AutoClaudeImportResponse, type AutoClaudeSyncRequest, type AutoClaudeSyncResponse, type AutoClaudeModelProfilesResponse, type AutoClaudeModelProfileDetail } from '../lib/api.js';
 
 /**
  * Create and configure the auto-claude command group
@@ -78,25 +78,27 @@ ${chalk.gray('Examples:')}
   profilesCommand
     .command('list')
     .description('List all available model profiles')
-    .action(async () => {
-      console.log(chalk.yellow('Auto-Claude profiles list command is not yet implemented.'));
-      console.log(chalk.gray('This will be available in a future update.'));
+    .option('-v, --verbose', 'Show detailed phase analysis for each profile')
+    .option('-f, --format <format>', 'Output format: table (default), json', 'table')
+    .action(async (options: { verbose?: boolean; format?: string }) => {
+      await autoClaudeProfilesListCommand(options);
     });
 
   profilesCommand
     .command('show <profile>')
     .description('Show details for a specific model profile')
-    .action(async () => {
-      console.log(chalk.yellow('Auto-Claude profiles show command is not yet implemented.'));
-      console.log(chalk.gray('This will be available in a future update.'));
+    .option('-f, --format <format>', 'Output format: table (default), json', 'table')
+    .action(async (profile: string, options: { format?: string }) => {
+      await autoClaudeProfilesShowCommand(profile, options);
     });
 
   profilesCommand
     .command('apply <profile>')
     .description('Apply model profile to current project')
-    .action(async () => {
-      console.log(chalk.yellow('Auto-Claude profiles apply command is not yet implemented.'));
-      console.log(chalk.gray('This will be available in a future update.'));
+    .option('--project-id <id>', 'Specific project ID to apply profile to')
+    .option('--project-name <name>', 'Specific project name to apply profile to')
+    .action(async (profile: string, options: { projectId?: string; projectName?: string }) => {
+      await autoClaudeProfilesApplyCommand(profile, options);
     });
 
   // Agents subcommand group - Will be implemented in subtask 6_6
@@ -567,4 +569,322 @@ export async function autoClaudeCommand(): Promise<void> {
   console.log(`Use ${chalk.cyan('ccm auto-claude <command> --help')} for detailed command information.`);
   console.log();
   console.log(`${chalk.gray('Web Interface:')} Visit ${chalk.cyan('/auto-claude')} to manage configurations through the web UI.`);
+}
+
+/**
+ * Auto-Claude profiles list command implementation
+ */
+async function autoClaudeProfilesListCommand(options: { verbose?: boolean; format?: string }): Promise<void> {
+  try {
+    console.log(chalk.bold('Auto-Claude Model Profiles'));
+    console.log();
+
+    const result = await api.listAutoClaudeModelProfiles({
+      includePhaseDetails: options.verbose || false,
+    });
+
+    if (result.error) {
+      console.log(chalk.red('Error fetching model profiles:'), result.error);
+      process.exit(1);
+    }
+
+    const { modelProfiles, stats } = result.data!;
+
+    if (modelProfiles.length === 0) {
+      console.log(chalk.yellow('No model profiles found.'));
+      console.log();
+      console.log('To create model profiles:');
+      console.log(`  • Visit ${chalk.cyan('/auto-claude/profiles')} in the web interface`);
+      console.log(`  • Import existing Auto-Claude configurations with ${chalk.cyan('ccm auto-claude import')}`);
+      return;
+    }
+
+    if (options.format === 'json') {
+      console.log(JSON.stringify(result.data, null, 2));
+      return;
+    }
+
+    // Table format output
+    console.log(`Found ${chalk.cyan(stats.total)} model profile${stats.total !== 1 ? 's' : ''}:`);
+    console.log();
+
+    for (const profile of modelProfiles) {
+      const statusIcon = profile.enabled ? chalk.green('✓') : chalk.red('✗');
+      console.log(`${statusIcon} ${chalk.bold(profile.name)}`);
+      console.log(`  ${chalk.gray(profile.description)}`);
+
+      if (options.verbose && profile.phaseAnalysis) {
+        const { phaseAnalysis } = profile;
+        console.log();
+        console.log('  Phase Configuration:');
+        console.log(`    Models:   ${Object.entries(profile.config.phaseModels)
+          .map(([phase, model]) => `${phase}=${chalk.cyan(model)}`)
+          .join(', ')}`);
+        console.log(`    Thinking: ${Object.entries(profile.config.phaseThinking)
+          .map(([phase, level]) => `${phase}=${chalk.magenta(level)}`)
+          .join(', ')}`);
+        console.log();
+        console.log('  Analysis:');
+        console.log(`    Cost:     ${getCostBadge(phaseAnalysis.costEstimate)}`);
+        console.log(`    Quality:  ${getQualityBadge(phaseAnalysis.qualityLevel)}`);
+        console.log();
+      } else if (!options.verbose) {
+        // Show a brief summary
+        const uniqueModels = [...new Set(Object.values(profile.config.phaseModels))];
+        const uniqueThinking = [...new Set(Object.values(profile.config.phaseThinking))];
+        console.log(`  Models: ${uniqueModels.map(m => chalk.cyan(m)).join(', ')} | Thinking: ${uniqueThinking.map(t => chalk.magenta(t)).join(', ')}`);
+      }
+
+      console.log();
+    }
+
+    console.log(chalk.gray('Summary:'));
+    console.log(`  Total Profiles: ${stats.total} (${stats.enabled} enabled)`);
+    console.log(`  Unique Models: ${stats.uniqueModels}`);
+    console.log(`  Unique Thinking Levels: ${stats.uniqueThinkingLevels}`);
+    console.log();
+    console.log(`Use ${chalk.cyan('ccm auto-claude profiles show <profile>')} for detailed information about a specific profile.`);
+
+  } catch (error) {
+    console.log(chalk.red('Command failed:'), error instanceof Error ? error.message : 'Unknown error');
+    process.exit(1);
+  }
+}
+
+/**
+ * Auto-Claude profiles show command implementation
+ */
+async function autoClaudeProfilesShowCommand(profile: string, options: { format?: string }): Promise<void> {
+  try {
+    console.log(chalk.bold(`Model Profile: ${profile}`));
+    console.log();
+
+    // First try to find profile by name
+    const listResult = await api.listAutoClaudeModelProfiles({ profileName: profile });
+    if (listResult.error) {
+      console.log(chalk.red('Error fetching model profiles:'), listResult.error);
+      process.exit(1);
+    }
+
+    const profiles = listResult.data!.modelProfiles;
+    if (profiles.length === 0) {
+      console.log(chalk.red(`Model profile '${profile}' not found.`));
+      console.log();
+      console.log('Available profiles:');
+      const allProfilesResult = await api.listAutoClaudeModelProfiles();
+      if (!allProfilesResult.error && allProfilesResult.data!.modelProfiles.length > 0) {
+        for (const p of allProfilesResult.data!.modelProfiles) {
+          console.log(`  • ${p.name}`);
+        }
+      } else {
+        console.log(chalk.gray('  No profiles available'));
+      }
+      process.exit(1);
+    }
+
+    const foundProfile = profiles[0];
+
+    // Get detailed profile information
+    const detailResult = await api.getAutoClaudeModelProfile(foundProfile.id);
+    if (detailResult.error) {
+      console.log(chalk.red('Error fetching profile details:'), detailResult.error);
+      process.exit(1);
+    }
+
+    const profileDetail = detailResult.data!;
+
+    if (options.format === 'json') {
+      console.log(JSON.stringify(profileDetail, null, 2));
+      return;
+    }
+
+    // Detailed formatted output
+    const statusIcon = profileDetail.enabled ? chalk.green('✓ Active') : chalk.red('✗ Disabled');
+    console.log(`Status: ${statusIcon}`);
+    console.log(`Description: ${profileDetail.description}`);
+    console.log();
+
+    // Phase Configuration Table
+    console.log(chalk.bold('Phase Configuration:'));
+    console.log();
+    console.log(`${'Phase'.padEnd(12)} ${'Model'.padEnd(10)} ${'Thinking'.padEnd(12)} ${'Cost'.padEnd(6)} ${'Quality'}`);
+    console.log('─'.repeat(60));
+
+    const phases = ['spec', 'planning', 'coding', 'qa'] as const;
+    for (const phase of phases) {
+      const model = profileDetail.config.phaseModels[phase];
+      const thinking = profileDetail.config.phaseThinking[phase];
+      const cost = profileDetail.analysis.cost.perPhase[phase];
+      const quality = profileDetail.analysis.quality.perPhase[phase];
+
+      const modelColor = model === 'opus' ? chalk.magenta : model === 'sonnet' ? chalk.cyan : chalk.green;
+      const thinkingColor = thinking === 'ultrathink' ? chalk.red :
+                           thinking === 'high' ? chalk.yellow :
+                           thinking === 'medium' ? chalk.blue :
+                           thinking === 'low' ? chalk.green : chalk.gray;
+
+      console.log(`${phase.padEnd(12)} ${modelColor(model.padEnd(10))} ${thinkingColor(thinking.padEnd(12))} ${cost.toString().padEnd(6)} ${quality}`);
+    }
+    console.log();
+
+    // Analysis Summary
+    console.log(chalk.bold('Profile Analysis:'));
+    console.log(`Overall Cost:     ${getCostBadge(profileDetail.analysis.characteristics.costEstimate)} (Score: ${profileDetail.analysis.cost.total})`);
+    console.log(`Overall Quality:  ${getQualityBadge(profileDetail.analysis.characteristics.qualityLevel)}`);
+    console.log(`Uniform Models:   ${profileDetail.analysis.characteristics.uniformModels ? chalk.green('Yes') : chalk.yellow('No')}`);
+    console.log(`Uniform Thinking: ${profileDetail.analysis.characteristics.uniformThinking ? chalk.green('Yes') : chalk.yellow('No')}`);
+    console.log();
+
+    // Model Distribution
+    console.log(chalk.bold('Model Distribution:'));
+    Object.entries(profileDetail.analysis.models.distribution).forEach(([model, count]) => {
+      const percentage = Math.round((count / 4) * 100);
+      const modelColor = model === 'opus' ? chalk.magenta : model === 'sonnet' ? chalk.cyan : chalk.green;
+      console.log(`  ${modelColor(model)}: ${count}/4 phases (${percentage}%)`);
+    });
+    console.log();
+
+    // Thinking Distribution
+    console.log(chalk.bold('Thinking Level Distribution:'));
+    Object.entries(profileDetail.analysis.thinking.distribution).forEach(([level, count]) => {
+      const percentage = Math.round((count / 4) * 100);
+      const thinkingColor = level === 'ultrathink' ? chalk.red :
+                           level === 'high' ? chalk.yellow :
+                           level === 'medium' ? chalk.blue :
+                           level === 'low' ? chalk.green : chalk.gray;
+      console.log(`  ${thinkingColor(level)}: ${count}/4 phases (${percentage}%)`);
+    });
+    console.log();
+
+    console.log(`Use ${chalk.cyan(`ccm auto-claude profiles apply ${profile}`)} to apply this profile to a project.`);
+
+  } catch (error) {
+    console.log(chalk.red('Command failed:'), error instanceof Error ? error.message : 'Unknown error');
+    process.exit(1);
+  }
+}
+
+/**
+ * Auto-Claude profiles apply command implementation
+ */
+async function autoClaudeProfilesApplyCommand(profile: string, options: { projectId?: string; projectName?: string }): Promise<void> {
+  try {
+    console.log(chalk.bold(`Applying Model Profile: ${profile}`));
+    console.log();
+
+    // Validate profile exists
+    const profileResult = await api.listAutoClaudeModelProfiles({ profileName: profile });
+    if (profileResult.error) {
+      console.log(chalk.red('Error fetching model profiles:'), profileResult.error);
+      process.exit(1);
+    }
+
+    const profiles = profileResult.data!.modelProfiles;
+    if (profiles.length === 0) {
+      console.log(chalk.red(`Model profile '${profile}' not found.`));
+      process.exit(1);
+    }
+
+    const targetProfile = profiles[0];
+
+    // Get projects
+    const projectsResult = await api.listProjects();
+    if (projectsResult.error) {
+      console.log(chalk.red('Error fetching projects:'), projectsResult.error);
+      process.exit(1);
+    }
+
+    const projects = projectsResult.data!.projects;
+
+    // Determine target project
+    let targetProject = null;
+    if (options.projectId) {
+      targetProject = projects.find(p => p.id === options.projectId);
+      if (!targetProject) {
+        console.log(chalk.red(`Project with ID '${options.projectId}' not found.`));
+        process.exit(1);
+      }
+    } else if (options.projectName) {
+      targetProject = projects.find(p => p.name === options.projectName);
+      if (!targetProject) {
+        console.log(chalk.red(`Project '${options.projectName}' not found.`));
+        process.exit(1);
+      }
+    } else {
+      // Show available projects and ask user to specify
+      console.log(chalk.yellow('No project specified. Available projects:'));
+      console.log();
+      if (projects.length === 0) {
+        console.log(chalk.gray('No projects found.'));
+        console.log(`Use ${chalk.cyan('ccm init')} to create a project first.`);
+        process.exit(1);
+      }
+
+      for (const project of projects) {
+        const profileInfo = project.profile ? ` (Current: ${project.profile.name})` : ' (No profile)';
+        console.log(`  • ${chalk.cyan(project.name)} [ID: ${project.id}]${chalk.gray(profileInfo)}`);
+        console.log(`    Path: ${project.path}`);
+        console.log();
+      }
+
+      console.log(`Use ${chalk.cyan(`ccm auto-claude profiles apply ${profile} --project-id <id>`)} or`);
+      console.log(`    ${chalk.cyan(`ccm auto-claude profiles apply ${profile} --project-name <name>`)}`);
+      return;
+    }
+
+    console.log(`Target Project: ${chalk.cyan(targetProject.name)}`);
+    console.log(`Profile: ${chalk.cyan(profile)}`);
+    console.log();
+
+    // Note: The actual profile application would require an API endpoint to update project.modelProfileId
+    // For now, we'll show what would happen
+    console.log(chalk.yellow('Note: Model profile application is not yet fully implemented.'));
+    console.log();
+    console.log('This would:');
+    console.log(`  ${chalk.gray('1.')} Update project to use model profile '${profile}'`);
+    console.log(`  ${chalk.gray('2.')} Generate task_metadata.json with profile settings when running ${chalk.cyan('ccm generate')}`);
+    console.log(`  ${chalk.gray('3.')} Apply the following phase configuration:`);
+    console.log();
+
+    const phases = ['spec', 'planning', 'coding', 'qa'] as const;
+    for (const phase of phases) {
+      const model = targetProfile.config.phaseModels[phase];
+      const thinking = targetProfile.config.phaseThinking[phase];
+      const modelColor = model === 'opus' ? chalk.magenta : model === 'sonnet' ? chalk.cyan : chalk.green;
+      const thinkingColor = thinking === 'ultrathink' ? chalk.red :
+                           thinking === 'high' ? chalk.yellow :
+                           thinking === 'medium' ? chalk.blue : chalk.green;
+      console.log(`      ${phase.padEnd(9)}: ${modelColor(model)} + ${thinkingColor(thinking)} thinking`);
+    }
+
+    console.log();
+    console.log(chalk.gray('To implement project-profile association, the API needs to be extended.'));
+    console.log(`Visit ${chalk.cyan('/auto-claude/profiles')} to manage profiles through the web interface.`);
+
+  } catch (error) {
+    console.log(chalk.red('Command failed:'), error instanceof Error ? error.message : 'Unknown error');
+    process.exit(1);
+  }
+}
+
+/**
+ * Helper functions for formatting
+ */
+function getCostBadge(cost: string): string {
+  switch (cost) {
+    case 'high': return chalk.red.bold('HIGH');
+    case 'medium': return chalk.yellow.bold('MEDIUM');
+    case 'low': return chalk.green.bold('LOW');
+    default: return chalk.gray(cost.toUpperCase());
+  }
+}
+
+function getQualityBadge(quality: string): string {
+  switch (quality) {
+    case 'premium': return chalk.magenta.bold('PREMIUM');
+    case 'high': return chalk.blue.bold('HIGH');
+    case 'balanced': return chalk.cyan.bold('BALANCED');
+    case 'basic': return chalk.green.bold('BASIC');
+    default: return chalk.gray(quality.toUpperCase());
+  }
 }
