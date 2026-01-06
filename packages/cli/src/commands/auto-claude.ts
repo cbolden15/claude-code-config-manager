@@ -2,7 +2,7 @@ import chalk from 'chalk';
 import { Command } from 'commander';
 import { existsSync, statSync } from 'fs';
 import { join, resolve } from 'path';
-import { api, type AutoClaudeImportRequest, type AutoClaudeImportResponse } from '../lib/api.js';
+import { api, type AutoClaudeImportRequest, type AutoClaudeImportResponse, type AutoClaudeSyncRequest, type AutoClaudeSyncResponse } from '../lib/api.js';
 
 /**
  * Create and configure the auto-claude command group
@@ -53,15 +53,14 @@ ${chalk.gray('Documentation:')}
       await autoClaudeImportCommand(options);
     });
 
-  // Sync subcommand - Will be implemented in subtask 6_4
+  // Sync subcommand
   autoClaudeCommand
     .command('sync')
     .description('Sync configurations to Auto-Claude backend')
     .option('-b, --backend <path>', 'Auto-Claude backend directory path')
     .option('--dry-run', 'Preview sync without writing files')
-    .action(async () => {
-      console.log(chalk.yellow('Auto-Claude sync command is not yet implemented.'));
-      console.log(chalk.gray('This will be available in a future update.'));
+    .action(async (options: { backend?: string; dryRun?: boolean }) => {
+      await autoClaudeSyncCommand(options);
     });
 
   // Profiles subcommand group - Will be implemented in subtask 6_5
@@ -337,6 +336,154 @@ async function autoClaudeImportCommand(options: { source?: string; dryRun?: bool
 
   } catch (error) {
     console.log(chalk.red('Import failed:'), error instanceof Error ? error.message : 'Unknown error');
+    process.exit(1);
+  }
+}
+
+/**
+ * Auto-Claude sync command implementation
+ */
+async function autoClaudeSyncCommand(options: { backend?: string; dryRun?: boolean }): Promise<void> {
+  console.log(chalk.bold('Auto-Claude Sync'));
+  console.log();
+
+  let backendPath: string;
+
+  // Determine backend path
+  if (options.backend) {
+    // Use provided backend path
+    backendPath = resolve(options.backend);
+    console.log(`Backend path: ${chalk.cyan(backendPath)} ${chalk.gray('(from --backend option)')}`);
+  } else {
+    // Use configured backend path
+    console.log(chalk.gray('Getting configured Auto-Claude backend path...'));
+
+    try {
+      const pathResult = await api.getSetting('autoClaudeBackendPath');
+      const currentPath = pathResult.data?.value;
+
+      if (pathResult.error || !currentPath) {
+        console.log(chalk.red('Error: No Auto-Claude backend path configured.'));
+        console.log();
+        console.log('Please either:');
+        console.log(`  • ${chalk.cyan('ccm auto-claude config --path /path/to/auto-claude')} to configure backend path`);
+        console.log(`  • ${chalk.cyan('ccm auto-claude sync --backend /path/to/auto-claude')} to specify path directly`);
+        process.exit(1);
+      }
+
+      backendPath = currentPath;
+      console.log(`Backend path: ${chalk.cyan(backendPath)} ${chalk.gray('(from configuration)')}`);
+    } catch (error) {
+      console.log(chalk.red('Error retrieving backend path:'), error instanceof Error ? error.message : 'Unknown error');
+      process.exit(1);
+    }
+  }
+
+  if (options.dryRun) {
+    console.log(chalk.yellow('Dry run mode: no files will be written'));
+  }
+  console.log();
+
+  // Validate backend path
+  console.log(chalk.gray('Validating Auto-Claude backend path...'));
+  const validation = validateAutoClaudePath(backendPath);
+  if (!validation.valid) {
+    console.log(chalk.red('✗ Invalid Auto-Claude backend path:'), validation.error);
+    console.log();
+    console.log(chalk.gray('Expected structure:'));
+    console.log(chalk.gray('  path/to/auto-claude/'));
+    console.log(chalk.gray('  ├── apps/'));
+    console.log(chalk.gray('  │   └── backend/'));
+    console.log(chalk.gray('  │       └── prompts/'));
+    console.log(chalk.gray('  └── (other Auto-Claude files)'));
+    process.exit(1);
+  }
+
+  console.log(chalk.green('✓ Valid Auto-Claude backend path'));
+  if (validation.version) {
+    console.log(chalk.gray(`  Version: ${validation.version}`));
+  }
+  console.log();
+
+  // Call sync API
+  try {
+    console.log(chalk.gray('Syncing configurations to Auto-Claude backend...'));
+
+    const syncResult = await api.autoClaudeSync({
+      backendPath: backendPath,
+      dryRun: options.dryRun || false,
+    });
+
+    if (syncResult.error) {
+      console.log(chalk.red('Sync failed:'), syncResult.error);
+      process.exit(1);
+    }
+
+    const result = syncResult.data!;
+
+    if (options.dryRun || result.dryRun) {
+      // Show preview results
+      console.log(chalk.bold('Sync Preview'));
+      console.log();
+
+      console.log('Files that would be written:');
+      if (result.stats.filesWritten.length > 0) {
+        for (const file of result.stats.filesWritten) {
+          console.log(`  ${chalk.cyan('→')} ${file}`);
+        }
+      } else {
+        console.log(chalk.gray('  No files to write'));
+      }
+      console.log();
+
+      console.log('Summary:');
+      console.log(`  ${chalk.cyan('Prompts:')} ${result.stats.promptsWritten}`);
+      console.log(`  ${chalk.cyan('Agent Configs:')} ${result.stats.agentConfigsWritten}`);
+      console.log(`  ${chalk.cyan('Total Files:')} ${result.stats.filesWritten.length}`);
+      console.log();
+      console.log(chalk.yellow('This was a dry run - no changes were made.'));
+      console.log(`Run without ${chalk.cyan('--dry-run')} to perform the actual sync.`);
+
+    } else {
+      // Show actual sync results
+      console.log(chalk.bold('Sync Results'));
+      console.log();
+
+      console.log('Files written:');
+      if (result.stats.filesWritten.length > 0) {
+        for (const file of result.stats.filesWritten) {
+          console.log(`  ${chalk.green('✓')} ${file}`);
+        }
+      } else {
+        console.log(chalk.gray('  No files written'));
+      }
+      console.log();
+
+      console.log('Summary:');
+      console.log(`  ${chalk.green('✓')} Prompts: ${result.stats.promptsWritten}`);
+      console.log(`  ${chalk.green('✓')} Agent Configs: ${result.stats.agentConfigsWritten}`);
+      console.log(`  ${chalk.green('✓')} Total Files: ${result.stats.filesWritten.length}`);
+
+      // Show any errors
+      if (result.stats.errors.length > 0) {
+        console.log();
+        console.log(chalk.yellow('Sync warnings:'));
+        for (const error of result.stats.errors) {
+          console.log(`  ${chalk.yellow('⚠')} ${error}`);
+        }
+      }
+
+      console.log();
+      console.log(chalk.green.bold('Sync completed successfully!'));
+      console.log();
+      console.log('Next steps:');
+      console.log(`  • Your Auto-Claude installation is now up to date`);
+      console.log(`  • Visit ${chalk.cyan('/auto-claude')} to manage your configurations`);
+      console.log(`  • Run Auto-Claude with the latest synced configurations`);
+    }
+
+  } catch (error) {
+    console.log(chalk.red('Sync failed:'), error instanceof Error ? error.message : 'Unknown error');
     process.exit(1);
   }
 }

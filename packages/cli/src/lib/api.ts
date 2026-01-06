@@ -140,6 +140,10 @@ class ApiClient {
   async autoClaudeImport(data: AutoClaudeImportRequest): Promise<ApiResponse<AutoClaudeImportResponse>> {
     return this.post('/api/auto-claude/import', data);
   }
+
+  async autoClaudeSync(data: AutoClaudeSyncRequest): Promise<ApiResponse<AutoClaudeSyncResponse>> {
+    return this.post('/api/auto-claude/sync', data);
+  }
 }
 
 // Types
@@ -226,5 +230,23 @@ interface AutoClaudeImportResponse {
   configs?: any; // For dry-run preview
 }
 
+interface AutoClaudeSyncRequest {
+  backendPath?: string; // Override backend path if provided
+  projectId?: string;   // Specific project to sync (optional)
+  dryRun?: boolean;     // Preview without writing files
+}
+
+interface AutoClaudeSyncResponse {
+  success: boolean;
+  stats: {
+    promptsWritten: number;
+    agentConfigsWritten: number;
+    filesWritten: string[];
+    errors: string[];
+  };
+  backendPath: string;
+  dryRun?: boolean;
+}
+
 export const api = new ApiClient();
-export type { Component, Profile, ProfileDetail, Project, GenerateRequest, GenerateResponse, AutoClaudeImportRequest, AutoClaudeImportResponse };
+export type { Component, Profile, ProfileDetail, Project, GenerateRequest, GenerateResponse, AutoClaudeImportRequest, AutoClaudeImportResponse, AutoClaudeSyncRequest, AutoClaudeSyncResponse };
