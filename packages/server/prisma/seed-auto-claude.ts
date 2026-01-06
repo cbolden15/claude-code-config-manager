@@ -1637,10 +1637,50 @@ You are a creative ideation specialist with expertise in generating innovative s
   });
 
   console.log('Auto-Claude model profiles seeded!');
+
+  // ============================================================================
+  // Project Configuration (1 default config for Auto-Claude projects)
+  // ============================================================================
+
+  const projectConfigDefault = await prisma.component.upsert({
+    where: { type_name: { type: 'AUTO_CLAUDE_PROJECT_CONFIG', name: 'default' } },
+    update: {},
+    create: {
+      type: 'AUTO_CLAUDE_PROJECT_CONFIG',
+      name: 'default',
+      description: 'Default Auto-Claude project configuration with commonly used MCP servers enabled',
+      config: JSON.stringify({
+        // MCP toggles - Enable commonly used servers by default
+        context7Enabled: true,
+        linearMcpEnabled: false,
+        electronMcpEnabled: false,
+        puppeteerMcpEnabled: false,
+        graphitiEnabled: false,
+
+        // Per-agent MCP overrides - None by default, users can customize as needed
+        agentMcpOverrides: {},
+
+        // Custom MCP servers - Empty by default, users can add custom servers
+        customMcpServers: [],
+
+        // Integration settings - Leave empty for security, users must configure
+        linearApiKey: undefined,
+        linearTeamId: undefined,
+        githubToken: undefined,
+        githubRepo: undefined,
+      } as AutoClaudeProjectConfig),
+      sourceUrl: 'auto-claude-defaults',
+      version: '1.0.0',
+      tags: 'default,project,configuration',
+    },
+  });
+
+  console.log('Auto-Claude project configuration seeded!');
   console.log({
     agentConfigs: 15,
     prompts: 23,
     modelProfiles: 3,
+    projectConfigs: 1,
   });
 
   return {
@@ -1685,5 +1725,6 @@ You are a creative ideation specialist with expertise in generating innovative s
     modelProfileBalanced,
     modelProfileCostOptimized,
     modelProfileQualityFocused,
+    projectConfigDefault,
   };
 }

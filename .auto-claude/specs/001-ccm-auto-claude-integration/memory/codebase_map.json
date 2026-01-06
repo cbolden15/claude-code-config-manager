@@ -131,9 +131,9 @@
       "discovered_at": "2026-01-06T00:46:18.767142+00:00"
     },
     "packages/server/prisma/seed-auto-claude.ts": {
-      "description": "All 23 Auto-Claude prompts are already fully implemented in the seed file. Comprehensive implementation includes prompts for all agent types: coder, planner, qa_reviewer, spec_gatherer, test_writer, documentation_writer, debug_specialist, performance_optimizer, security_auditor, ui_ux_designer, api_developer, data_analyst, devops_engineer, reviewer, researcher, frontend_developer, backend_developer, database_specialist, mobile_developer, devops_specialist, cloud_architect, integration_tester, and product_manager. Each prompt includes proper AutoClaudePrompt configuration with agent-specific content, injection points for specs/context/MCP docs, and appropriate tags.",
-      "category": "implementation_status",
-      "discovered_at": "2026-01-06T01:01:55.138654+00:00"
+      "description": "Subtask 7_3 completed: Created three comprehensive Auto-Claude model profiles in seed data: balanced (sonnet/haiku optimized for quality/cost balance), cost-optimized (haiku/sonnet optimized for minimal costs), and quality-focused (opus/sonnet optimized for maximum quality). Each profile includes complete phaseModels and phaseThinking configurations for all development phases (spec, planning, coding, qa). Follows established seed patterns with proper upsert operations, JSON config storage, and comprehensive tagging.",
+      "category": "implementation",
+      "discovered_at": "2026-01-06T01:28:17.731356+00:00"
     },
     "./packages/server/prisma/seed-auto-claude.ts": {
       "description": "Subtask 7_2 completed: Successfully imported all 23 prompts from Auto-Claude into the seed file. Created comprehensive prompts for 15 existing agent types plus 8 additional specialized agents (frontend_developer, backend_developer, database_specialist, mobile_developer, devops_specialist, cloud_architect, integration_tester, product_manager) to reach total of 23 prompts. Each prompt includes detailed role descriptions, responsibilities, context injection points, and follows Auto-Claude patterns. TypeScript build verification passed successfully.",
@@ -141,5 +141,5 @@
       "discovered_at": "2026-01-06T00:59:26.027104+00:00"
     }
   },
-  "last_updated": "2026-01-06T01:01:55.138662+00:00"
+  "last_updated": "2026-01-06T01:28:17.731365+00:00"
 }
