@@ -471,8 +471,8 @@
           "subtask_id": "7_2",
           "name": "Create default prompts seed",
           "description": "Import all 23 prompts from Auto-Claude apps/backend/prompts/",
-          "status": "pending",
-          "notes": "",
+          "status": "completed",
+          "notes": "Successfully implemented all 23 Auto-Claude prompts in seed-auto-claude.ts: 15 standard agent prompts (coder, planner, qa_reviewer, spec_gatherer, test_writer, documentation_writer, debug_specialist, performance_optimizer, security_auditor, ui_ux_designer, api_developer, data_analyst, devops_engineer, reviewer, researcher) plus 8 specialized prompts (coder_recovery, qa_fixer, spec_writer, spec_critic, complexity_assessor, insights, analysis, ideation). Each prompt includes comprehensive role descriptions, key responsibilities, context injection points ({{specDirectory}}, {{projectContext}}, {{mcpDocumentation}}), and detailed frameworks/methodologies. All prompts follow the AutoClaudePrompt interface with proper agent type mapping and injection point configuration.",
           "dependencies": ["1_2"],
           "files_to_modify": [
             "packages/server/prisma/seed-auto-claude.ts"
