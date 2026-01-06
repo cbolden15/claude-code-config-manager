@@ -1544,9 +1544,103 @@ You are a creative ideation specialist with expertise in generating innovative s
   });
 
   console.log('Auto-Claude prompts seeded!');
+
+  // ============================================================================
+  // Model Profiles (3 profiles: balanced, cost-optimized, quality-focused)
+  // ============================================================================
+
+  const modelProfileBalanced = await prisma.component.upsert({
+    where: { type_name: { type: 'AUTO_CLAUDE_MODEL_PROFILE', name: 'balanced' } },
+    update: {},
+    create: {
+      type: 'AUTO_CLAUDE_MODEL_PROFILE',
+      name: 'balanced',
+      description: 'Balanced profile optimizing for quality and cost across all development phases',
+      config: JSON.stringify({
+        name: 'balanced',
+        description: 'Balanced profile optimizing for quality and cost',
+        phaseModels: {
+          spec: 'sonnet',
+          planning: 'sonnet',
+          coding: 'sonnet',
+          qa: 'haiku'
+        },
+        phaseThinking: {
+          spec: 'medium',
+          planning: 'high',
+          coding: 'medium',
+          qa: 'low'
+        }
+      } as AutoClaudeModelProfile),
+      sourceUrl: 'auto-claude-defaults',
+      version: '1.0.0',
+      tags: 'balanced,default,general',
+    },
+  });
+
+  const modelProfileCostOptimized = await prisma.component.upsert({
+    where: { type_name: { type: 'AUTO_CLAUDE_MODEL_PROFILE', name: 'cost-optimized' } },
+    update: {},
+    create: {
+      type: 'AUTO_CLAUDE_MODEL_PROFILE',
+      name: 'cost-optimized',
+      description: 'Cost-optimized profile using lighter models where possible to minimize API costs',
+      config: JSON.stringify({
+        name: 'cost-optimized',
+        description: 'Cost-optimized profile using lighter models where possible',
+        phaseModels: {
+          spec: 'haiku',
+          planning: 'sonnet',
+          coding: 'sonnet',
+          qa: 'haiku'
+        },
+        phaseThinking: {
+          spec: 'low',
+          planning: 'medium',
+          coding: 'low',
+          qa: 'none'
+        }
+      } as AutoClaudeModelProfile),
+      sourceUrl: 'auto-claude-defaults',
+      version: '1.0.0',
+      tags: 'cost-optimized,budget,efficiency',
+    },
+  });
+
+  const modelProfileQualityFocused = await prisma.component.upsert({
+    where: { type_name: { type: 'AUTO_CLAUDE_MODEL_PROFILE', name: 'quality-focused' } },
+    update: {},
+    create: {
+      type: 'AUTO_CLAUDE_MODEL_PROFILE',
+      name: 'quality-focused',
+      description: 'Quality-focused profile using the best models for all phases to maximize output quality',
+      config: JSON.stringify({
+        name: 'quality-focused',
+        description: 'Quality-focused profile using the best models for all phases',
+        phaseModels: {
+          spec: 'sonnet',
+          planning: 'opus',
+          coding: 'opus',
+          qa: 'sonnet'
+        },
+        phaseThinking: {
+          spec: 'high',
+          planning: 'ultrathink',
+          coding: 'high',
+          qa: 'medium'
+        }
+      } as AutoClaudeModelProfile),
+      sourceUrl: 'auto-claude-defaults',
+      version: '1.0.0',
+      tags: 'quality-focused,premium,best',
+    },
+  });
+
+  console.log('Auto-Claude model profiles seeded!');
   console.log({
     agentConfigs: 15,
     prompts: 23,
+    modelProfiles: 3,
   });
 
   return {
@@ -1588,5 +1682,8 @@ You are a creative ideation specialist with expertise in generating innovative s
     promptInsights,
     promptAnalysis,
     promptIdeation,
+    modelProfileBalanced,
+    modelProfileCostOptimized,
+    modelProfileQualityFocused,
   };
 }
