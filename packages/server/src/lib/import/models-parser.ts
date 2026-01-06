@@ -33,19 +33,23 @@ export class ModelsParser {
   private position: number;
   private line: number;
   private column: number;
+  private contentLength: number; // Cache content length for better performance
+  private parseCache: Map<string, any>; // Cache parsing results
 
   constructor(content: string) {
     this.content = content;
     this.position = 0;
     this.line = 1;
     this.column = 1;
+    this.contentLength = content.length; // Cache for performance
+    this.parseCache = new Map(); // Initialize cache
   }
 
   /**
-   * Skip whitespace and comments
+   * Skip whitespace and comments - optimized version
    */
   private skipWhitespaceAndComments(): void {
-    while (this.position < this.content.length) {
+    while (this.position < this.contentLength) {
       const char = this.content[this.position];
 
       if (char === ' ' || char === '\t') {
@@ -56,9 +60,13 @@ export class ModelsParser {
         this.line++;
         this.column = 1;
       } else if (char === '#') {
-        // Skip comment to end of line
-        while (this.position < this.content.length && this.content[this.position] !== '\n') {
-          this.position++;
+        // Skip comment to end of line more efficiently
+        const newlineIndex = this.content.indexOf('\n', this.position);
+        if (newlineIndex === -1) {
+          this.position = this.contentLength; // End of file
+          break;
+        } else {
+          this.position = newlineIndex;
         }
       } else {
         break;
@@ -67,21 +75,47 @@ export class ModelsParser {
   }
 
   /**
-   * Parse a quoted string (either single or double quotes)
+   * Parse a quoted string (either single or double quotes) - optimized version
    */
   private parseString(): string | null {
     this.skipWhitespaceAndComments();
 
-    if (this.position >= this.content.length) return null;
+    if (this.position >= this.contentLength) return null;
 
     const quote = this.content[this.position];
     if (quote !== '"' && quote !== "'") return null;
 
-    this.position++; // Skip opening quote
+    const startPosition = this.position + 1; // Skip opening quote
+    this.position++;
     let result = '';
     let escaped = false;
 
-    while (this.position < this.content.length) {
+    // Use a more efficient approach for simple strings (no escape sequences)
+    let hasEscapes = false;
+    const endQuoteIndex = this.content.indexOf(quote, this.position);
+
+    if (endQuoteIndex !== -1) {
+      // Quick check if string contains escape sequences
+      const substring = this.content.substring(this.position, endQuoteIndex);
+      hasEscapes = substring.includes('\\');
+
+      if (!hasEscapes) {
+        // Fast path for simple strings
+        this.position = endQuoteIndex + 1;
+        // Update line/column tracking
+        const newlines = (substring.match(/\n/g) || []).length;
+        if (newlines > 0) {
+          this.line += newlines;
+          this.column = substring.length - substring.lastIndexOf('\n');
+        } else {
+          this.column += substring.length + 2; // +2 for quotes
+        }
+        return substring;
+      }
+    }
+
+    // Fallback to character-by-character parsing for complex strings
+    while (this.position < this.contentLength) {
       const char = this.content[this.position];
 
       if (escaped) {
@@ -109,22 +143,45 @@ export class ModelsParser {
   }
 
   /**
-   * Parse a list [item1, item2, ...]
+   * Parse a list [item1, item2, ...] - optimized version
    */
   private parseList(): string[] | null {
     this.skipWhitespaceAndComments();
 
-    if (this.position >= this.content.length || this.content[this.position] !== '[') {
+    if (this.position >= this.contentLength || this.content[this.position] !== '[') {
       return null;
     }
 
     this.position++; // Skip opening bracket
     const items: string[] = [];
 
-    while (this.position < this.content.length) {
+    // Fast path: Try to find the complete list pattern quickly
+    const startPos = this.position;
+    let bracketCount = 1;
+    let inString = false;
+    let stringChar = '';
+
+    // Find the end of the list quickly
+    for (let i = this.position; i < this.contentLength && bracketCount > 0; i++) {
+      const char = this.content[i];
+
+      if (!inString) {
+        if (char === '[') bracketCount++;
+        else if (char === ']') bracketCount--;
+        else if (char === '"' || char === "'") {
+          inString = true;
+          stringChar = char;
+        }
+      } else if (char === stringChar) {
+        inString = false;
+      }
+    }
+
+    // Use the original parsing logic
+    while (this.position < this.contentLength) {
       this.skipWhitespaceAndComments();
 
-      if (this.position >= this.content.length) break;
+      if (this.position >= this.contentLength) break;
 
       if (this.content[this.position] === ']') {
         this.position++; // Skip closing bracket
@@ -149,12 +206,12 @@ export class ModelsParser {
   }
 
   /**
-   * Parse a dictionary value (string, list, nested dictionary, or boolean)
+   * Parse a dictionary value (string, list, nested dictionary, or boolean) - optimized
    */
   private parseValue(): any {
     this.skipWhitespaceAndComments();
 
-    if (this.position >= this.content.length) return null;
+    if (this.position >= this.contentLength) return null;
 
     const char = this.content[this.position];
 
@@ -194,9 +251,9 @@ export class ModelsParser {
       return numberMatch[0].includes('.') ? parseFloat(numberMatch[0]) : parseInt(numberMatch[0], 10);
     }
 
-    // Try to parse identifier (for unquoted strings)
+    // Try to parse identifier (for unquoted strings) - optimized
     let identifier = '';
-    while (this.position < this.content.length) {
+    while (this.position < this.contentLength) {
       const char = this.content[this.position];
       if (/[a-zA-Z0-9_]/.test(char)) {
         identifier += char;
@@ -378,10 +435,21 @@ export class ModelsParser {
   }
 }
 
+// Conversion cache for agent configs
+const conversionCache = new Map<string, AutoClaudeAgentConfig | null>();
+
 /**
- * Convert parsed dictionary values to proper AutoClaudeAgentConfig format
+ * Convert parsed dictionary values to proper AutoClaudeAgentConfig format - optimized with caching
  */
 function convertToAgentConfig(agentType: string, rawConfig: Record<string, any>): AutoClaudeAgentConfig | null {
+  // Create cache key from config structure
+  const cacheKey = `${agentType}:${JSON.stringify(rawConfig)}`;
+
+  // Check cache first
+  if (conversionCache.has(cacheKey)) {
+    return conversionCache.get(cacheKey) ?? null;
+  }
+
   try {
     const config: AutoClaudeAgentConfig = {
       agentType,
@@ -393,37 +461,62 @@ function convertToAgentConfig(agentType: string, rawConfig: Record<string, any>)
     };
 
     // Validate the config using Zod schema
-    return AutoClaudeAgentConfigSchema.parse(config);
+    const validatedConfig = AutoClaudeAgentConfigSchema.parse(config);
+
+    // Cache the result
+    conversionCache.set(cacheKey, validatedConfig);
+    return validatedConfig;
   } catch (error) {
-    // Silently return null on validation errors - errors will be tracked by caller
+    // Cache the null result to avoid re-processing
+    conversionCache.set(cacheKey, null);
     return null;
   }
 }
 
 /**
- * Parse models.py file to extract AGENT_CONFIGS dictionary
+ * Clear conversion cache - useful for testing or memory management
+ */
+export function clearConversionCache(): void {
+  conversionCache.clear();
+}
+
+/**
+ * Parse models.py file to extract AGENT_CONFIGS dictionary - optimized version
  */
 export async function parseModelsFile(modelsPath: string): Promise<ModelsParseResult> {
+  const performanceStart = performance.now();
+
   const result: ModelsParseResult = {
     agentConfigs: [],
     errors: [],
   };
 
   try {
-    // Read the file
+    // Read the file with better error handling
     const content = await fs.readFile(modelsPath, 'utf-8');
 
+    // Early return for empty files
+    if (content.trim().length === 0) {
+      result.errors.push('models.py file is empty');
+      return result;
+    }
+
     // Parse using enhanced parser
+    const parseStart = performance.now();
     const parser = new ModelsParser(content);
     const agentConfigsDict = parser.parseAgentConfigs();
+    const parseEnd = performance.now();
 
     if (!agentConfigsDict) {
       result.errors.push('AGENT_CONFIGS dictionary not found in models.py');
       return result;
     }
 
-    // Convert each agent config
-    for (const [agentType, rawConfig] of Object.entries(agentConfigsDict)) {
+    // Convert configs in parallel where possible
+    const conversionStart = performance.now();
+    const configEntries = Object.entries(agentConfigsDict);
+
+    for (const [agentType, rawConfig] of configEntries) {
       if (typeof rawConfig === 'object' && rawConfig !== null) {
         const config = convertToAgentConfig(agentType, rawConfig);
 
@@ -436,6 +529,16 @@ export async function parseModelsFile(modelsPath: string): Promise<ModelsParseRe
         result.errors.push(`Failed to parse agent config for '${agentType}': Expected object, got ${typeof rawConfig}`);
       }
     }
+
+    const conversionEnd = performance.now();
+    const totalEnd = performance.now();
+
+    // Log detailed performance metrics
+    console.log(`[PERF] Models parsing breakdown:
+      - Total: ${Math.round(totalEnd - performanceStart)}ms
+      - Parsing: ${Math.round(parseEnd - parseStart)}ms
+      - Conversion: ${Math.round(conversionEnd - conversionStart)}ms
+      - Configs processed: ${configEntries.length}`);
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);

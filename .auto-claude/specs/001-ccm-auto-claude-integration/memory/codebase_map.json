@@ -254,7 +254,17 @@
       "description": "Subtask 9_6 completed: Updated README with Auto-Claude integration guide and CLI reference. Enhanced documentation to highlight 15+ default agent configs, 23 default prompts, 3 default model profiles, and AES-256-GCM encryption details. All CLI commands, Web UI descriptions, and cross-references verified and validated. Documentation now accurately reflects the completed Auto-Claude integration implementation.",
       "category": "documentation",
       "discovered_at": "2026-01-06T06:27:53.207573+00:00"
+    },
+    "README.md": {
+      "description": "Updated README.md with comprehensive Auto-Claude CLI reference including corrected command syntax (--backend <path>, --project-id/--project-name, --format json), enhanced workflow examples, and practical troubleshooting guides",
+      "category": "documentation",
+      "discovered_at": "2026-01-06T06:32:07.956545+00:00"
+    },
+    "docs/AUTO_CLAUDE_INTEGRATION.md": {
+      "description": "Enhanced Auto-Claude integration documentation with accurate CLI command reference, comprehensive workflow examples for first-time setup/development/troubleshooting/maintenance, and practical command syntax corrections",
+      "category": "documentation",
+      "discovered_at": "2026-01-06T06:32:12.308887+00:00"
     }
   },
-  "last_updated": "2026-01-06T06:27:53.207580+00:00"
+  "last_updated": "2026-01-06T06:32:12.308894+00:00"
 }
