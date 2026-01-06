@@ -119,7 +119,17 @@
       "description": "The --auto-claude flag for ccm init command enables Auto-Claude integration by setting autoClaudeEnabled parameter in the generate API call. When enabled, the generator automatically adds default Auto-Claude components (project config, model profiles, agent configs, and prompts) and generates corresponding files (.auto-claude/.env, task_metadata.json, etc.)",
       "category": "Auto-Claude CLI Integration",
       "discovered_at": "2026-01-06T00:30:29.143291+00:00"
+    },
+    "packages/cli/src/index.ts": {
+      "description": "Completed CLI Commands phase 8/8: Auto-Claude commands are fully integrated into main CLI help and discovery system. Main ccm --help shows auto-claude command, all subcommands (config, import, sync, profiles, agents) are discoverable, init command includes --auto-claude flag, and all functionality is working correctly.",
+      "category": "implementation",
+      "discovered_at": "2026-01-06T00:44:02.851967+00:00"
+    },
+    "./packages/cli/src/index.ts": {
+      "description": "Subtask 6_8 (Update CLI help system) is already completed. Auto-claude commands are properly integrated with program.addCommand(createAutoClaudeCommand()) and appear correctly in main help system. All subcommands (config, import, sync, profiles, agents) are discoverable and functional.",
+      "category": "implementation",
+      "discovered_at": "2026-01-06T00:46:18.767142+00:00"
     }
   },
-  "last_updated": "2026-01-06T00:30:29.143299+00:00"
+  "last_updated": "2026-01-06T00:46:18.767153+00:00"
 }
