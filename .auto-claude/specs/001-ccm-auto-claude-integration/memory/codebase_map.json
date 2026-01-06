@@ -174,7 +174,17 @@
       "description": "Subtask 8_2 completed: Comprehensive agent configurations page already implemented with AgentsList, AgentsMatrix, and AgentEditDialog components providing full tool/MCP matrix visualization and editing capabilities. API endpoint verified working with 15 agent configurations. TypeScript build passing.",
       "category": "UI Implementation",
       "discovered_at": "2026-01-06T02:21:30.153354+00:00"
+    },
+    "./packages/server/src/app/auto-claude/prompts/": {
+      "description": "Complete Monaco editor implementation for Auto-Claude prompts with live preview and injection points. Features include: comprehensive Monaco editor with autocomplete for injection points ({{specDirectory}}, {{projectContext}}, {{mcpDocumentation}}), hover documentation, live markdown preview with injection point highlighting, split-panel interface, edit/preview toggle, CRUD operations, search and filtering, statistics dashboard, and fallback to textarea. All components work together seamlessly.",
+      "category": "implementation",
+      "discovered_at": "2026-01-06T02:35:38.671159+00:00"
+    },
+    "packages/server/src/app/auto-claude/prompts/": {
+      "description": "Subtask 8_3 completed: Monaco editor with live preview and injection points is fully implemented and working correctly. Implementation includes MonacoEditor.tsx (complete Monaco editor with dynamic loading, injection point autocomplete/hover, markdown support), PromptsList.tsx (comprehensive prompts management with two-panel layout, Monaco integration, live preview), MarkdownPreview.tsx (live preview with injection point highlighting), and PromptEditDialog.tsx (prompt metadata editing). Features include Monaco editor with syntax highlighting, live preview toggle, injection point autocomplete ({{specDirectory}}, {{projectContext}}, {{mcpDocumentation}}), highlighting and hover documentation, real-time validation, full API integration, and responsive design. TypeScript build verification passed successfully.",
+      "category": "implementation",
+      "discovered_at": "2026-01-06T02:40:52.264580+00:00"
     }
   },
-  "last_updated": "2026-01-06T02:21:30.153361+00:00"
+  "last_updated": "2026-01-06T02:40:52.264588+00:00"
 }
