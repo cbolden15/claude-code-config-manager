@@ -8,6 +8,8 @@ const UpdateProjectSchema = z.object({
   machine: z.string().min(1).optional(),
   profileId: z.string().optional().nullable(),
   modelProfileId: z.string().optional().nullable(),
+  autoClaudeEnabled: z.boolean().optional(),
+  autoClaudeConfigId: z.string().optional().nullable(),
 });
 
 type RouteParams = { params: Promise<{ id: string }> };
@@ -110,6 +112,12 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         }),
         ...(validated.modelProfileId !== undefined && {
           modelProfileId: validated.modelProfileId,
+        }),
+        ...(validated.autoClaudeEnabled !== undefined && {
+          autoClaudeEnabled: validated.autoClaudeEnabled,
+        }),
+        ...(validated.autoClaudeConfigId !== undefined && {
+          autoClaudeConfigId: validated.autoClaudeConfigId,
         }),
       },
       include: {

@@ -9,6 +9,10 @@ const ComponentType = z.enum([
   'COMMAND',
   'HOOK',
   'CLAUDE_MD_TEMPLATE',
+  'AUTO_CLAUDE_AGENT_CONFIG',
+  'AUTO_CLAUDE_PROMPT',
+  'AUTO_CLAUDE_MODEL_PROFILE',
+  'AUTO_CLAUDE_PROJECT_CONFIG',
 ]);
 
 const CreateComponentSchema = z.object({

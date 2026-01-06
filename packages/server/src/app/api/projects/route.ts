@@ -14,6 +14,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const machine = searchParams.get('machine');
     const profileId = searchParams.get('profileId');
+    const includeAutoClaudeData = searchParams.get('includeAutoClaudeData') === 'true';
 
     const where: Record<string, unknown> = {};
 
@@ -34,6 +35,60 @@ export async function GET(request: NextRequest) {
       },
       orderBy: [{ machine: 'asc' }, { name: 'asc' }],
     });
+
+    // If Auto-Claude data is requested, fetch the related components
+    if (includeAutoClaudeData) {
+      const projectsWithAutoClaudeData = await Promise.all(
+        projects.map(async (project) => {
+          let autoClaudeConfig = null;
+          let modelProfile = null;
+
+          // Fetch Auto-Claude project config
+          if (project.autoClaudeConfigId) {
+            try {
+              const config = await prisma.component.findUnique({
+                where: { id: project.autoClaudeConfigId },
+                select: { id: true, name: true, config: true },
+              });
+              if (config) {
+                autoClaudeConfig = {
+                  ...config,
+                  config: JSON.parse(config.config),
+                };
+              }
+            } catch (err) {
+              console.warn(`Failed to fetch Auto-Claude config for project ${project.id}:`, err);
+            }
+          }
+
+          // Fetch model profile
+          if (project.modelProfileId) {
+            try {
+              const profile = await prisma.component.findUnique({
+                where: { id: project.modelProfileId },
+                select: { id: true, name: true, description: true },
+              });
+              if (profile) {
+                modelProfile = profile;
+              }
+            } catch (err) {
+              console.warn(`Failed to fetch model profile for project ${project.id}:`, err);
+            }
+          }
+
+          return {
+            ...project,
+            autoClaudeConfig,
+            modelProfile,
+          };
+        })
+      );
+
+      return NextResponse.json({
+        projects: projectsWithAutoClaudeData,
+        total: projectsWithAutoClaudeData.length,
+      });
+    }
 
     return NextResponse.json({
       projects,
