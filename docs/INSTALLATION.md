@@ -8,7 +8,7 @@ Before installing CCM, ensure you have:
 
 - **Node.js** 20.0.0 or higher ([Download](https://nodejs.org/))
 - **pnpm** 9.0.0 or higher (Install: `npm install -g pnpm`)
-- **Auto-Claude** (optional, for Auto-Claude features) ([GitHub](https://github.com/coleam00/Auto-Claude))
+- **Auto-Claude** (optional, for Auto-Claude features) ([GitHub](https://github.com/AndyMik90/Auto-Claude))
 - **Git** for version control
 
 ## Installation Methods
@@ -17,7 +17,7 @@ Before installing CCM, ensure you have:
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/YOUR_USERNAME/claude-code-config-manager.git
+git clone https://github.com/cbolden-bd/claude-code-config-manager.git
 cd claude-code-config-manager
 
 # 2. Install all dependencies
@@ -43,7 +43,7 @@ ccm --version
 
 ```bash
 # Clone and install
-git clone https://github.com/YOUR_USERNAME/claude-code-config-manager.git
+git clone https://github.com/cbolden-bd/claude-code-config-manager.git
 cd claude-code-config-manager
 pnpm install
 
@@ -182,5 +182,5 @@ See [UPDATING.md](./UPDATING.md) for instructions on keeping CCM up to date.
 ## Support
 
 - **Documentation**: [Main README](../README.md)
-- **Issues**: [GitHub Issues](https://github.com/YOUR_USERNAME/claude-code-config-manager/issues)
+- **Issues**: [GitHub Issues](https://github.com/cbolden-bd/claude-code-config-manager/issues)
 - **Auto-Claude Guide**: [Integration Guide](./AUTO_CLAUDE_INTEGRATION.md)

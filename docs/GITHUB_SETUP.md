@@ -139,7 +139,7 @@ gh repo create claude-code-config-manager \
 Then connect locally:
 
 ```bash
-git remote add origin https://github.com/YOUR_USERNAME/claude-code-config-manager.git
+git remote add origin https://github.com/cbolden-bd/claude-code-config-manager.git
 ```
 
 ## Step 3: Prepare Commits
@@ -259,7 +259,7 @@ jobs:
 ### Edit README.md
 
 Update these placeholder URLs:
-- `YOUR_USERNAME` → Your actual GitHub username
+- `cbolden-bd` → Your actual GitHub username
 - `your-org` → Your organization name (if applicable)
 
 ### Create CHANGELOG.md
@@ -359,7 +359,7 @@ Once pushed, users can install with:
 
 ```bash
 # Clone your repository
-git clone https://github.com/YOUR_USERNAME/claude-code-config-manager.git
+git clone https://github.com/cbolden-bd/claude-code-config-manager.git
 cd claude-code-config-manager
 
 # Follow standard installation

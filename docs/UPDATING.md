@@ -285,7 +285,7 @@ chmod +x update-ccm.sh
 
 If you encounter issues updating:
 
-1. Check [GitHub Issues](https://github.com/YOUR_USERNAME/claude-code-config-manager/issues)
+1. Check [GitHub Issues](https://github.com/cbolden-bd/claude-code-config-manager/issues)
 2. Review [Installation Guide](./INSTALLATION.md)
 3. Create a new issue with:
    - Current version
