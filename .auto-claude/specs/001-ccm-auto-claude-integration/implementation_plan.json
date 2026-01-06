@@ -606,8 +606,8 @@
           "subtask_id": "8_8",
           "name": "Create Auto-Claude layout",
           "description": "Shared layout for Auto-Claude pages with navigation",
-          "status": "pending",
-          "notes": "",
+          "status": "completed",
+          "notes": "Shared layout for Auto-Claude pages with navigation is already fully implemented and working correctly. The layout includes comprehensive breadcrumb navigation (Home > Auto-Claude), secondary tab navigation for all Auto-Claude sections (Dashboard, Agents, Prompts, Profiles, Projects, Import), consistent icon system, proper active state detection using usePathname, clean Tailwind CSS styling, and successful TypeScript compilation. The implementation follows all established codebase patterns and provides excellent navigation structure for the Auto-Claude section.",
           "dependencies": [],
           "files_to_modify": [
             "packages/server/src/app/auto-claude/layout.tsx"
