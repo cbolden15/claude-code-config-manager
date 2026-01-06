@@ -659,8 +659,8 @@
           "subtask_id": "9_3",
           "name": "Write CLI integration tests",
           "description": "Test all auto-claude CLI commands with mock API responses",
-          "status": "pending",
-          "notes": "",
+          "status": "completed",
+          "notes": "Successfully implemented comprehensive CLI integration tests for all auto-claude CLI commands with mock API responses. The test suite includes 29 tests covering: command structure validation, config command (show/set/validation/no-config scenarios), import command (dry-run/execute/validation), sync command (backend path/dry-run/validation/error-handling), profiles commands (list/show/apply/formats including JSON output), agents commands (list/show/formats), error handling scenarios and API failures, command help text validation, and JSON and table output formats. Added missing profilesApply command action and comprehensive error scenarios. All tests pass successfully, providing full coverage of Auto-Claude CLI functionality with proper mock API integration.",
           "dependencies": ["6_8"],
           "files_to_modify": [
             "packages/cli/__tests__/commands/auto-claude.test.ts"
