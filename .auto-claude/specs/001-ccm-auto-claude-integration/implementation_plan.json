@@ -417,8 +417,8 @@
           "subtask_id": "6_6",
           "name": "Implement agents subcommands",
           "description": "ccm auto-claude agents list/show for agent config management",
-          "status": "pending",
-          "notes": "",
+          "status": "completed",
+          "notes": "Auto-Claude agents CLI commands are already fully implemented and working correctly. Both `ccm auto-claude agents list` and `ccm auto-claude agents show <agent>` commands are functional with proper error handling, verbose options, JSON output format, and comprehensive display of agent configurations including tools, MCP servers, thinking levels, and detailed metadata. The implementation follows existing CLI patterns and integrates with the Auto-Claude API endpoints. Verification completed successfully.",
           "dependencies": ["6_1", "4_3"],
           "files_to_modify": [
             "packages/cli/src/commands/auto-claude.ts"
