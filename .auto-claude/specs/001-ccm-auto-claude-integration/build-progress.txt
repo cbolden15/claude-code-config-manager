@@ -12,7 +12,37 @@
 
 ## Latest Updates
 
-### 2026-01-05 20:56 UTC - Subtask 6_6 Completed ✅
+### 2026-01-05 21:35 UTC - Subtask 6_8 Completed ✅
+**Task**: Update CLI help system
+**Description**: Add auto-claude commands to main help and command discovery
+**Status**: COMPLETED
+
+**Implementation Summary:**
+- ✅ Auto-claude commands are fully integrated into main CLI help and command discovery
+- ✅ The createAutoClaudeCommand() function is properly imported and added to main program using program.addCommand()
+- ✅ All auto-claude subcommands (config, import, sync, profiles, agents) are discoverable through the main help system
+- ✅ Help text working correctly for all commands and subcommands with proper examples and documentation
+- ✅ TypeScript compilation successful with no errors
+- ✅ Manual verification confirmed:
+  * 'auto-claude' appears in main help output when running `ccm --help`
+  * Auto-claude subcommands have proper help text and work correctly
+  * Command exports are properly set up in packages/cli/src/commands/index.ts
+  * Integration is complete and functional
+
+**Files Verified:**
+- `packages/cli/src/index.ts` (properly imports and adds auto-claude command group)
+- `packages/cli/src/commands/index.ts` (correctly exports createAutoClaudeCommand and autoClaudeCommand)
+
+**Verification Results:**
+✅ Auto-claude commands appear in main help (`ccm --help`)
+✅ All subcommands have proper help text and functionality
+✅ TypeScript build successful with no errors
+✅ Command structure follows existing CLI patterns
+✅ Integration complete and functional
+
+**Commit**: `32452a2` - auto-claude: 6_8 - Add auto-claude commands to main help and command discovery
+
+### Previous: 2026-01-05 20:56 UTC - Subtask 6_6 Completed ✅
 **Task**: Implement agents subcommands
 **Description**: ccm auto-claude agents list/show for agent config management
 **Status**: COMPLETED
@@ -47,15 +77,15 @@
 
 ---
 
-**Current Progress**: 32/72 subtasks completed (44.4%)
+**Current Progress**: 34/72 subtasks completed (47.2%)
 
 ### Phase Summary
 1. **Phase 1** - Schema & Types (Foundation): 6 subtasks, 12 hours ✅ **COMPLETED**
 2. **Phase 2** - Settings Infrastructure: 4 subtasks, 8 hours ✅ **COMPLETED**
 3. **Phase 3** - Generators: 6 subtasks, 12 hours ✅ **COMPLETED**
 4. **Phase 4** - API Routes: 6 subtasks, 12 hours ✅ **COMPLETED**
-5. **Phase 5** - Import Wizard: 4 subtasks, 8 hours [3/4] **ALMOST COMPLETE**
-6. **Phase 6** - CLI Commands: 8 subtasks, 16 hours [6/8] 🚧 **IN PROGRESS**
+5. **Phase 5** - Import Wizard: 4 subtasks, 8 hours ✅ **COMPLETED**
+6. **Phase 6** - CLI Commands: 8 subtasks, 16 hours ✅ **COMPLETED**
 7. **Phase 7** - Seed Data: 5 subtasks, 10 hours
 8. **Phase 8** - Web UI: 9 subtasks, 18 hours
 9. **Phase 9** - Integration & Testing: 7 subtasks, 14 hours
@@ -310,7 +340,7 @@
   - ✅ **TypeScript build verified** - Implementation follows existing UI patterns with responsive design
   - ✅ **Location**: packages/server/src/app/auto-claude/import/page.tsx, components/
 
-### Phase 6 - CLI Commands [6/8] 🚧 **IN PROGRESS**
+### Phase 6 - CLI Commands [8/8] ✅ **COMPLETED**
 - [x] **Subtask 6_1**: Create base auto-claude command ✅ **COMPLETED**
   - ✅ **Command Group Structure** - Created comprehensive auto-claude command group with proper help text and subcommand placeholders
   - ✅ **createAutoClaudeCommand() Function** - Returns Commander.js Command instance with all planned subcommands
@@ -387,6 +417,26 @@
   - ✅ **TypeScript Build Verified** - Successful compilation with proper type safety
   - ✅ **Location**: packages/cli/src/lib/api.ts (API methods), packages/cli/src/commands/auto-claude.ts (commands)
 
+- [x] **Subtask 6_7**: Update init command ✅ **COMPLETED**
+  - ✅ **--auto-claude Flag Implementation** - Added autoClaudeEnabled boolean parameter to ccm init command
+  - ✅ **Generator Integration** - Full integration with generate API call to include Auto-Claude components when enabled
+  - ✅ **User Feedback** - Added clear indication when Auto-Claude integration is enabled during project initialization
+  - ✅ **Enhanced Guidance** - Updated next steps guidance specifically for Auto-Claude enabled projects
+  - ✅ **CLI Command Definition** - Properly updated command definition with --auto-claude flag and help text
+  - ✅ **TypeScript Build Verified** - All code compiles without errors and integrates with existing functionality
+  - ✅ **Manual Verification Passed** - Flag properly recognized in help text and integrates with Auto-Claude generators
+  - ✅ **Location**: packages/cli/src/commands/init.ts
+
+- [x] **Subtask 6_8**: Update CLI help system ✅ **COMPLETED**
+  - ✅ **Main Help Integration** - Auto-claude commands fully integrated into main CLI help and command discovery system
+  - ✅ **Command Structure** - createAutoClaudeCommand() function properly imported and added to main program using program.addCommand()
+  - ✅ **Subcommand Discovery** - All auto-claude subcommands (config, import, sync, profiles, agents) discoverable through main help system
+  - ✅ **Help Text Functionality** - Help text working correctly for all commands and subcommands with proper examples and documentation
+  - ✅ **Manual Verification** - 'auto-claude' appears in main help output, subcommands have proper help text, exports correctly set up
+  - ✅ **TypeScript Build Verified** - Compilation successful with no errors, follows existing CLI patterns
+  - ✅ **Integration Complete** - All verification results passed, integration is complete and functional
+  - ✅ **Location**: packages/cli/src/index.ts, packages/cli/src/commands/index.ts
+
 ## Key Deliverables Planned
 
 ### New Component Types
@@ -404,17 +454,6 @@
 ## Next Steps
 
 🎯 **CURRENTLY READY FOR:**
-**Phase 6: CLI Commands** [6/8] - Almost Complete!
-- [ ] **Subtask 6_7**: Update init command
-  - Dependencies: Subtask 3_6 ✅ (main generator integration completed)
-  - Files to modify: packages/cli/src/commands/init.ts
-  - Add --auto-claude flag to ccm init command
-
-- [ ] **Subtask 6_8**: Update CLI help system
-  - Dependencies: All previous Phase 6 subtasks ✅ (6_1 through 6_6 completed)
-  - Files to modify: packages/cli/src/index.ts, packages/cli/src/commands/index.ts
-  - Add auto-claude commands to main help and command discovery
-
 **Phase 7: Seed Data** [0/5] - Ready to Begin!
 **Phase 8: Web UI** [0/9] - Ready after Phase 7
 **Phase 9: Integration & Testing** [0/7] - Final phase
@@ -454,5 +493,5 @@
 - Complete testing and documentation
 
 ---
-**Last Updated**: 2026-01-05T20:56:00Z
-**Status**: Phase 6 CLI Commands Almost Complete (6/8) | Ready for Phase 7 Seed Data 🚀
+**Last Updated**: 2026-01-05T21:35:00Z
+**Status**: Phase 6 CLI Commands Complete (8/8) | Ready for Phase 7 Seed Data 🚀
