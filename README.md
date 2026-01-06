@@ -178,21 +178,42 @@ ccm components delete <id>
 
 ```bash
 # Configuration
-ccm auto-claude config --path <auto-claude-path>
-ccm auto-claude config --show
+ccm auto-claude config --path <auto-claude-path>  # Set backend path
+ccm auto-claude config --show                     # Show current config
 
 # Import & Sync
-ccm auto-claude import --source <path> [--dry-run]
-ccm auto-claude sync [--backend <url>] [--dry-run]
+ccm auto-claude import --source <path> [--dry-run]      # Import existing configs
+ccm auto-claude sync [--backend <path>] [--dry-run]     # Sync to Auto-Claude backend
 
 # Model Profiles
-ccm auto-claude profiles list [--verbose] [--format json]
-ccm auto-claude profiles show <name>
-ccm auto-claude profiles apply <name> --project <id>
+ccm auto-claude profiles list [--verbose] [--format json]           # List all profiles
+ccm auto-claude profiles show <name> [--format json]                # Show profile details
+ccm auto-claude profiles apply <name> [--project-id <id>]           # Apply to project by ID
+ccm auto-claude profiles apply <name> [--project-name <name>]       # Apply to project by name
 
 # Agent Management
-ccm auto-claude agents list [--verbose] [--format json]
-ccm auto-claude agents show <agent-type>
+ccm auto-claude agents list [--verbose] [--format json]   # List all agent configs
+ccm auto-claude agents show <agent-type> [--format json]  # Show agent details
+```
+
+### Auto-Claude Workflow Examples
+
+```bash
+# Complete setup workflow
+ccm auto-claude config --path ~/Auto-Claude
+ccm auto-claude import --source ~/Auto-Claude
+ccm auto-claude agents list --verbose
+ccm auto-claude profiles apply balanced --project-name my-project
+
+# Development workflow
+ccm auto-claude sync --dry-run                    # Preview changes
+ccm auto-claude sync                              # Apply changes
+ccm init new-project --auto-claude                # Create project with Auto-Claude
+
+# Management and inspection
+ccm auto-claude agents show coder                 # Inspect coder agent config
+ccm auto-claude profiles show balanced --format json  # Export profile as JSON
+ccm auto-claude config --show                     # Verify configuration
 ```
 
 ## 🌐 Web UI

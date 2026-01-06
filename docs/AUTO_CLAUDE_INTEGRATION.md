@@ -344,15 +344,15 @@ ccm auto-claude import --source /opt/auto-claude
 # Sync to configured backend
 ccm auto-claude sync
 
-# Sync to specific backend
-ccm auto-claude sync --backend <url>
+# Sync to specific backend path
+ccm auto-claude sync --backend <path>
 
 # Sync with preview (dry run)
 ccm auto-claude sync --dry-run
 
 # Examples
 ccm auto-claude sync
-ccm auto-claude sync --backend http://localhost:8000
+ccm auto-claude sync --backend ~/Projects/Auto-Claude
 ccm auto-claude sync --dry-run
 ```
 
@@ -368,16 +368,21 @@ ccm auto-claude profiles list --verbose
 # Show specific profile
 ccm auto-claude profiles show <name>
 
-# Apply profile to project
-ccm auto-claude profiles apply <name> --project <id>
+# Apply profile to project (by ID)
+ccm auto-claude profiles apply <name> --project-id <id>
 
-# JSON output
+# Apply profile to project (by name)
+ccm auto-claude profiles apply <name> --project-name <name>
+
+# JSON output for list and show
 ccm auto-claude profiles list --format json
+ccm auto-claude profiles show <name> --format json
 
 # Examples
 ccm auto-claude profiles list
-ccm auto-claude profiles show balanced
-ccm auto-claude profiles apply quality-focused --project 123
+ccm auto-claude profiles show balanced --format json
+ccm auto-claude profiles apply quality-focused --project-id 123
+ccm auto-claude profiles apply balanced --project-name my-project
 ```
 
 ### Agent Commands
@@ -392,12 +397,13 @@ ccm auto-claude agents list --verbose
 # Show specific agent config
 ccm auto-claude agents show <agent-type>
 
-# JSON output
+# JSON output for list and show
 ccm auto-claude agents list --format json
+ccm auto-claude agents show <agent-type> --format json
 
 # Examples
 ccm auto-claude agents list
-ccm auto-claude agents show coder
+ccm auto-claude agents show coder --format json
 ccm auto-claude agents list --verbose --format json
 ```
 
@@ -410,6 +416,85 @@ ccm init <project> --profile <profile> --auto-claude
 # Examples
 ccm init my-ai-app --profile fullstack --auto-claude
 ccm init data-pipeline --profile data-science --auto-claude
+```
+
+### Complete CLI Workflows
+
+#### First-Time Setup Workflow
+
+```bash
+# 1. Configure Auto-Claude backend path
+ccm auto-claude config --path ~/Projects/Auto-Claude
+
+# 2. Verify configuration
+ccm auto-claude config --show
+
+# 3. Import existing configurations
+ccm auto-claude import --source ~/Projects/Auto-Claude --dry-run
+ccm auto-claude import --source ~/Projects/Auto-Claude
+
+# 4. Verify import results
+ccm auto-claude agents list
+ccm auto-claude profiles list
+```
+
+#### Development Workflow
+
+```bash
+# 1. Create new project with Auto-Claude support
+ccm init my-project --profile fullstack --auto-claude
+
+# 2. Apply specific model profile
+ccm auto-claude profiles apply balanced --project-name my-project
+
+# 3. Preview sync changes
+ccm auto-claude sync --dry-run
+
+# 4. Sync configurations to Auto-Claude backend
+ccm auto-claude sync
+
+# 5. Verify configuration
+ccm auto-claude agents show coder
+ccm auto-claude profiles show balanced --format json
+```
+
+#### Inspection and Troubleshooting
+
+```bash
+# Check configuration status
+ccm auto-claude config --show
+
+# Inspect agent configurations
+ccm auto-claude agents list --verbose
+ccm auto-claude agents show coder --format json
+
+# Review model profiles
+ccm auto-claude profiles list --verbose
+ccm auto-claude profiles show balanced
+
+# Test import without changes
+ccm auto-claude import --source ~/Auto-Claude --dry-run
+
+# Test sync without changes
+ccm auto-claude sync --dry-run
+```
+
+#### Maintenance Operations
+
+```bash
+# Regular sync to keep Auto-Claude updated
+ccm auto-claude sync
+
+# Re-import after Auto-Claude updates
+ccm auto-claude import --source ~/Auto-Claude
+
+# Export configurations for backup
+ccm auto-claude agents list --format json > agents-backup.json
+ccm auto-claude profiles list --format json > profiles-backup.json
+
+# Apply profiles to multiple projects
+ccm auto-claude profiles apply cost-optimized --project-name project1
+ccm auto-claude profiles apply quality-focused --project-name project2
 ```
 
 ---

@@ -249,7 +249,12 @@
       "description": "Completed comprehensive Auto-Claude CLI test suite with 20 test cases covering all command structures, API integrations, error handling, path validation, and edge cases. All tests pass with 100% success rate using mock API responses for isolated testing without live server dependency.",
       "category": "testing",
       "discovered_at": "2026-01-06T05:29:44.117917+00:00"
+    },
+    "./README.md": {
+      "description": "Subtask 9_6 completed: Updated README with Auto-Claude integration guide and CLI reference. Enhanced documentation to highlight 15+ default agent configs, 23 default prompts, 3 default model profiles, and AES-256-GCM encryption details. All CLI commands, Web UI descriptions, and cross-references verified and validated. Documentation now accurately reflects the completed Auto-Claude integration implementation.",
+      "category": "documentation",
+      "discovered_at": "2026-01-06T06:27:53.207573+00:00"
     }
   },
-  "last_updated": "2026-01-06T05:46:01.984608+00:00"
+  "last_updated": "2026-01-06T06:27:53.207580+00:00"
 }
