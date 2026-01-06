@@ -1,0 +1,35 @@
+✅ SUBTASK COMPLETED: Auto-Claude Layout (8_8)
+
+**Description:** Shared layout for Auto-Claude pages with navigation
+
+**Implementation Summary:**
+- ✅ Comprehensive Auto-Claude layout with breadcrumb navigation (Home > Auto-Claude)
+- ✅ Secondary navigation with all required Auto-Claude sections:
+  - Dashboard (/auto-claude)
+  - Agents (/auto-claude/agents)
+  - Prompts (/auto-claude/prompts)
+  - Profiles (/auto-claude/profiles)
+  - Projects (/auto-claude/projects)
+  - Import (/auto-claude/import)
+- ✅ Proper icons and active state handling with violet accent color
+- ✅ Standardized icon sizes (w-5 h-5) for consistency with main sidebar
+- ✅ Follows established codebase patterns and TypeScript conventions
+- ✅ TypeScript build verification successful
+- ✅ Responsive design with proper styling
+
+**Files Modified:**
+- packages/server/src/app/auto-claude/layout.tsx
+
+**Verification:**
+- ✅ TypeScript compilation successful
+- ✅ All Auto-Claude pages build correctly
+- ✅ Layout follows established patterns from main sidebar
+- ✅ Navigation structure matches specification requirements
+
+**Commit:** b928548 - "auto-claude: layout - Shared layout for Auto-Claude pages with navigation"
+
+**Status:** COMPLETED ✅
+
+---
+
+The Auto-Claude layout is now fully functional and provides a cohesive navigation experience for all Auto-Claude related pages. It includes proper breadcrumb navigation showing the user's location within the app hierarchy and secondary navigation for easy access to all Auto-Claude management features.
