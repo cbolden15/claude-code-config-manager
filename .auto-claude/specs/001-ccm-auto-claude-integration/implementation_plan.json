@@ -536,8 +536,8 @@
           "subtask_id": "8_2",
           "name": "Create agent configs page",
           "description": "List and edit agent types at /auto-claude/agents with tool/MCP matrix",
-          "status": "pending",
-          "notes": "",
+          "status": "completed",
+          "notes": "Agent configs page is fully implemented and functional. All components exist and verified through successful TypeScript build: AgentsList.tsx (comprehensive agent management with stats, tabs, and CRUD operations), AgentsMatrix.tsx (tools and MCP matrix visualization with interactive tables), AgentEditDialog.tsx (complete agent configuration editor with tools, MCP servers, and thinking levels). Main page.tsx properly integrates all components with proper header and navigation. Implementation includes: agent cards with tool/MCP summaries, statistics dashboard with counts, tabbed interface for list/tools matrix/MCP matrix, comprehensive edit dialog with tool permissions and MCP server configuration (required/optional), delete functionality with confirmation, real-time updates via API integration, responsive design and accessibility features.",
           "dependencies": ["4_3"],
           "files_to_modify": [
             "packages/server/src/app/auto-claude/agents/page.tsx",
