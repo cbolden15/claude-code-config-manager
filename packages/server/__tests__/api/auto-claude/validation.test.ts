@@ -116,7 +116,7 @@ async function testAgentConfigValidation() {
   const invalidToolsRequest = createMockRequest('/api/auto-claude/agents', {
     method: 'POST',
     body: {
-      agentType: 'test-agent',
+      agentType: 'test_agent',
       tools: ['Read', 123, null], // Mixed types
       mcpServers: ['context7'],
       mcpServersOptional: [],
@@ -134,7 +134,7 @@ async function testAgentConfigValidation() {
   const invalidThinkingRequest = createMockRequest('/api/auto-claude/agents', {
     method: 'POST',
     body: {
-      agentType: 'test-agent',
+      agentType: 'test_agent',
       tools: ['Read'],
       mcpServers: ['context7'],
       mcpServersOptional: [],
@@ -152,7 +152,7 @@ async function testAgentConfigValidation() {
   const extraFieldsRequest = createMockRequest('/api/auto-claude/agents', {
     method: 'POST',
     body: {
-      agentType: 'test-agent-extra',
+      agentType: 'test_agent_extra',
       tools: ['Read'],
       mcpServers: ['context7'],
       mcpServersOptional: [],
@@ -184,8 +184,8 @@ async function testPromptValidation() {
   const missingAgentTypeRequest = createMockRequest('/api/auto-claude/prompts', {
     method: 'POST',
     body: {
-      content: 'Test prompt content',
-      injectionPoints: []
+      promptContent: 'Test prompt content',
+      injectionPoints: {}
     }
   });
 
@@ -193,43 +193,43 @@ async function testPromptValidation() {
   assert.strictEqual(missingAgentTypeResponse.status, 400);
   console.log('    ✅ Missing agentType properly rejected');
 
-  // Test 2.2: Missing content
-  console.log('  Test 2.2: Missing content');
+  // Test 2.2: Missing promptContent
+  console.log('  Test 2.2: Missing promptContent');
   const missingContentRequest = createMockRequest('/api/auto-claude/prompts', {
     method: 'POST',
     body: {
-      agentType: 'test-agent',
-      injectionPoints: []
+      agentType: 'test_agent',
+      injectionPoints: {}
     }
   });
 
   const missingContentResponse = await PromptsPOST(missingContentRequest);
   assert.strictEqual(missingContentResponse.status, 400);
-  console.log('    ✅ Missing content properly rejected');
+  console.log('    ✅ Missing promptContent properly rejected');
 
-  // Test 2.3: Empty content
-  console.log('  Test 2.3: Empty content');
+  // Test 2.3: Empty promptContent
+  console.log('  Test 2.3: Empty promptContent');
   const emptyContentRequest = createMockRequest('/api/auto-claude/prompts', {
     method: 'POST',
     body: {
-      agentType: 'test-agent',
-      content: '',
-      injectionPoints: []
+      agentType: 'test_agent',
+      promptContent: '',
+      injectionPoints: {}
     }
   });
 
   const emptyContentResponse = await PromptsPOST(emptyContentRequest);
   assert.strictEqual(emptyContentResponse.status, 400);
-  console.log('    ✅ Empty content properly rejected');
+  console.log('    ✅ Empty promptContent properly rejected');
 
-  // Test 2.4: Invalid injection points (not strings)
+  // Test 2.4: Invalid injection points (wrong structure)
   console.log('  Test 2.4: Invalid injection points');
   const invalidInjectionPointsRequest = createMockRequest('/api/auto-claude/prompts', {
     method: 'POST',
     body: {
-      agentType: 'test-agent',
-      content: 'Test content with {{specDirectory}}',
-      injectionPoints: ['specDirectory', 123, null] // Mixed types
+      agentType: 'test_agent',
+      promptContent: 'Test content with {{specDirectory}}',
+      injectionPoints: ['specDirectory', 123, null] // Should be object, not array
     }
   });
 
@@ -242,11 +242,15 @@ async function testPromptValidation() {
   const validPromptRequest = createMockRequest('/api/auto-claude/prompts', {
     method: 'POST',
     body: {
-      agentType: 'test-valid-agent',
-      content: `# Test Agent
+      agentType: 'test_valid_agent',
+      promptContent: `# Test Agent
 
       Content with {{specDirectory}} and {{projectContext}}.`,
-      injectionPoints: ['specDirectory', 'projectContext']
+      injectionPoints: {
+        specDirectory: true,
+        projectContext: true,
+        mcpDocumentation: false
+      }
     }
   });
 
@@ -254,8 +258,12 @@ async function testPromptValidation() {
   assert.strictEqual(validPromptResponse.status, 201);
 
   const validPromptData = await getResponseJSON(validPromptResponse);
-  assert.strictEqual(validPromptData.agentType, 'test-valid-agent');
-  assert.deepStrictEqual(validPromptData.config.injectionPoints, ['specDirectory', 'projectContext']);
+  assert.strictEqual(validPromptData.agentType, 'test_valid_agent');
+  assert.deepStrictEqual(validPromptData.config.injectionPoints, {
+    specDirectory: true,
+    projectContext: true,
+    mcpDocumentation: false
+  });
   console.log('    ✅ Valid prompt created successfully');
 
   console.log('  ✅ Prompt validation tests completed\n');
@@ -416,7 +424,7 @@ async function testDatabaseConstraints() {
   const firstAgentRequest = createMockRequest('/api/auto-claude/agents', {
     method: 'POST',
     body: {
-      agentType: 'unique-test-agent',
+      agentType: 'unique_test_agent',
       tools: ['Read'],
       mcpServers: ['context7'],
       mcpServersOptional: [],
@@ -433,7 +441,7 @@ async function testDatabaseConstraints() {
   const duplicateAgentRequest = createMockRequest('/api/auto-claude/agents', {
     method: 'POST',
     body: {
-      agentType: 'unique-test-agent', // Same name
+      agentType: 'unique_test_agent', // Same name
       tools: ['Write'],
       mcpServers: ['linear'],
       mcpServersOptional: [],

@@ -234,7 +234,12 @@
       "description": "Comprehensive Auto-Claude generator test suite implementation completed successfully. Created 4 test files (env-file.test.ts, model-profile.test.ts, prompts.test.ts, agent-configs.test.ts) with 62+ test scenarios and 113+ assertions covering all generator functions with various input scenarios including valid/invalid inputs, edge cases, JSON validation, configuration merging, and error handling. Includes test orchestration, CI/CD integration, type definitions, and validation scripts.",
       "category": "testing",
       "discovered_at": "2026-01-06T04:06:39.951699+00:00"
+    },
+    "packages/server/__tests__/api/auto-claude/": {
+      "description": "Comprehensive Auto-Claude API integration test suite with real database operations covering all endpoints (agents, prompts, model-profiles, import, sync, generate), validation scenarios, error handling, and edge cases. Test runner provides detailed reporting and coverage analysis.",
+      "category": "testing",
+      "discovered_at": "2026-01-06T04:24:11.539048+00:00"
     }
   },
-  "last_updated": "2026-01-06T04:17:22.852606+00:00"
+  "last_updated": "2026-01-06T04:24:11.539056+00:00"
 }

@@ -145,10 +145,10 @@ async function testAgentsCRUD() {
 
   // Test 1.4: GET /api/auto-claude/agents/[agentType]
   console.log('  Test 1.4: GET specific agent');
-  const getSpecificRequest = createMockRequest(`/api/auto-claude/agents/${testAgentConfig.agentType}`, {
-    params: { agentType: testAgentConfig.agentType }
+  const getSpecificRequest = createMockRequest(`/api/auto-claude/agents/${testAgentConfig.agentType}`);
+  const getSpecificResponse = await AgentGET(getSpecificRequest, {
+    params: Promise.resolve({ agentType: testAgentConfig.agentType })
   });
-  const getSpecificResponse = await AgentGET(getSpecificRequest);
   assert.strictEqual(getSpecificResponse.status, 200);
 
   const specificData = await getResponseJSON(getSpecificResponse);
@@ -163,10 +163,11 @@ async function testAgentsCRUD() {
   };
   const updateRequest = createMockRequest(`/api/auto-claude/agents/${testAgentConfig.agentType}`, {
     method: 'PUT',
-    body: updatedConfig,
-    params: { agentType: testAgentConfig.agentType }
+    body: updatedConfig
   });
-  const updateResponse = await AgentPUT(updateRequest);
+  const updateResponse = await AgentPUT(updateRequest, {
+    params: Promise.resolve({ agentType: testAgentConfig.agentType })
+  });
   assert.strictEqual(updateResponse.status, 200);
 
   const updatedData = await getResponseJSON(updateResponse);
@@ -214,7 +215,7 @@ async function testPromptsCRUD() {
 
   const createdData = await getResponseJSON(createResponse);
   assert.strictEqual(createdData.agentType, testPrompt.agentType);
-  assert.strictEqual(createdData.config.content, testPrompt.content);
+  assert.strictEqual(createdData.config.promptContent, testPrompt.promptContent);
   console.log('    ✅ Prompt created successfully');
 
   // Store prompt ID for later tests
@@ -233,10 +234,10 @@ async function testPromptsCRUD() {
 
   // Test 2.4: GET /api/auto-claude/prompts/[id]
   console.log('  Test 2.4: GET specific prompt');
-  const getSpecificRequest = createMockRequest(`/api/auto-claude/prompts/${promptId}`, {
-    params: { id: promptId }
+  const getSpecificRequest = createMockRequest(`/api/auto-claude/prompts/${promptId}`);
+  const getSpecificResponse = await PromptGET(getSpecificRequest, {
+    params: Promise.resolve({ id: promptId })
   });
-  const getSpecificResponse = await PromptGET(getSpecificRequest);
   assert.strictEqual(getSpecificResponse.status, 200);
 
   const specificData = await getResponseJSON(getSpecificResponse);
@@ -247,18 +248,19 @@ async function testPromptsCRUD() {
   console.log('  Test 2.5: PUT prompt (update)');
   const updatedPrompt = {
     ...testPrompt,
-    content: testPrompt.content + '\n\n## Updated content'
+    promptContent: testPrompt.promptContent + '\n\n## Updated content'
   };
   const updateRequest = createMockRequest(`/api/auto-claude/prompts/${promptId}`, {
     method: 'PUT',
-    body: updatedPrompt,
-    params: { id: promptId }
+    body: updatedPrompt
   });
-  const updateResponse = await PromptPUT(updateRequest);
+  const updateResponse = await PromptPUT(updateRequest, {
+    params: Promise.resolve({ id: promptId })
+  });
   assert.strictEqual(updateResponse.status, 200);
 
   const updatedData = await getResponseJSON(updateResponse);
-  assert(updatedData.config.content.includes('## Updated content'));
+  assert(updatedData.config.promptContent.includes('## Updated content'));
   console.log('    ✅ Prompt updated successfully');
 
   console.log('  ✅ Prompts CRUD tests completed\n');
@@ -277,7 +279,7 @@ async function testModelProfilesCRUD() {
   assert.strictEqual(getEmptyResponse.status, 200);
 
   const emptyData = await getResponseJSON(getEmptyResponse);
-  assert.strictEqual(emptyData.profiles.length, 0);
+  assert.strictEqual(emptyData.modelProfiles.length, 0);
   console.log('    ✅ Empty model profiles list returned correctly');
 
   // Test 3.2: POST /api/auto-claude/model-profiles (create)
@@ -304,16 +306,16 @@ async function testModelProfilesCRUD() {
   assert.strictEqual(getWithDataResponse.status, 200);
 
   const withData = await getResponseJSON(getWithDataResponse);
-  assert.strictEqual(withData.profiles.length, 1);
+  assert.strictEqual(withData.modelProfiles.length, 1);
   assert.strictEqual(withData.stats.total, 1);
   console.log('    ✅ Model profiles list with data returned correctly');
 
   // Test 3.4: GET /api/auto-claude/model-profiles/[id]
   console.log('  Test 3.4: GET specific model profile');
-  const getSpecificRequest = createMockRequest(`/api/auto-claude/model-profiles/${profileId}`, {
-    params: { id: profileId }
+  const getSpecificRequest = createMockRequest(`/api/auto-claude/model-profiles/${profileId}`);
+  const getSpecificResponse = await ProfileGET(getSpecificRequest, {
+    params: Promise.resolve({ id: profileId })
   });
-  const getSpecificResponse = await ProfileGET(getSpecificRequest);
   assert.strictEqual(getSpecificResponse.status, 200);
 
   const specificData = await getResponseJSON(getSpecificResponse);
@@ -328,10 +330,11 @@ async function testModelProfilesCRUD() {
   };
   const updateRequest = createMockRequest(`/api/auto-claude/model-profiles/${profileId}`, {
     method: 'PUT',
-    body: updatedProfile,
-    params: { id: profileId }
+    body: updatedProfile
   });
-  const updateResponse = await ProfilePUT(updateRequest);
+  const updateResponse = await ProfilePUT(updateRequest, {
+    params: Promise.resolve({ id: profileId })
+  });
   assert.strictEqual(updateResponse.status, 200);
 
   const updatedData = await getResponseJSON(updateResponse);

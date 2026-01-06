@@ -8,7 +8,7 @@ import type { AutoClaudeAgentConfig, AutoClaudePrompt, AutoClaudeModelProfile, A
 
 // Test data fixtures
 export const testAgentConfig: AutoClaudeAgentConfig = {
-  agentType: 'test-coder',
+  agentType: 'test_coder',
   tools: ['Read', 'Write', 'Edit', 'Bash'],
   mcpServers: ['context7'],
   mcpServersOptional: ['linear'],
@@ -17,8 +17,8 @@ export const testAgentConfig: AutoClaudeAgentConfig = {
 };
 
 export const testPrompt: AutoClaudePrompt = {
-  agentType: 'test-coder',
-  content: `# Test Coder Agent
+  agentType: 'test_coder',
+  promptContent: `# Test Coder Agent
 
 You are a test coder agent.
 
@@ -29,11 +29,15 @@ You are a test coder agent.
 
 ## Instructions
 Write clean, tested code.`,
-  injectionPoints: ['specDirectory', 'projectContext', 'mcpDocumentation']
+  injectionPoints: {
+    specDirectory: true,
+    projectContext: true,
+    mcpDocumentation: true
+  }
 };
 
 export const testModelProfile: AutoClaudeModelProfile = {
-  name: 'test-profile',
+  name: 'test_profile',
   description: 'Test model profile',
   phaseModels: {
     spec: 'sonnet',
