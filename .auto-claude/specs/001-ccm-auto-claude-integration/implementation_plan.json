@@ -572,8 +572,8 @@
           "subtask_id": "8_5",
           "name": "Create project settings page",
           "description": "Per-project MCP toggles at /auto-claude/projects with credential overrides",
-          "status": "pending",
-          "notes": "",
+          "status": "completed",
+          "notes": "Per-project MCP toggles at /auto-claude/projects with credential overrides is fully implemented and working correctly. All required functionality exists: ProjectsList.tsx component displays projects with Auto-Claude status, MCP configurations, and management buttons; ProjectConfigDialog.tsx component provides comprehensive configuration with MCP server toggles (Context7, Linear, Electron, Puppeteer, Graphiti), custom MCP server configuration, credential management (Linear API key, GitHub token, etc.), and model profile selection; API endpoints are properly integrated for fetching projects with Auto-Claude data and updating configurations; TypeScript build verification passed successfully.",
           "dependencies": ["2_4"],
           "files_to_modify": [
             "packages/server/src/app/auto-claude/projects/page.tsx",
@@ -584,8 +584,8 @@
           "subtask_id": "8_6",
           "name": "Update components page",
           "description": "Add filter for Auto-Claude component types and badges",
-          "status": "pending",
-          "notes": "",
+          "status": "completed",
+          "notes": "Successfully implemented Auto-Claude component filtering and visual badges. Added unified 'Auto-Claude' tab that groups all Auto-Claude component types together (AUTO_CLAUDE_AGENT_CONFIG, AUTO_CLAUDE_PROMPT, AUTO_CLAUDE_MODEL_PROFILE, AUTO_CLAUDE_PROJECT_CONFIG). Enhanced ComponentCard with distinctive 🤖 Auto-Claude badge for easy visual identification of Auto-Claude components. Users can now easily filter and identify Auto-Claude components in the components page.",
           "dependencies": ["1_4"],
           "files_to_modify": [
             "packages/server/src/app/components/page.tsx"
@@ -595,8 +595,8 @@
           "subtask_id": "8_7",
           "name": "Update profiles page",
           "description": "Add Auto-Claude Enabled toggle and show Auto-Claude components",
-          "status": "pending",
-          "notes": "",
+          "status": "completed",
+          "notes": "Successfully implemented Auto-Claude toggle functionality for profiles page. Added ProfilesClient component with switch to filter profiles by Auto-Claude components, shows Auto-Claude statistics and filtering status, maintains existing Auto-Claude component badges and counts. Enhanced UX with clear visual feedback and empty states. TypeScript build verification passed successfully.",
           "dependencies": ["1_5"],
           "files_to_modify": [
             "packages/server/src/app/profiles/page.tsx"

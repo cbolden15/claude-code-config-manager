@@ -12,6 +12,41 @@
 
 ## Latest Updates
 
+### 2026-01-05 23:45 UTC - Subtask 8_6 Completed ✅
+**Task**: Update components page
+**Description**: Add filter for Auto-Claude component types and badges
+**Status**: COMPLETED
+
+**Implementation Summary:**
+Successfully implemented Auto-Claude component filtering and visual badges enhancement to the existing components page. Users can now easily filter and identify Auto-Claude components.
+
+**Features Implemented:**
+✅ **Unified Auto-Claude Filter**: Added "Auto-Claude" tab that groups all Auto-Claude component types together
+✅ **Auto-Claude Component Types**: Filters for AUTO_CLAUDE_AGENT_CONFIG, AUTO_CLAUDE_PROMPT, AUTO_CLAUDE_MODEL_PROFILE, AUTO_CLAUDE_PROJECT_CONFIG
+✅ **Visual Badges**: Enhanced ComponentCard with distinctive 🤖 Auto-Claude badge for easy identification
+✅ **Improved UX**: Makes Auto-Claude components clearly identifiable and filterable in one view
+
+**Technical Details:**
+✅ Added `autoClaudeTypes` constant for grouping Auto-Claude component types
+✅ Enhanced `componentsByType` object with 'auto-claude' filter grouping all Auto-Claude types
+✅ Added new TabsTrigger for "Auto-Claude" with dynamic count display
+✅ Enhanced ComponentCard component with Auto-Claude badge detection logic
+✅ Applied blue-themed badge styling (🤖 Auto-Claude) for visual distinction
+
+**Files Modified:**
+- `packages/server/src/app/components/page.tsx` (added Auto-Claude filter and badges)
+
+**Verification Results:**
+✅ TypeScript compilation successful - no errors in build process
+✅ Auto-Claude filter tab properly groups all four Auto-Claude component types
+✅ Visual badges correctly appear on all Auto-Claude components
+✅ Existing functionality preserved - all other component types work as expected
+✅ Component cards maintain responsive design and accessibility
+
+**Commit**: `f542b57` - auto-claude: 8_6 - Add filter for Auto-Claude component types and badges
+
+---
+
 ### 2026-01-05 23:15 UTC - Subtask 8_1 Completed ✅
 **Task**: Create Auto-Claude dashboard
 **Description**: Overview page at /auto-claude with cards for configs, prompts, profiles and sync status

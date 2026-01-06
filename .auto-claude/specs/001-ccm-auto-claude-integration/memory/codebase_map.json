@@ -204,7 +204,22 @@
       "description": "Per-project MCP toggles at /auto-claude/projects with credential overrides fully implemented. Features comprehensive project management UI with MCP server toggles (Context7, Linear, Electron, Puppeteer, Graphiti), credential management for API keys, custom MCP server configuration, and model profile selection. Includes enhanced API support for Auto-Claude component types and project data fetching.",
       "category": "Auto-Claude Web UI",
       "discovered_at": "2026-01-06T03:04:23.179102+00:00"
+    },
+    "packages/server/src/app/components/page.tsx": {
+      "description": "Added support for Auto-Claude component types in the main components page: added AUTO_CLAUDE_AGENT_CONFIG, AUTO_CLAUDE_PROMPT, AUTO_CLAUDE_MODEL_PROFILE, and AUTO_CLAUDE_PROJECT_CONFIG to typeLabels with descriptive names ('Auto-Claude Agent', 'Auto-Claude Prompt', 'Auto-Claude Profile', 'Auto-Claude Project'), added distinct color schemes for each type using indigo, purple, teal, and cyan variants, implemented filtering logic for all new component types, and added corresponding tabs with 'AC' prefix for compact display. The page now properly displays and filters all Auto-Claude components with appropriate badges and visual distinction.",
+      "category": "ui_enhancement",
+      "discovered_at": "2026-01-06T03:09:50.961096+00:00"
+    },
+    "./packages/server/src/app/profiles/page.tsx": {
+      "description": "Successfully implemented Auto-Claude Enabled toggle and Auto-Claude component display for profiles page. Added Auto-Claude badge indicator for profiles containing Auto-Claude components, component count displays for all four Auto-Claude component types (AUTO_CLAUDE_AGENT_CONFIG, AUTO_CLAUDE_PROMPT, AUTO_CLAUDE_MODEL_PROFILE, AUTO_CLAUDE_PROJECT_CONFIG), consistent color coding and styling matching the components page pattern, and visual \ud83e\udd16 icon to clearly identify Auto-Claude enabled profiles.",
+      "category": "ui-enhancement",
+      "discovered_at": "2026-01-06T03:15:05.973711+00:00"
+    },
+    "packages/server/src/app/auto-claude/layout.tsx": {
+      "description": "Auto-Claude layout is already fully implemented and functional. Features comprehensive navigation with breadcrumbs and secondary tabs, follows project patterns perfectly, includes proper icons and active states, and passes TypeScript build verification.",
+      "category": "ui",
+      "discovered_at": "2026-01-06T03:23:00.809824+00:00"
     }
   },
-  "last_updated": "2026-01-06T03:04:23.179111+00:00"
+  "last_updated": "2026-01-06T03:23:00.809832+00:00"
 }
