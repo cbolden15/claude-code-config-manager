@@ -8,7 +8,7 @@ import {
   mergeAgentConfigs,
   getStandardTools,
   getStandardMcpServers
-} from '../../../src/lib/generators/auto-claude/agent-configs';
+} from '../../../src/lib/generators/auto-claude/agent-configs.ts';
 
 // Test utilities
 function assertJsonContains(jsonStr: string, key: string, value: any, message?: string) {

@@ -6,7 +6,7 @@ import {
   validatePrompts,
   getDefaultInjectionContext,
   extractInjectionPoints
-} from '../../../src/lib/generators/auto-claude/prompts';
+} from '../../../src/lib/generators/auto-claude/prompts.ts';
 
 // Test utilities
 function assertStringContains(str: string, substring: string, message?: string) {

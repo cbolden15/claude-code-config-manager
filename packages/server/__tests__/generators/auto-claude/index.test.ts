@@ -4,10 +4,10 @@
  * Comprehensive testing for all Auto-Claude generator functions
  */
 
-import { runEnvFileTests } from './env-file.test';
-import { runModelProfileTests } from './model-profile.test';
-import { runPromptsTests } from './prompts.test';
-import { runAgentConfigsTests } from './agent-configs.test';
+import { runEnvFileTests } from './env-file.test.ts';
+import { runModelProfileTests } from './model-profile.test.ts';
+import { runPromptsTests } from './prompts.test.ts';
+import { runAgentConfigsTests } from './agent-configs.test.ts';
 
 interface TestResult {
   name: string;
