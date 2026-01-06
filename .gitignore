@@ -37,3 +37,6 @@ coverage/
 # Prisma
 packages/server/prisma/*.db
 packages/server/prisma/*.db-journal
+
+# Auto Claude data directory
+.auto-claude/
