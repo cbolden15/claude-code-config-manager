@@ -9,7 +9,6 @@ interface EnvFileOptions {
  * Generates .auto-claude/.env file with MCP toggles, API keys, and custom servers
  */
 export function generateAutoClaudeEnv(options: EnvFileOptions): string {
-  const performanceStart = performance.now();
   const { projectConfig, settings = {} } = options;
   const lines: string[] = [];
 
@@ -130,10 +129,6 @@ export function generateAutoClaudeEnv(options: EnvFileOptions): string {
   lines.push('AUTO_CLAUDE_DEBUG=false');
   lines.push('AUTO_CLAUDE_LOG_LEVEL=info');
   lines.push('');
-
-  // Add performance logging
-  const performanceEnd = performance.now();
-  console.log(`[PERF] Env file generation: ${Math.round(performanceEnd - performanceStart)}ms`);
 
   // End with a final newline
   return lines.join('\n');

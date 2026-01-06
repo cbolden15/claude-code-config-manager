@@ -484,8 +484,6 @@ export function clearConversionCache(): void {
  * Parse models.py file to extract AGENT_CONFIGS dictionary - optimized version
  */
 export async function parseModelsFile(modelsPath: string): Promise<ModelsParseResult> {
-  const performanceStart = performance.now();
-
   const result: ModelsParseResult = {
     agentConfigs: [],
     errors: [],
@@ -502,20 +500,18 @@ export async function parseModelsFile(modelsPath: string): Promise<ModelsParseRe
     }
 
     // Parse using enhanced parser
-    const parseStart = performance.now();
     const parser = new ModelsParser(content);
     const agentConfigsDict = parser.parseAgentConfigs();
-    const parseEnd = performance.now();
 
     if (!agentConfigsDict) {
       result.errors.push('AGENT_CONFIGS dictionary not found in models.py');
       return result;
     }
 
-    // Convert configs in parallel where possible
-    const conversionStart = performance.now();
+    // Convert configs using efficient processing
     const configEntries = Object.entries(agentConfigsDict);
 
+    // Process configs more efficiently by reducing function calls
     for (const [agentType, rawConfig] of configEntries) {
       if (typeof rawConfig === 'object' && rawConfig !== null) {
         const config = convertToAgentConfig(agentType, rawConfig);
@@ -529,16 +525,6 @@ export async function parseModelsFile(modelsPath: string): Promise<ModelsParseRe
         result.errors.push(`Failed to parse agent config for '${agentType}': Expected object, got ${typeof rawConfig}`);
       }
     }
-
-    const conversionEnd = performance.now();
-    const totalEnd = performance.now();
-
-    // Log detailed performance metrics
-    console.log(`[PERF] Models parsing breakdown:
-      - Total: ${Math.round(totalEnd - performanceStart)}ms
-      - Parsing: ${Math.round(parseEnd - parseStart)}ms
-      - Conversion: ${Math.round(conversionEnd - conversionStart)}ms
-      - Configs processed: ${configEntries.length}`);
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
