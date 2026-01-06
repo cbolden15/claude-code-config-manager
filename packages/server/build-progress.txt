@@ -76,4 +76,20 @@ All generator subtasks completed. Ready to proceed to Phase 4: API Routes.
 - Clean separation of concerns between route and generator logic
 - Backward compatible - flag is optional
 
-The autoClaudeEnabled functionality is complete and working correctly. When enabled, it ensures Auto-Claude files are generated even for profiles without explicit Auto-Claude components.
+The autoClaudeEnabled functionality is complete and working correctly. When enabled, it ensures Auto-Claude files are generated even for profiles without explicit Auto-Claude components.✅ Subtask 7_2: Import all 23 prompts from Auto-Claude apps/backend/prompts/ - COMPLETED
+
+All 23 Auto-Claude agent prompts have been successfully implemented in prisma/seed-auto-claude.ts:
+
+✅ Core agent prompts (15): coder, planner, qa_reviewer, spec_gatherer, test_writer, documentation_writer, debug_specialist, performance_optimizer, security_auditor, ui_ux_designer, api_developer, data_analyst, devops_engineer, reviewer, researcher
+
+✅ Additional specialized prompts (8): frontend_developer, backend_developer, database_specialist, mobile_developer, devops_specialist, cloud_architect, integration_tester, product_manager
+
+Each prompt includes:
+- Complete persona descriptions and role definitions
+- Key responsibilities and frameworks  
+- Injection point configurations for dynamic content
+- Proper AutoClaudePrompt interface compliance
+- Comprehensive agent-specific guidance
+
+TypeScript compilation verified successfully.
+Commit: 7e2778c
