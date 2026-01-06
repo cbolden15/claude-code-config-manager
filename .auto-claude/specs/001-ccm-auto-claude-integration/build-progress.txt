@@ -12,30 +12,35 @@
 
 ## Latest Updates
 
-### 2026-01-05 16:30 UTC - Subtask 4_4 Completed ✅
-**Task**: Create prompts CRUD endpoints
-**Description**: Full CRUD API for Auto-Claude prompts with markdown handling
+### 2026-01-05 17:50 UTC - Subtask 6_3 Completed ✅
+**Task**: Implement import subcommand
+**Description**: ccm auto-claude import with --source and --dry-run options
 **Status**: COMPLETED
 
 **Implementation Summary:**
-- ✅ Full CRUD operations: GET/POST /api/auto-claude/prompts, GET/PUT/DELETE /api/auto-claude/prompts/[id]
-- ✅ Comprehensive markdown handling: content analysis, injection points detection
-- ✅ Content statistics: length, lines, words, headers, code blocks detection
-- ✅ Injection points support: {{...}} pattern detection and replacement
-- ✅ Proper validation with Zod schemas
-- ✅ TypeScript type safety and error handling
-- ✅ Follows established API patterns from agents endpoint
-- ✅ Build verification passed with no TypeScript errors
+- ✅ Complete CLI command implementation with --source and --dry-run options
+- ✅ Source path validation with Auto-Claude installation verification
+- ✅ Integration with /api/auto-claude/import endpoint for data processing
+- ✅ Dry-run preview mode vs actual import execution with different output
+- ✅ Comprehensive error handling and user-friendly feedback messages
+- ✅ Detailed import results with statistics and helpful next steps
+- ✅ Version detection from Auto-Claude package.json when available
+- ✅ Manual testing verification: help text, validation, path checking
+- ✅ CLI integration working through createAutoClaudeCommand()
+- ✅ Follows existing CLI patterns using chalk for colored output
 
 **Files Modified:**
-- `packages/server/src/app/api/auto-claude/prompts/route.ts`
-- `packages/server/src/app/api/auto-claude/prompts/[id]/route.ts`
+- `packages/cli/src/commands/auto-claude.ts` (implementation already complete)
 
-**Commit**: `eaf1a46` - auto-claude: 4_4 - Full CRUD API for Auto-Claude prompts with markdown handling
+**Commit**: `80c18b9` - auto-claude: 6_3 - ccm auto-claude import with --source and --dry-run
+
+### Previous: 2026-01-05 16:30 UTC - Subtask 4_4 Completed ✅
+**Task**: Create prompts CRUD endpoints
+**Description**: Full CRUD API for Auto-Claude prompts with markdown handling
 
 ---
 
-**Current Progress**: 29/72 subtasks completed (40.3%)
+**Current Progress**: 30/72 subtasks completed (41.7%)
 
 ### Phase Summary
 1. **Phase 1** - Schema & Types (Foundation): 6 subtasks, 12 hours
