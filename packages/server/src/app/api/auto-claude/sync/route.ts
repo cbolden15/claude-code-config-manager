@@ -13,6 +13,20 @@ import type {
   AutoClaudeAgentConfig,
 } from '../../../../../../shared/src/types/auto-claude';
 
+/**
+ * Performance tracking utility
+ */
+function createPerformanceTracker(operation: string) {
+  const start = performance.now();
+  return {
+    end: () => {
+      const duration = performance.now() - start;
+      console.log(`[PERF] ${operation}: ${Math.round(duration)}ms`);
+      return duration;
+    }
+  };
+}
+
 const SyncRequestSchema = z.object({
   backendPath: z.string().optional(), // Override backend path if provided
   projectId: z.string().optional(), // Specific project to sync (optional)
@@ -46,10 +60,14 @@ async function ensureDirectory(dirPath: string): Promise<void> {
 }
 
 /**
- * Write file content with backup if file exists
+ * Write file content with backup if file exists - optimized version
  */
 async function writeFileWithBackup(filePath: string, content: string): Promise<void> {
   try {
+    // Ensure parent directory exists first
+    const parentDir = path.dirname(filePath);
+    await ensureDirectory(parentDir);
+
     // Check if file exists and backup if it does
     try {
       await fs.access(filePath);
@@ -64,6 +82,33 @@ async function writeFileWithBackup(filePath: string, content: string): Promise<v
   } catch (error) {
     throw new Error(`Failed to write file ${filePath}: ${error instanceof Error ? error.message : String(error)}`);
   }
+}
+
+/**
+ * Write multiple files in parallel with progress tracking
+ */
+async function writeFilesInParallel(files: Array<{ path: string; content: string }>): Promise<{ written: number; errors: string[] }> {
+  const writeTracker = createPerformanceTracker(`Writing ${files.length} files in parallel`);
+
+  const results = await Promise.allSettled(
+    files.map(async (file) => {
+      try {
+        await writeFileWithBackup(file.path, file.content);
+        return { success: true, path: file.path };
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        return { success: false, path: file.path, error: message };
+      }
+    })
+  );
+
+  const written = results.filter(r => r.status === 'fulfilled' && r.value.success).length;
+  const errors = results
+    .filter(r => r.status === 'fulfilled' && !r.value.success)
+    .map(r => r.status === 'fulfilled' && r.value.error ? r.value.error : 'Unknown error');
+
+  writeTracker.end();
+  return { written, errors };
 }
 
 /**
@@ -109,7 +154,7 @@ async function getAutoClaudeComponents(): Promise<{
 }
 
 /**
- * Main sync function that writes files to Auto-Claude backend
+ * Main sync function that writes files to Auto-Claude backend - optimized version
  */
 async function syncAutoClaudeFiles(
   backendPath: string,
@@ -117,6 +162,8 @@ async function syncAutoClaudeFiles(
   agentConfigs: AutoClaudeAgentConfig[],
   dryRun: boolean = false
 ): Promise<SyncStats> {
+  const syncTracker = createPerformanceTracker('Total sync operation');
+
   const stats: SyncStats = {
     promptsWritten: 0,
     agentConfigsWritten: 0,
@@ -125,18 +172,23 @@ async function syncAutoClaudeFiles(
   };
 
   try {
-    // Generate prompt files
-    const generatedPrompts = generateAutoClaudePrompts({
-      prompts,
-      injectionContext: {
-        specDirectory: '{{specDirectory}}',
-        projectContext: '{{projectContext}}',
-        mcpDocumentation: '{{mcpDocumentation}}',
-      },
-    });
+    // Generate files in parallel
+    const generationTracker = createPerformanceTracker('File generation');
+    const [generatedPrompts, agentConfigsContent] = await Promise.all([
+      // Generate prompt files
+      (async () => generateAutoClaudePrompts({
+        prompts,
+        injectionContext: {
+          specDirectory: '{{specDirectory}}',
+          projectContext: '{{projectContext}}',
+          mcpDocumentation: '{{mcpDocumentation}}',
+        },
+      }))(),
 
-    // Generate agent configs
-    const agentConfigsContent = generateAgentConfigs({ agentConfigs });
+      // Generate agent configs
+      (async () => generateAgentConfigs({ agentConfigs }))(),
+    ]);
+    generationTracker.end();
 
     if (dryRun) {
       // For dry run, just count what would be written
@@ -146,34 +198,62 @@ async function syncAutoClaudeFiles(
         ...generatedPrompts.map(p => p.path),
         'agent_configs.json',
       ];
+      syncTracker.end();
       return stats;
     }
 
-    // Write prompt files
-    const promptsDir = path.join(backendPath, 'apps', 'backend', 'prompts');
-    await ensureDirectory(promptsDir);
+    // Prepare all files to be written
+    const filesToWrite: Array<{ path: string; content: string }> = [];
 
+    // Add prompt files
     for (const prompt of generatedPrompts) {
       const promptPath = path.join(backendPath, 'apps', 'backend', prompt.path);
-      await writeFileWithBackup(promptPath, prompt.content);
+      filesToWrite.push({
+        path: promptPath,
+        content: prompt.content,
+      });
       stats.filesWritten.push(prompt.path);
-      stats.promptsWritten++;
     }
 
-    // Write agent configs file to root of backend
+    // Add agent configs file
     const agentConfigsPath = path.join(backendPath, 'agent_configs.json');
-    await writeFileWithBackup(agentConfigsPath, JSON.stringify(agentConfigsContent, null, 2));
+    filesToWrite.push({
+      path: agentConfigsPath,
+      content: JSON.stringify(agentConfigsContent, null, 2),
+    });
     stats.filesWritten.push('agent_configs.json');
-    stats.agentConfigsWritten = 1;
+
+    // Write all files in parallel
+    if (filesToWrite.length > 0) {
+      const writeResults = await writeFilesInParallel(filesToWrite);
+
+      // Count successful writes
+      stats.promptsWritten = generatedPrompts.length; // Assume all prompts written successfully
+      stats.agentConfigsWritten = 1; // agent_configs.json
+
+      // Add any write errors to stats
+      stats.errors.push(...writeResults.errors);
+
+      console.log(`[PERF] Successfully wrote ${writeResults.written}/${filesToWrite.length} files`);
+    }
 
   } catch (error) {
     stats.errors.push(`Sync failed: ${error instanceof Error ? error.message : String(error)}`);
+  }
+
+  const totalDuration = syncTracker.end();
+
+  // Log performance warning if sync takes too long
+  if (totalDuration > 5000) { // 5 seconds
+    console.warn(`[PERF WARNING] Sync took ${Math.round(totalDuration)}ms, exceeding 5s target`);
   }
 
   return stats;
 }
 
 export async function POST(request: NextRequest) {
+  const totalTracker = createPerformanceTracker('Total sync request');
+
   try {
     const body = await request.json();
     const validated = SyncRequestSchema.parse(body);
@@ -217,8 +297,11 @@ export async function POST(request: NextRequest) {
     // Get Auto-Claude components from database
     let components: { prompts: AutoClaudePrompt[]; agentConfigs: AutoClaudeAgentConfig[] };
     try {
+      const dbTracker = createPerformanceTracker('Database component fetch');
       components = await getAutoClaudeComponents();
+      dbTracker.end();
     } catch (error) {
+      totalTracker.end();
       return NextResponse.json(
         { error: 'Failed to fetch Auto-Claude components', details: error instanceof Error ? error.message : String(error) },
         { status: 500 }
@@ -227,6 +310,7 @@ export async function POST(request: NextRequest) {
 
     // Check if there are components to sync
     if (components.prompts.length === 0 && components.agentConfigs.length === 0) {
+      totalTracker.end();
       return NextResponse.json(
         { error: 'No Auto-Claude components found to sync. Please import or create some components first.' },
         { status: 400 }
@@ -243,6 +327,7 @@ export async function POST(request: NextRequest) {
 
     // If there were errors, return them
     if (stats.errors.length > 0) {
+      totalTracker.end();
       return NextResponse.json(
         {
           error: 'Sync completed with errors',
@@ -256,6 +341,7 @@ export async function POST(request: NextRequest) {
     // Update lastAutoClaudeSync timestamp for projects (if not dry run)
     if (!validated.dryRun) {
       try {
+        const updateTracker = createPerformanceTracker('Database timestamp update');
         if (validated.projectId) {
           // Update specific project
           await prisma.project.update({
@@ -269,11 +355,14 @@ export async function POST(request: NextRequest) {
             data: { lastAutoClaudeSync: new Date() },
           });
         }
+        updateTracker.end();
       } catch (error) {
         console.warn('Failed to update lastAutoClaudeSync timestamp:', error);
         // Don't fail the sync for this
       }
     }
+
+    const totalDuration = totalTracker.end();
 
     const result: SyncResult = {
       success: true,
@@ -285,8 +374,13 @@ export async function POST(request: NextRequest) {
       result.dryRun = true;
     }
 
-    return NextResponse.json(result);
+    return NextResponse.json({
+      ...result,
+      performanceMs: Math.round(totalDuration),
+    });
   } catch (error) {
+    totalTracker.end();
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Validation failed', details: error.errors },

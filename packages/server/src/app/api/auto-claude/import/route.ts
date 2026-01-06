@@ -10,6 +10,8 @@ import {
   AutoClaudeProjectConfigSchema,
 } from '../../../../../../shared/src/schemas/auto-claude';
 import { parseModelsFile } from '@/lib/import/models-parser';
+import { parsePromptsDirectory } from '@/lib/import/prompts-parser';
+import { parseEnvFile } from '@/lib/import/env-parser';
 
 const ImportRequestSchema = z.object({
   autoClaudeInstallPath: z.string().min(1, 'Auto-Claude installation path is required'),
@@ -38,118 +40,17 @@ interface ImportStats {
 }
 
 /**
- * Parse models.py file using enhanced AST-like parser
+ * Performance tracking utility
  */
-async function parseModelsFileEnhanced(modelsPath: string): Promise<Array<{ agentType: string; config: any }>> {
-  const result = await parseModelsFile(modelsPath);
-
-  if (result.errors.length > 0) {
-    console.warn('Errors during models.py parsing:', result.errors);
-  }
-
-  return result.agentConfigs;
-}
-
-/**
- * Parse prompts directory to extract all .md files
- */
-async function parsePromptsDirectory(promptsPath: string): Promise<Array<{ agentType: string; content: string }>> {
-  try {
-    const files = await fs.readdir(promptsPath);
-    const prompts: Array<{ agentType: string; content: string }> = [];
-
-    for (const file of files) {
-      if (path.extname(file) === '.md') {
-        const agentType = path.basename(file, '.md');
-        const filePath = path.join(promptsPath, file);
-        const content = await fs.readFile(filePath, 'utf-8');
-
-        // Detect injection points in the content
-        const hasSpecDirectory = content.includes('{{specDirectory}}');
-        const hasProjectContext = content.includes('{{projectContext}}');
-        const hasMcpDocumentation = content.includes('{{mcpDocumentation}}');
-
-        const promptData = {
-          agentType,
-          promptContent: content,
-          injectionPoints: {
-            specDirectory: hasSpecDirectory,
-            projectContext: hasProjectContext,
-            mcpDocumentation: hasMcpDocumentation,
-          },
-        };
-
-        prompts.push({ agentType, content: JSON.stringify(promptData) });
-      }
+function createPerformanceTracker(operation: string) {
+  const start = performance.now();
+  return {
+    end: () => {
+      const duration = performance.now() - start;
+      console.log(`[PERF] ${operation}: ${Math.round(duration)}ms`);
+      return duration;
     }
-
-    return prompts;
-  } catch (error) {
-    console.error('Error parsing prompts directory:', error);
-    throw new Error(`Failed to parse prompts directory: ${error instanceof Error ? error.message : String(error)}`);
-  }
-}
-
-/**
- * Parse .auto-claude/.env file for project configuration
- */
-async function parseProjectConfig(envPath: string): Promise<any | null> {
-  try {
-    const content = await fs.readFile(envPath, 'utf-8');
-    const config: any = {
-      context7Enabled: false,
-      linearMcpEnabled: false,
-      electronMcpEnabled: false,
-      puppeteerMcpEnabled: false,
-      graphitiEnabled: false,
-      customMcpServers: [],
-    };
-
-    // Parse environment variables
-    const lines = content.split('\n');
-    for (const line of lines) {
-      const trimmed = line.trim();
-      if (trimmed.startsWith('#') || !trimmed.includes('=')) continue;
-
-      const [key, ...valueParts] = trimmed.split('=');
-      const value = valueParts.join('=').replace(/^["']|["']$/g, ''); // Remove quotes
-
-      switch (key.trim()) {
-        case 'CONTEXT7_ENABLED':
-          config.context7Enabled = value.toLowerCase() === 'true';
-          break;
-        case 'LINEAR_MCP_ENABLED':
-          config.linearMcpEnabled = value.toLowerCase() === 'true';
-          break;
-        case 'ELECTRON_MCP_ENABLED':
-          config.electronMcpEnabled = value.toLowerCase() === 'true';
-          break;
-        case 'PUPPETEER_MCP_ENABLED':
-          config.puppeteerMcpEnabled = value.toLowerCase() === 'true';
-          break;
-        case 'GRAPHITI_ENABLED':
-          config.graphitiEnabled = value.toLowerCase() === 'true';
-          break;
-        case 'LINEAR_API_KEY':
-          if (value && value !== '') config.linearApiKey = value;
-          break;
-        case 'LINEAR_TEAM_ID':
-          if (value && value !== '') config.linearTeamId = value;
-          break;
-        case 'GITHUB_TOKEN':
-          if (value && value !== '') config.githubToken = value;
-          break;
-        case 'GITHUB_REPO':
-          if (value && value !== '') config.githubRepo = value;
-          break;
-      }
-    }
-
-    return config;
-  } catch (error) {
-    console.warn('Could not parse project config from .env:', error);
-    return null;
-  }
+  };
 }
 
 /**
@@ -209,56 +110,118 @@ function getDefaultModelProfiles(): Array<any> {
 }
 
 /**
- * Parse Auto-Claude installation directory
+ * Parse Auto-Claude installation directory with optimized parallel processing
  */
 async function parseAutoClaudeConfigs(installPath: string): Promise<ParsedAutoClaudeConfigs> {
+  const parseTracker = createPerformanceTracker('Total parsing');
+
   const configs: ParsedAutoClaudeConfigs = {
     agentConfigs: [],
     prompts: [],
     modelProfiles: [],
   };
 
-  // Parse models.py for agent configs
+  // Define file paths
   const modelsPath = path.join(installPath, 'apps', 'backend', 'models.py');
-  try {
-    await fs.access(modelsPath);
-    configs.agentConfigs = await parseModelsFileEnhanced(modelsPath);
-  } catch (error) {
-    console.warn('Could not find or parse models.py:', error);
-  }
-
-  // Parse prompts directory
   const promptsPath = path.join(installPath, 'apps', 'backend', 'prompts');
-  try {
-    await fs.access(promptsPath);
-    configs.prompts = await parsePromptsDirectory(promptsPath);
-  } catch (error) {
-    console.warn('Could not find or parse prompts directory:', error);
-  }
-
-  // Look for project config in common locations
   const envPaths = [
     path.join(installPath, '.auto-claude', '.env'),
     path.join(installPath, '.env'),
   ];
 
-  for (const envPath of envPaths) {
-    try {
-      await fs.access(envPath);
-      configs.projectConfig = await parseProjectConfig(envPath);
-      break;
-    } catch {
-      // Try next path
-    }
+  // Parse all components in parallel for better performance
+  const [modelsResult, promptsResult, envResult] = await Promise.allSettled([
+    // Parse models.py for agent configs
+    (async () => {
+      try {
+        await fs.access(modelsPath);
+        const modelTracker = createPerformanceTracker('Models parsing');
+        const result = await parseModelsFile(modelsPath);
+        modelTracker.end();
+
+        if (result.errors.length > 0) {
+          console.warn('Errors during models.py parsing:', result.errors);
+        }
+
+        return result.agentConfigs.map(config => ({
+          agentType: config.agentType,
+          config: config.config,
+        }));
+      } catch (error) {
+        console.warn('Could not find or parse models.py:', error);
+        return [];
+      }
+    })(),
+
+    // Parse prompts directory
+    (async () => {
+      try {
+        await fs.access(promptsPath);
+        const promptTracker = createPerformanceTracker('Prompts parsing');
+        const result = await parsePromptsDirectory(promptsPath);
+        promptTracker.end();
+
+        if (result.errors.length > 0) {
+          console.warn('Errors during prompts parsing:', result.errors);
+        }
+
+        return result.prompts.map(prompt => ({
+          agentType: prompt.agentType,
+          content: JSON.stringify(prompt.prompt),
+        }));
+      } catch (error) {
+        console.warn('Could not find or parse prompts directory:', error);
+        return [];
+      }
+    })(),
+
+    // Parse project config from .env files
+    (async () => {
+      for (const envPath of envPaths) {
+        try {
+          await fs.access(envPath);
+          const envTracker = createPerformanceTracker('Env parsing');
+          const result = await parseEnvFile(envPath);
+          envTracker.end();
+
+          if (result.errors.length > 0) {
+            console.warn('Errors during env parsing:', result.errors);
+          }
+
+          return result.config?.projectConfig || null;
+        } catch (error) {
+          // Try next path
+          continue;
+        }
+      }
+      console.warn('Could not find any .env file');
+      return null;
+    })(),
+  ]);
+
+  // Collect results from parallel operations
+  if (modelsResult.status === 'fulfilled') {
+    configs.agentConfigs = modelsResult.value;
+  }
+
+  if (promptsResult.status === 'fulfilled') {
+    configs.prompts = promptsResult.value;
+  }
+
+  if (envResult.status === 'fulfilled') {
+    configs.projectConfig = envResult.value;
   }
 
   // Add default model profiles
   configs.modelProfiles = getDefaultModelProfiles();
 
+  parseTracker.end();
   return configs;
 }
 
 export async function POST(request: NextRequest) {
+  const totalTracker = createPerformanceTracker('Total import operation');
+
   try {
     const body = await request.json();
     const validated = ImportRequestSchema.parse(body);
@@ -276,6 +239,7 @@ export async function POST(request: NextRequest) {
     try {
       configs = await parseAutoClaudeConfigs(validated.autoClaudeInstallPath);
     } catch (error) {
+      totalTracker.end();
       return NextResponse.json(
         { error: 'Failed to parse Auto-Claude configs', details: error instanceof Error ? error.message : String(error) },
         { status: 400 }
@@ -283,6 +247,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (validated.dryRun) {
+      totalTracker.end();
       // Return preview without importing
       return NextResponse.json({
         success: true,
@@ -297,120 +262,182 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Import in a transaction
-    await prisma.$transaction(async (tx) => {
-      // Import agent configs
-      for (const { agentType, config } of configs.agentConfigs) {
-        try {
-          // Validate against schema
-          const validatedConfig = AutoClaudeAgentConfigSchema.parse(config);
+    // Pre-validate all configs to fail fast if there are validation errors
+    const validationTracker = createPerformanceTracker('Validation');
+    const validatedConfigs = {
+      agentConfigs: [] as Array<{ agentType: string; config: any }>,
+      prompts: [] as Array<{ agentType: string; data: any }>,
+      modelProfiles: [] as Array<{ name: string; description: string; config: any }>,
+      projectConfig: null as any,
+    };
 
-          await tx.component.upsert({
+    // Validate all agent configs
+    for (const { agentType, config } of configs.agentConfigs) {
+      try {
+        const validatedConfig = AutoClaudeAgentConfigSchema.parse(config);
+        validatedConfigs.agentConfigs.push({ agentType, config: validatedConfig });
+      } catch (error) {
+        stats.errors.push(`Failed to validate agent config ${agentType}: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    }
+
+    // Validate all prompts
+    for (const { agentType, content } of configs.prompts) {
+      try {
+        const promptData = JSON.parse(content);
+        const validatedPrompt = AutoClaudePromptSchema.parse(promptData);
+        validatedConfigs.prompts.push({ agentType, data: validatedPrompt });
+      } catch (error) {
+        stats.errors.push(`Failed to validate prompt ${agentType}: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    }
+
+    // Validate all model profiles
+    for (const profile of configs.modelProfiles) {
+      try {
+        const validatedProfile = AutoClaudeModelProfileSchema.parse(profile);
+        validatedConfigs.modelProfiles.push({ name: profile.name, description: profile.description, config: validatedProfile });
+      } catch (error) {
+        stats.errors.push(`Failed to validate model profile ${profile.name}: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    }
+
+    // Validate project config
+    if (configs.projectConfig) {
+      try {
+        const validatedConfig = AutoClaudeProjectConfigSchema.parse(configs.projectConfig);
+        validatedConfigs.projectConfig = validatedConfig;
+      } catch (error) {
+        stats.errors.push(`Failed to validate project config: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    }
+
+    validationTracker.end();
+
+    // If there are validation errors, return early
+    if (stats.errors.length > 0) {
+      totalTracker.end();
+      return NextResponse.json({
+        success: false,
+        stats,
+        message: 'Import failed due to validation errors',
+      }, { status: 400 });
+    }
+
+    // Optimized database import with batch operations
+    const dbTracker = createPerformanceTracker('Database operations');
+    await prisma.$transaction(async (tx) => {
+      // Prepare all operations for parallel execution
+      const operations: Promise<any>[] = [];
+
+      // Import agent configs in parallel
+      for (const { agentType, config } of validatedConfigs.agentConfigs) {
+        operations.push(
+          tx.component.upsert({
             where: { type_name: { type: 'AUTO_CLAUDE_AGENT_CONFIG', name: agentType } },
             update: {
               description: `Auto-Claude agent configuration for ${agentType}`,
-              config: JSON.stringify(validatedConfig),
+              config: JSON.stringify(config),
+              updatedAt: new Date(),
             },
             create: {
               type: 'AUTO_CLAUDE_AGENT_CONFIG',
               name: agentType,
               description: `Auto-Claude agent configuration for ${agentType}`,
-              config: JSON.stringify(validatedConfig),
+              config: JSON.stringify(config),
               tags: 'auto-claude,agent-config,imported',
               enabled: true,
             },
-          });
-          stats.agentConfigsImported++;
-        } catch (error) {
-          stats.errors.push(`Failed to import agent config ${agentType}: ${error instanceof Error ? error.message : String(error)}`);
-        }
+          }).then(() => { stats.agentConfigsImported++; })
+        );
       }
 
-      // Import prompts
-      for (const { agentType, content } of configs.prompts) {
-        try {
-          const promptData = JSON.parse(content);
-          const validatedPrompt = AutoClaudePromptSchema.parse(promptData);
-
-          await tx.component.upsert({
+      // Import prompts in parallel
+      for (const { agentType, data } of validatedConfigs.prompts) {
+        operations.push(
+          tx.component.upsert({
             where: { type_name: { type: 'AUTO_CLAUDE_PROMPT', name: agentType } },
             update: {
               description: `Auto-Claude prompt for ${agentType}`,
-              config: JSON.stringify(validatedPrompt),
+              config: JSON.stringify(data),
+              updatedAt: new Date(),
             },
             create: {
               type: 'AUTO_CLAUDE_PROMPT',
               name: agentType,
               description: `Auto-Claude prompt for ${agentType}`,
-              config: JSON.stringify(validatedPrompt),
+              config: JSON.stringify(data),
               tags: 'auto-claude,prompt,imported',
               enabled: true,
             },
-          });
-          stats.promptsImported++;
-        } catch (error) {
-          stats.errors.push(`Failed to import prompt ${agentType}: ${error instanceof Error ? error.message : String(error)}`);
-        }
+          }).then(() => { stats.promptsImported++; })
+        );
       }
 
-      // Import model profiles
-      for (const profile of configs.modelProfiles) {
-        try {
-          const validatedProfile = AutoClaudeModelProfileSchema.parse(profile);
-
-          await tx.component.upsert({
-            where: { type_name: { type: 'AUTO_CLAUDE_MODEL_PROFILE', name: profile.name } },
+      // Import model profiles in parallel
+      for (const { name, description, config } of validatedConfigs.modelProfiles) {
+        operations.push(
+          tx.component.upsert({
+            where: { type_name: { type: 'AUTO_CLAUDE_MODEL_PROFILE', name } },
             update: {
-              description: profile.description,
-              config: JSON.stringify(validatedProfile),
+              description,
+              config: JSON.stringify(config),
+              updatedAt: new Date(),
             },
             create: {
               type: 'AUTO_CLAUDE_MODEL_PROFILE',
-              name: profile.name,
-              description: profile.description,
-              config: JSON.stringify(validatedProfile),
+              name,
+              description,
+              config: JSON.stringify(config),
               tags: 'auto-claude,model-profile,default',
               enabled: true,
             },
-          });
-          stats.modelProfilesImported++;
-        } catch (error) {
-          stats.errors.push(`Failed to import model profile ${profile.name}: ${error instanceof Error ? error.message : String(error)}`);
-        }
+          }).then(() => { stats.modelProfilesImported++; })
+        );
       }
 
       // Import project config if found
-      if (configs.projectConfig) {
-        try {
-          const validatedConfig = AutoClaudeProjectConfigSchema.parse(configs.projectConfig);
-
-          await tx.component.upsert({
+      if (validatedConfigs.projectConfig) {
+        operations.push(
+          tx.component.upsert({
             where: { type_name: { type: 'AUTO_CLAUDE_PROJECT_CONFIG', name: 'default' } },
             update: {
               description: 'Default Auto-Claude project configuration',
-              config: JSON.stringify(validatedConfig),
+              config: JSON.stringify(validatedConfigs.projectConfig),
+              updatedAt: new Date(),
             },
             create: {
               type: 'AUTO_CLAUDE_PROJECT_CONFIG',
               name: 'default',
               description: 'Default Auto-Claude project configuration',
-              config: JSON.stringify(validatedConfig),
+              config: JSON.stringify(validatedConfigs.projectConfig),
               tags: 'auto-claude,project-config,imported',
               enabled: true,
             },
-          });
-          stats.projectConfigImported = 1;
-        } catch (error) {
-          stats.errors.push(`Failed to import project config: ${error instanceof Error ? error.message : String(error)}`);
-        }
+          }).then(() => { stats.projectConfigImported = 1; })
+        );
       }
+
+      // Execute all operations in parallel within the transaction
+      await Promise.all(operations);
     });
+    dbTracker.end();
+
+    const totalDuration = totalTracker.end();
+
+    // Log performance warning if import takes too long
+    if (totalDuration > 10000) { // 10 seconds
+      console.warn(`[PERF WARNING] Import took ${Math.round(totalDuration)}ms, exceeding 10s target`);
+    }
 
     return NextResponse.json({
       success: true,
       stats,
+      performanceMs: Math.round(totalDuration),
     });
   } catch (error) {
+    totalTracker.end();
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Validation failed', details: error.errors },
