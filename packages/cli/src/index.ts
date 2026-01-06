@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 import { program } from 'commander';
 import chalk from 'chalk';
-import { configCommand } from './commands/config.js';
-import { listCommand } from './commands/list.js';
-import { initCommand } from './commands/init.js';
-import { applyCommand } from './commands/apply.js';
-import { syncCommand } from './commands/sync.js';
-import { createAutoClaudeCommand } from './commands/auto-claude.js';
+import {
+  configCommand,
+  listCommand,
+  initCommand,
+  applyCommand,
+  syncCommand,
+  createAutoClaudeCommand
+} from './commands/index.js';
 
 program
   .name('ccm')
