@@ -484,6 +484,7 @@ export function clearConversionCache(): void {
  * Parse models.py file to extract AGENT_CONFIGS dictionary - optimized version
  */
 export async function parseModelsFile(modelsPath: string): Promise<ModelsParseResult> {
+  const startTime = performance.now();
   const result: ModelsParseResult = {
     agentConfigs: [],
     errors: [],
@@ -508,22 +509,33 @@ export async function parseModelsFile(modelsPath: string): Promise<ModelsParseRe
       return result;
     }
 
-    // Convert configs using efficient processing
+    // Convert configs using efficient processing with batched operations
     const configEntries = Object.entries(agentConfigsDict);
 
-    // Process configs more efficiently by reducing function calls
-    for (const [agentType, rawConfig] of configEntries) {
-      if (typeof rawConfig === 'object' && rawConfig !== null) {
-        const config = convertToAgentConfig(agentType, rawConfig);
+    // Process configs in batches for better memory management with large files
+    const batchSize = 10;
+    for (let i = 0; i < configEntries.length; i += batchSize) {
+      const batch = configEntries.slice(i, i + batchSize);
 
-        if (config) {
-          result.agentConfigs.push({ agentType, config });
+      for (const [agentType, rawConfig] of batch) {
+        if (typeof rawConfig === 'object' && rawConfig !== null) {
+          const config = convertToAgentConfig(agentType, rawConfig);
+
+          if (config) {
+            result.agentConfigs.push({ agentType, config });
+          } else {
+            result.errors.push(`Failed to parse agent config for '${agentType}': Invalid configuration structure`);
+          }
         } else {
-          result.errors.push(`Failed to parse agent config for '${agentType}': Invalid configuration structure`);
+          result.errors.push(`Failed to parse agent config for '${agentType}': Expected object, got ${typeof rawConfig}`);
         }
-      } else {
-        result.errors.push(`Failed to parse agent config for '${agentType}': Expected object, got ${typeof rawConfig}`);
       }
+    }
+
+    // Log performance metrics for monitoring
+    const duration = performance.now() - startTime;
+    if (duration > 100) { // Only log if parsing takes more than 100ms
+      console.log(`[PERF] models.py parsing completed in ${Math.round(duration)}ms (${result.agentConfigs.length} configs, ${result.errors.length} errors)`);
     }
 
   } catch (error) {

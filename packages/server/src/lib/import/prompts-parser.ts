@@ -179,9 +179,10 @@ export async function parsePromptFile(filePath: string): Promise<{ prompt: Parse
 }
 
 /**
- * Parse all .md files from prompts directory - optimized with parallel processing
+ * Parse all .md files from prompts directory - optimized with parallel processing and concurrency control
  */
 export async function parsePromptsDirectory(promptsPath: string): Promise<PromptsParseResult> {
+  const startTime = performance.now();
   const result: PromptsParseResult = {
     prompts: [],
     errors: [],
@@ -204,26 +205,48 @@ export async function parsePromptsDirectory(promptsPath: string): Promise<Prompt
       return result;
     }
 
-    // Parse all files in parallel for better performance
+    // Limit concurrency to prevent overwhelming the system with large prompt directories
+    const concurrencyLimit = Math.min(5, markdownFiles.length);
     const filePaths = markdownFiles.map(file => path.join(promptsPath, file));
-    const parseResults = await Promise.all(
-      filePaths.map(async (filePath) => {
-        try {
-          return await parsePromptFile(filePath);
-        } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : String(error);
-          return { prompt: null, error: `Failed to parse ${path.basename(filePath)}: ${errorMessage}` };
-        }
-      })
-    );
 
-    // Collect results
+    // Process files in controlled batches
+    const parseResults: Array<{ prompt: ParsedPrompt | null; error: string | null }> = [];
+
+    for (let i = 0; i < filePaths.length; i += concurrencyLimit) {
+      const batch = filePaths.slice(i, i + concurrencyLimit);
+
+      const batchResults = await Promise.all(
+        batch.map(async (filePath) => {
+          try {
+            return await parsePromptFile(filePath);
+          } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            return { prompt: null, error: `Failed to parse ${path.basename(filePath)}: ${errorMessage}` };
+          }
+        })
+      );
+
+      parseResults.push(...batchResults);
+    }
+
+    // Collect results efficiently
+    let promptCount = 0;
+    let errorCount = 0;
+
     for (const parseResult of parseResults) {
       if (parseResult.prompt) {
         result.prompts.push(parseResult.prompt);
+        promptCount++;
       } else if (parseResult.error) {
         result.errors.push(parseResult.error);
+        errorCount++;
       }
+    }
+
+    // Log performance metrics for monitoring
+    const duration = performance.now() - startTime;
+    if (duration > 50) { // Log if parsing takes more than 50ms
+      console.log(`[PERF] Prompts directory parsing completed in ${Math.round(duration)}ms (${promptCount} prompts, ${errorCount} errors)`);
     }
 
   } catch (error) {
