@@ -6,7 +6,7 @@ import {
   getDefaultModelProfile,
   getCostOptimizedModelProfile,
   getQualityFocusedModelProfile
-} from '../../../src/lib/generators/auto-claude/model-profile.ts';
+} from '../../../src/lib/generators/auto-claude/model-profile.js';
 
 // Test utilities
 function assertJsonContains(jsonStr: string, key: string, value: any, message?: string) {

@@ -1,4 +1,4 @@
-import { AutoClaudePrompt } from '../../../../../shared/src/types/auto-claude';
+import { AutoClaudePrompt } from '../../types/auto-claude';
 
 interface PromptsOptions {
   prompts: AutoClaudePrompt[];

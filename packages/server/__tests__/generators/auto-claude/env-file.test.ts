@@ -4,7 +4,7 @@ import {
   generateAutoClaudeEnv,
   validateAutoClaudeEnv,
   getDefaultAutoClaudeProjectConfig
-} from '../../../src/lib/generators/auto-claude/env-file.ts';
+} from '../../../src/lib/generators/auto-claude/env-file.js';
 
 // Test utilities
 function assertStringContains(str: string, substring: string, message?: string) {
