@@ -29,7 +29,7 @@ export interface PromptsParseResult {
 }
 
 /**
- * Injection point patterns that can be found in prompt content
+ * Optimized injection point patterns - compiled once for better performance
  */
 const INJECTION_PATTERNS = {
   specDirectory: /\{\{\s*specDirectory\s*\}\}/gi,
@@ -38,14 +38,31 @@ const INJECTION_PATTERNS = {
 };
 
 /**
- * Detect injection points in prompt content
+ * Detect injection points in prompt content - optimized version
  */
 function detectInjectionPoints(content: string): { specDirectory: boolean; projectContext: boolean; mcpDocumentation: boolean } {
-  return {
-    specDirectory: INJECTION_PATTERNS.specDirectory.test(content),
-    projectContext: INJECTION_PATTERNS.projectContext.test(content),
-    mcpDocumentation: INJECTION_PATTERNS.mcpDocumentation.test(content),
+  // Reset global regex states
+  INJECTION_PATTERNS.specDirectory.lastIndex = 0;
+  INJECTION_PATTERNS.projectContext.lastIndex = 0;
+  INJECTION_PATTERNS.mcpDocumentation.lastIndex = 0;
+
+  // Use more efficient approach - check all patterns in one pass
+  const results = {
+    specDirectory: false,
+    projectContext: false,
+    mcpDocumentation: false,
   };
+
+  // If no injection patterns exist at all, return early
+  if (!content.includes('{{')) {
+    return results;
+  }
+
+  results.specDirectory = INJECTION_PATTERNS.specDirectory.test(content);
+  results.projectContext = INJECTION_PATTERNS.projectContext.test(content);
+  results.mcpDocumentation = INJECTION_PATTERNS.mcpDocumentation.test(content);
+
+  return results;
 }
 
 /**
@@ -58,39 +75,42 @@ function extractAgentTypeFromFilename(filename: string): string | null {
 }
 
 /**
- * Parse front matter from markdown content
+ * Parse front matter from markdown content - optimized version
  */
 function parseFrontMatter(content: string): { frontMatter?: Record<string, any>; content: string } {
-  const lines = content.split('\n');
-
-  if (lines[0] === '---') {
-    const frontMatterEndIndex = lines.slice(1).findIndex(line => line === '---');
-    if (frontMatterEndIndex !== -1) {
-      try {
-        const frontMatterLines = lines.slice(1, frontMatterEndIndex + 1);
-        const frontMatterText = frontMatterLines.join('\n');
-
-        // Simple YAML-like parsing for basic key-value pairs
-        const frontMatter: Record<string, any> = {};
-        frontMatterLines.forEach(line => {
-          const colonIndex = line.indexOf(':');
-          if (colonIndex > 0) {
-            const key = line.substring(0, colonIndex).trim();
-            const value = line.substring(colonIndex + 1).trim();
-            frontMatter[key] = value.replace(/^['"]|['"]$/g, ''); // Remove quotes
-          }
-        });
-
-        const actualContent = lines.slice(frontMatterEndIndex + 2).join('\n');
-        return { frontMatter, content: actualContent };
-      } catch (error) {
-        // If front matter parsing fails, return original content
-        return { content };
-      }
-    }
+  // Quick check if front matter exists to avoid unnecessary split
+  if (!content.startsWith('---\n')) {
+    return { content };
   }
 
-  return { content };
+  // Find the end marker more efficiently
+  const frontMatterEnd = content.indexOf('\n---\n', 4);
+  if (frontMatterEnd === -1) {
+    return { content };
+  }
+
+  try {
+    const frontMatterText = content.substring(4, frontMatterEnd);
+    const actualContent = content.substring(frontMatterEnd + 5);
+
+    // Simple YAML-like parsing for basic key-value pairs
+    const frontMatter: Record<string, any> = {};
+    const lines = frontMatterText.split('\n');
+
+    for (const line of lines) {
+      const colonIndex = line.indexOf(':');
+      if (colonIndex > 0) {
+        const key = line.substring(0, colonIndex).trim();
+        const value = line.substring(colonIndex + 1).trim();
+        frontMatter[key] = value.replace(/^['"]|['"]$/g, ''); // Remove quotes
+      }
+    }
+
+    return { frontMatter, content: actualContent };
+  } catch (error) {
+    // If front matter parsing fails, return original content
+    return { content };
+  }
 }
 
 /**
@@ -159,7 +179,7 @@ export async function parsePromptFile(filePath: string): Promise<{ prompt: Parse
 }
 
 /**
- * Parse all .md files from prompts directory
+ * Parse all .md files from prompts directory - optimized with parallel processing
  */
 export async function parsePromptsDirectory(promptsPath: string): Promise<PromptsParseResult> {
   const result: PromptsParseResult = {
@@ -184,15 +204,25 @@ export async function parsePromptsDirectory(promptsPath: string): Promise<Prompt
       return result;
     }
 
-    // Parse each markdown file
-    for (const file of markdownFiles) {
-      const filePath = path.join(promptsPath, file);
-      const { prompt, error } = await parsePromptFile(filePath);
+    // Parse all files in parallel for better performance
+    const filePaths = markdownFiles.map(file => path.join(promptsPath, file));
+    const parseResults = await Promise.all(
+      filePaths.map(async (filePath) => {
+        try {
+          return await parsePromptFile(filePath);
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          return { prompt: null, error: `Failed to parse ${path.basename(filePath)}: ${errorMessage}` };
+        }
+      })
+    );
 
-      if (prompt) {
-        result.prompts.push(prompt);
-      } else if (error) {
-        result.errors.push(error);
+    // Collect results
+    for (const parseResult of parseResults) {
+      if (parseResult.prompt) {
+        result.prompts.push(parseResult.prompt);
+      } else if (parseResult.error) {
+        result.errors.push(parseResult.error);
       }
     }
 

@@ -275,14 +275,9 @@ export class ModelsParser {
   }
 
   /**
-   * Find and parse AGENT_CONFIGS dictionary
+   * Find and parse AGENT_CONFIGS dictionary - optimized version
    */
   public parseAgentConfigs(): Record<string, any> | null {
-    // Reset position to start
-    this.position = 0;
-    this.line = 1;
-    this.column = 1;
-
     // Look for AGENT_CONFIGS = {
     const agentConfigsPattern = /AGENT_CONFIGS\s*=\s*\{/;
     const match = this.content.match(agentConfigsPattern);
@@ -291,10 +286,95 @@ export class ModelsParser {
       return null;
     }
 
-    // Move position to start of dictionary
-    this.position = match.index! + match[0].length - 1; // Position at the opening brace
+    // Find the complete dictionary using bracket matching for better performance
+    const startIndex = match.index! + match[0].length - 1;
+    const dictContent = this.extractDictionary(startIndex);
 
-    return this.parseDictionary();
+    if (!dictContent) {
+      return null;
+    }
+
+    // Use optimized JSON-like parsing instead of character-by-character
+    return this.parseJsonLikeDict(dictContent);
+  }
+
+  /**
+   * Extract dictionary content using efficient bracket matching
+   */
+  private extractDictionary(startIndex: number): string | null {
+    let braceCount = 0;
+    let inString = false;
+    let escapeNext = false;
+    let currentQuote = '';
+
+    for (let i = startIndex; i < this.content.length; i++) {
+      const char = this.content[i];
+
+      if (escapeNext) {
+        escapeNext = false;
+        continue;
+      }
+
+      if (char === '\\') {
+        escapeNext = true;
+        continue;
+      }
+
+      if (!inString && (char === '"' || char === "'")) {
+        inString = true;
+        currentQuote = char;
+        continue;
+      }
+
+      if (inString && char === currentQuote) {
+        inString = false;
+        currentQuote = '';
+        continue;
+      }
+
+      if (!inString) {
+        if (char === '{') {
+          braceCount++;
+        } else if (char === '}') {
+          braceCount--;
+          if (braceCount === 0) {
+            return this.content.substring(startIndex, i + 1);
+          }
+        }
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Parse dictionary using optimized JSON-like approach
+   */
+  private parseJsonLikeDict(dictStr: string): Record<string, any> | null {
+    try {
+      // Convert Python-like syntax to JSON-like for faster parsing
+      let jsonLike = dictStr
+        .replace(/'/g, '"') // Convert single quotes to double quotes
+        .replace(/True/g, 'true')
+        .replace(/False/g, 'false')
+        .replace(/None/g, 'null');
+
+      // Handle unquoted keys (common in Python)
+      jsonLike = jsonLike.replace(/(\w+):\s*(["\[])/g, '"$1": $2');
+
+      try {
+        return JSON.parse(jsonLike);
+      } catch (e) {
+        // Fallback to original parser for complex cases
+        this.position = 0;
+        this.line = 1;
+        this.column = 1;
+        this.position = dictStr.length - dictStr.length; // Set to start of dict
+        return this.parseDictionary();
+      }
+    } catch (error) {
+      return null;
+    }
   }
 }
 

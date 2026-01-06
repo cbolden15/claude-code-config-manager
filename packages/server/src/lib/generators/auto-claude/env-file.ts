@@ -1,4 +1,4 @@
-import { AutoClaudeProjectConfig, CustomMcpServer } from '../../types/auto-claude.js';
+import { AutoClaudeProjectConfig, CustomMcpServer } from '../../../../../shared/src/types/auto-claude';
 
 interface EnvFileOptions {
   projectConfig?: AutoClaudeProjectConfig | null;
