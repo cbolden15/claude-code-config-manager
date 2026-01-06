@@ -384,8 +384,8 @@
           "subtask_id": "6_3",
           "name": "Implement import subcommand",
           "description": "ccm auto-claude import with --source and --dry-run options",
-          "status": "pending",
-          "notes": "",
+          "status": "completed",
+          "notes": "Successfully implemented ccm auto-claude import command with comprehensive --source path validation and --dry-run preview mode. Features include: validation that --source is required, Auto-Claude installation path validation (checking for apps/backend/prompts structure), integration with /api/auto-claude/import endpoint, proper handling of dry-run vs actual import modes, comprehensive error handling and user feedback, detailed import results with statistics and next steps, version detection from Auto-Claude package.json when available. Tested functionality: command help text works correctly, validation prevents import without --source option, path validation rejects non-existent or invalid paths, dry-run flag is properly recognized and displayed, CLI integration working through createAutoClaudeCommand(). Implementation follows existing CLI patterns using chalk for colored output.",
           "dependencies": ["6_1", "4_1"],
           "files_to_modify": [
             "packages/cli/src/commands/auto-claude.ts"
