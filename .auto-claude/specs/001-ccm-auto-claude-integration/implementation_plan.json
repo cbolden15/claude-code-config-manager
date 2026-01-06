@@ -428,8 +428,8 @@
           "subtask_id": "6_7",
           "name": "Update init command",
           "description": "Add --auto-claude flag to ccm init command",
-          "status": "pending",
-          "notes": "",
+          "status": "completed",
+          "notes": "Successfully implemented --auto-claude flag for ccm init command. Added autoClaude?: boolean to InitOptions interface, integrated autoClaudeEnabled parameter with the generate API call, added user feedback indicating when Auto-Claude integration is enabled, updated CLI command definition with --auto-claude flag and help text, and added enhanced next steps guidance for Auto-Claude projects. Manual verification passed - the flag is properly recognized in help text, and the command integrates correctly with existing Auto-Claude generator functionality. All TypeScript compilation successful.",
           "dependencies": ["3_6"],
           "files_to_modify": [
             "packages/cli/src/commands/init.ts"

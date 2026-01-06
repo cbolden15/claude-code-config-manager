@@ -114,7 +114,12 @@
       "description": "Successfully implemented ccm auto-claude sync command with --backend option for one-way sync. Features include: backend path configuration/override, Auto-Claude validation, dry-run mode, API integration, comprehensive error handling, and detailed progress reporting. Implementation follows established patterns and passed TypeScript build verification.",
       "category": "CLI Implementation",
       "discovered_at": "2026-01-06T00:03:54.296088+00:00"
+    },
+    "packages/cli/src/commands/init.ts": {
+      "description": "The --auto-claude flag for ccm init command enables Auto-Claude integration by setting autoClaudeEnabled parameter in the generate API call. When enabled, the generator automatically adds default Auto-Claude components (project config, model profiles, agent configs, and prompts) and generates corresponding files (.auto-claude/.env, task_metadata.json, etc.)",
+      "category": "Auto-Claude CLI Integration",
+      "discovered_at": "2026-01-06T00:30:29.143291+00:00"
     }
   },
-  "last_updated": "2026-01-06T00:03:54.296097+00:00"
+  "last_updated": "2026-01-06T00:30:29.143299+00:00"
 }
