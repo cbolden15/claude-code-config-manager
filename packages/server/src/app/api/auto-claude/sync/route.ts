@@ -13,18 +13,22 @@ import type {
   AutoClaudeAgentConfig,
 } from '../../../../../../shared/src/types/auto-claude';
 
+import { timeOperation, performanceMonitor } from '@/lib/performance-monitor';
+
+// Cache for database components to avoid repeated queries
+const componentCache = new Map<string, { data: any; timestamp: number }>();
+const CACHE_TTL = 30000; // 30 seconds cache TTL
+
 /**
- * Performance tracking utility
+ * Clear expired cache entries
  */
-function createPerformanceTracker(operation: string) {
-  const start = performance.now();
-  return {
-    end: () => {
-      const duration = performance.now() - start;
-      console.log(`[PERF] ${operation}: ${Math.round(duration)}ms`);
-      return duration;
+function clearExpiredCache(): void {
+  const now = Date.now();
+  for (const [key, entry] of componentCache.entries()) {
+    if (now - entry.timestamp > CACHE_TTL) {
+      componentCache.delete(key);
     }
-  };
+  }
 }
 
 const SyncRequestSchema = z.object({
@@ -85,72 +89,153 @@ async function writeFileWithBackup(filePath: string, content: string): Promise<v
 }
 
 /**
- * Write multiple files in parallel with progress tracking
+ * Write multiple files in parallel with progress tracking - optimized version
  */
 async function writeFilesInParallel(files: Array<{ path: string; content: string }>): Promise<{ written: number; errors: string[] }> {
-  const writeTracker = createPerformanceTracker(`Writing ${files.length} files in parallel`);
+  const { result } = await timeOperation(
+    `Writing ${files.length} files in parallel`,
+    async () => {
+      // Adaptive concurrency based on file count and system resources
+      const memoryUsage = process.memoryUsage().heapUsed / 1024 / 1024; // MB
+      const baseConcurrency = Math.min(10, files.length);
+      const concurrency = memoryUsage > 300 ? Math.max(3, baseConcurrency - 3) : baseConcurrency;
 
-  const results = await Promise.allSettled(
-    files.map(async (file) => {
-      try {
-        await writeFileWithBackup(file.path, file.content);
-        return { success: true, path: file.path };
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        return { success: false, path: file.path, error: message };
+      const results: Array<{ success: boolean; path: string; error?: string }> = [];
+
+      // Process files in controlled batches to avoid overwhelming the system
+      for (let i = 0; i < files.length; i += concurrency) {
+        const batch = files.slice(i, i + concurrency);
+
+        const batchResults = await Promise.allSettled(
+          batch.map(async (file) => {
+            try {
+              await writeFileWithBackup(file.path, file.content);
+              return { success: true, path: file.path };
+            } catch (error) {
+              const message = error instanceof Error ? error.message : String(error);
+              return { success: false, path: file.path, error: message };
+            }
+          })
+        );
+
+        // Collect results from this batch
+        for (const result of batchResults) {
+          if (result.status === 'fulfilled') {
+            results.push(result.value);
+          } else {
+            results.push({ success: false, path: 'unknown', error: result.reason?.message || 'Unknown error' });
+          }
+        }
+
+        // Small delay between batches to prevent system overload
+        if (i + concurrency < files.length && files.length > 20) {
+          await new Promise(resolve => setTimeout(resolve, 10));
+        }
       }
-    })
+
+      const written = results.filter(r => r.success).length;
+      const errors = results.filter(r => !r.success).map(r => r.error || 'Unknown error');
+
+      return { written, errors };
+    },
+    files.length // items processed
   );
 
-  const written = results.filter(r => r.status === 'fulfilled' && r.value.success).length;
-  const errors = results
-    .filter(r => r.status === 'fulfilled' && !r.value.success)
-    .map(r => r.status === 'fulfilled' && r.value.error ? r.value.error : 'Unknown error');
-
-  writeTracker.end();
-  return { written, errors };
+  return result;
 }
 
 /**
- * Get Auto-Claude components from database
+ * Get Auto-Claude components from database with caching - optimized version
  */
 async function getAutoClaudeComponents(): Promise<{
   prompts: AutoClaudePrompt[];
   agentConfigs: AutoClaudeAgentConfig[];
 }> {
-  const [promptComponents, agentConfigComponents] = await Promise.all([
-    prisma.component.findMany({
-      where: {
-        type: 'AUTO_CLAUDE_PROMPT',
-        enabled: true,
-      },
-    }),
-    prisma.component.findMany({
-      where: {
-        type: 'AUTO_CLAUDE_AGENT_CONFIG',
-        enabled: true,
-      },
-    }),
-  ]);
+  // Clear expired cache entries first
+  clearExpiredCache();
 
-  // Parse component configs into typed objects
-  const prompts: AutoClaudePrompt[] = promptComponents.map(component => {
-    try {
-      return JSON.parse(component.config);
-    } catch (error) {
-      throw new Error(`Failed to parse prompt config for ${component.name}: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  });
+  const cacheKey = 'auto-claude-components';
+  const cached = componentCache.get(cacheKey);
 
-  const agentConfigs: AutoClaudeAgentConfig[] = agentConfigComponents.map(component => {
-    try {
-      return JSON.parse(component.config);
-    } catch (error) {
-      throw new Error(`Failed to parse agent config for ${component.name}: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  });
+  // Return cached data if available and not expired
+  if (cached && (Date.now() - cached.timestamp) < CACHE_TTL) {
+    return cached.data;
+  }
 
-  return { prompts, agentConfigs };
+  const { result } = await timeOperation(
+    'Database component fetch',
+    async () => {
+      const [promptComponents, agentConfigComponents] = await Promise.all([
+        prisma.component.findMany({
+          where: {
+            type: 'AUTO_CLAUDE_PROMPT',
+            enabled: true,
+          },
+          select: {
+            id: true,
+            name: true,
+            config: true,
+            updatedAt: true, // Include for change detection
+          },
+        }),
+        prisma.component.findMany({
+          where: {
+            type: 'AUTO_CLAUDE_AGENT_CONFIG',
+            enabled: true,
+          },
+          select: {
+            id: true,
+            name: true,
+            config: true,
+            updatedAt: true, // Include for change detection
+          },
+        }),
+      ]);
+
+      // Optimize JSON parsing with error handling for batches
+      const prompts: AutoClaudePrompt[] = [];
+      const agentConfigs: AutoClaudeAgentConfig[] = [];
+
+      // Parse prompts with error collection
+      const promptErrors: string[] = [];
+      for (const component of promptComponents) {
+        try {
+          prompts.push(JSON.parse(component.config));
+        } catch (error) {
+          promptErrors.push(`Failed to parse prompt config for ${component.name}: ${error instanceof Error ? error.message : String(error)}`);
+        }
+      }
+
+      // Parse agent configs with error collection
+      const agentConfigErrors: string[] = [];
+      for (const component of agentConfigComponents) {
+        try {
+          agentConfigs.push(JSON.parse(component.config));
+        } catch (error) {
+          agentConfigErrors.push(`Failed to parse agent config for ${component.name}: ${error instanceof Error ? error.message : String(error)}`);
+        }
+      }
+
+      // Throw aggregated errors if any parsing failed
+      const allErrors = [...promptErrors, ...agentConfigErrors];
+      if (allErrors.length > 0) {
+        throw new Error(`Component parsing failed: ${allErrors.join('; ')}`);
+      }
+
+      const result = { prompts, agentConfigs };
+
+      // Cache the result
+      componentCache.set(cacheKey, {
+        data: result,
+        timestamp: Date.now(),
+      });
+
+      return result;
+    },
+    promptComponents.length + agentConfigComponents.length // items processed
+  );
+
+  return result;
 }
 
 /**
@@ -162,88 +247,98 @@ async function syncAutoClaudeFiles(
   agentConfigs: AutoClaudeAgentConfig[],
   dryRun: boolean = false
 ): Promise<SyncStats> {
-  const syncTracker = createPerformanceTracker('Total sync operation');
 
-  const stats: SyncStats = {
-    promptsWritten: 0,
-    agentConfigsWritten: 0,
-    filesWritten: [],
-    errors: [],
-  };
+  const { result: stats } = await timeOperation(
+    'Total sync operation',
+    async () => {
+      const syncStats: SyncStats = {
+        promptsWritten: 0,
+        agentConfigsWritten: 0,
+        filesWritten: [],
+        errors: [],
+      };
 
-  try {
-    // Generate files in parallel
-    const generationTracker = createPerformanceTracker('File generation');
-    const [generatedPrompts, agentConfigsContent] = await Promise.all([
-      // Generate prompt files
-      (async () => generateAutoClaudePrompts({
-        prompts,
-        injectionContext: {
-          specDirectory: '{{specDirectory}}',
-          projectContext: '{{projectContext}}',
-          mcpDocumentation: '{{mcpDocumentation}}',
-        },
-      }))(),
+      try {
+        // Generate files in parallel using the performance monitor
+        const { result: [generatedPrompts, agentConfigsContent] } = await timeOperation(
+          'File generation',
+          async () => {
+            return await Promise.all([
+              // Generate prompt files
+              generateAutoClaudePrompts({
+                prompts,
+                injectionContext: {
+                  specDirectory: '{{specDirectory}}',
+                  projectContext: '{{projectContext}}',
+                  mcpDocumentation: '{{mcpDocumentation}}',
+                },
+              }),
 
-      // Generate agent configs
-      (async () => generateAgentConfigs({ agentConfigs }))(),
-    ]);
-    generationTracker.end();
+              // Generate agent configs
+              generateAgentConfigs({ agentConfigs }),
+            ]);
+          },
+          prompts.length + agentConfigs.length // items processed
+        );
 
-    if (dryRun) {
-      // For dry run, just count what would be written
-      stats.promptsWritten = generatedPrompts.length;
-      stats.agentConfigsWritten = 1; // agent_configs.json
-      stats.filesWritten = [
-        ...generatedPrompts.map(p => p.path),
-        'agent_configs.json',
-      ];
-      syncTracker.end();
-      return stats;
-    }
+        if (dryRun) {
+          // For dry run, just count what would be written
+          syncStats.promptsWritten = generatedPrompts.length;
+          syncStats.agentConfigsWritten = 1; // agent_configs.json
+          syncStats.filesWritten = [
+            ...generatedPrompts.map(p => p.path),
+            'agent_configs.json',
+          ];
+          return syncStats;
+        }
 
-    // Prepare all files to be written
-    const filesToWrite: Array<{ path: string; content: string }> = [];
+        // Prepare all files to be written
+        const filesToWrite: Array<{ path: string; content: string }> = [];
 
-    // Add prompt files
-    for (const prompt of generatedPrompts) {
-      const promptPath = path.join(backendPath, 'apps', 'backend', prompt.path);
-      filesToWrite.push({
-        path: promptPath,
-        content: prompt.content,
-      });
-      stats.filesWritten.push(prompt.path);
-    }
+        // Add prompt files
+        for (const prompt of generatedPrompts) {
+          const promptPath = path.join(backendPath, 'apps', 'backend', prompt.path);
+          filesToWrite.push({
+            path: promptPath,
+            content: prompt.content,
+          });
+          syncStats.filesWritten.push(prompt.path);
+        }
 
-    // Add agent configs file
-    const agentConfigsPath = path.join(backendPath, 'agent_configs.json');
-    filesToWrite.push({
-      path: agentConfigsPath,
-      content: JSON.stringify(agentConfigsContent, null, 2),
-    });
-    stats.filesWritten.push('agent_configs.json');
+        // Add agent configs file
+        const agentConfigsPath = path.join(backendPath, 'agent_configs.json');
+        filesToWrite.push({
+          path: agentConfigsPath,
+          content: agentConfigsContent, // Already a string from generateAgentConfigs
+        });
+        syncStats.filesWritten.push('agent_configs.json');
 
-    // Write all files in parallel
-    if (filesToWrite.length > 0) {
-      const writeResults = await writeFilesInParallel(filesToWrite);
+        // Write all files in parallel
+        if (filesToWrite.length > 0) {
+          const writeResults = await writeFilesInParallel(filesToWrite);
 
-      // Count successful writes
-      stats.promptsWritten = generatedPrompts.length; // Assume all prompts written successfully
-      stats.agentConfigsWritten = 1; // agent_configs.json
+          // Count successful writes based on actual results
+          const successfulPrompts = writeResults.written - (writeResults.errors.length === 0 ? 1 : 0); // Subtract agent_configs.json
+          syncStats.promptsWritten = Math.max(0, successfulPrompts);
+          syncStats.agentConfigsWritten = writeResults.written > successfulPrompts ? 1 : 0;
 
-      // Add any write errors to stats
-      stats.errors.push(...writeResults.errors);
+          // Add any write errors to stats
+          syncStats.errors.push(...writeResults.errors);
 
-      console.log(`[PERF] Successfully wrote ${writeResults.written}/${filesToWrite.length} files`);
-    }
+          console.log(`[PERF] Successfully wrote ${writeResults.written}/${filesToWrite.length} files`);
+        }
 
-  } catch (error) {
-    stats.errors.push(`Sync failed: ${error instanceof Error ? error.message : String(error)}`);
-  }
+      } catch (error) {
+        syncStats.errors.push(`Sync failed: ${error instanceof Error ? error.message : String(error)}`);
+      }
 
-  const totalDuration = syncTracker.end();
+      return syncStats;
+    },
+    prompts.length + agentConfigs.length // total items processed
+  );
 
-  // Log performance warning if sync takes too long
+  // Log performance warning if sync takes too long (check metric duration)
+  const totalDuration = performanceMonitor.getStats('Total sync operation')?.avgDuration || 0;
   if (totalDuration > 5000) { // 5 seconds
     console.warn(`[PERF WARNING] Sync took ${Math.round(totalDuration)}ms, exceeding 5s target`);
   }
@@ -252,9 +347,10 @@ async function syncAutoClaudeFiles(
 }
 
 export async function POST(request: NextRequest) {
-  const totalTracker = createPerformanceTracker('Total sync request');
-
-  try {
+  const { result: response } = await timeOperation(
+    'Total sync request',
+    async () => {
+      try {
     const body = await request.json();
     const validated = SyncRequestSchema.parse(body);
 
@@ -294,104 +390,105 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get Auto-Claude components from database
-    let components: { prompts: AutoClaudePrompt[]; agentConfigs: AutoClaudeAgentConfig[] };
-    try {
-      const dbTracker = createPerformanceTracker('Database component fetch');
-      components = await getAutoClaudeComponents();
-      dbTracker.end();
-    } catch (error) {
-      totalTracker.end();
-      return NextResponse.json(
-        { error: 'Failed to fetch Auto-Claude components', details: error instanceof Error ? error.message : String(error) },
-        { status: 500 }
-      );
-    }
+        // Get Auto-Claude components from database
+        let components: { prompts: AutoClaudePrompt[]; agentConfigs: AutoClaudeAgentConfig[] };
+        try {
+          components = await getAutoClaudeComponents();
+        } catch (error) {
+          return NextResponse.json(
+            { error: 'Failed to fetch Auto-Claude components', details: error instanceof Error ? error.message : String(error) },
+            { status: 500 }
+          );
+        }
 
-    // Check if there are components to sync
-    if (components.prompts.length === 0 && components.agentConfigs.length === 0) {
-      totalTracker.end();
-      return NextResponse.json(
-        { error: 'No Auto-Claude components found to sync. Please import or create some components first.' },
-        { status: 400 }
-      );
-    }
+        // Check if there are components to sync
+        if (components.prompts.length === 0 && components.agentConfigs.length === 0) {
+          return NextResponse.json(
+            { error: 'No Auto-Claude components found to sync. Please import or create some components first.' },
+            { status: 400 }
+          );
+        }
 
-    // Perform the sync
-    const stats = await syncAutoClaudeFiles(
-      backendPath,
-      components.prompts,
-      components.agentConfigs,
-      validated.dryRun
-    );
+        // Perform the sync
+        const stats = await syncAutoClaudeFiles(
+          backendPath,
+          components.prompts,
+          components.agentConfigs,
+          validated.dryRun
+        );
 
-    // If there were errors, return them
-    if (stats.errors.length > 0) {
-      totalTracker.end();
-      return NextResponse.json(
-        {
-          error: 'Sync completed with errors',
+        // If there were errors, return them
+        if (stats.errors.length > 0) {
+          return NextResponse.json(
+            {
+              error: 'Sync completed with errors',
+              stats,
+              backendPath,
+            },
+            { status: 207 } // Multi-status (partial success)
+          );
+        }
+
+        // Update lastAutoClaudeSync timestamp for projects (if not dry run)
+        if (!validated.dryRun) {
+          try {
+            const { metric } = await timeOperation(
+              'Database timestamp update',
+              async () => {
+                if (validated.projectId) {
+                  // Update specific project
+                  await prisma.project.update({
+                    where: { id: validated.projectId },
+                    data: { lastAutoClaudeSync: new Date() },
+                  });
+                } else {
+                  // Update all Auto-Claude enabled projects
+                  await prisma.project.updateMany({
+                    where: { autoClaudeEnabled: true },
+                    data: { lastAutoClaudeSync: new Date() },
+                  });
+                }
+                return 'success';
+              },
+              1 // 1 operation
+            );
+          } catch (error) {
+            console.warn('Failed to update lastAutoClaudeSync timestamp:', error);
+            // Don't fail the sync for this
+          }
+        }
+
+        const result: SyncResult = {
+          success: true,
           stats,
           backendPath,
-        },
-        { status: 207 } // Multi-status (partial success)
-      );
-    }
+        };
 
-    // Update lastAutoClaudeSync timestamp for projects (if not dry run)
-    if (!validated.dryRun) {
-      try {
-        const updateTracker = createPerformanceTracker('Database timestamp update');
-        if (validated.projectId) {
-          // Update specific project
-          await prisma.project.update({
-            where: { id: validated.projectId },
-            data: { lastAutoClaudeSync: new Date() },
-          });
-        } else {
-          // Update all Auto-Claude enabled projects
-          await prisma.project.updateMany({
-            where: { autoClaudeEnabled: true },
-            data: { lastAutoClaudeSync: new Date() },
-          });
+        if (validated.dryRun) {
+          result.dryRun = true;
         }
-        updateTracker.end();
+
+        return NextResponse.json({
+          ...result,
+          performanceMs: Math.round(performanceMonitor.getStats('Total sync request')?.avgDuration || 0),
+        });
       } catch (error) {
-        console.warn('Failed to update lastAutoClaudeSync timestamp:', error);
-        // Don't fail the sync for this
+        if (error instanceof z.ZodError) {
+          return NextResponse.json(
+            { error: 'Validation failed', details: error.errors },
+            { status: 400 }
+          );
+        }
+
+        console.error('POST /api/auto-claude/sync error:', error);
+        return NextResponse.json(
+          { error: 'Failed to sync Auto-Claude files' },
+          { status: 500 }
+        );
       }
-    }
+    },
+    1 // 1 request processed
+  );
 
-    const totalDuration = totalTracker.end();
-
-    const result: SyncResult = {
-      success: true,
-      stats,
-      backendPath,
-    };
-
-    if (validated.dryRun) {
-      result.dryRun = true;
-    }
-
-    return NextResponse.json({
-      ...result,
-      performanceMs: Math.round(totalDuration),
-    });
-  } catch (error) {
-    totalTracker.end();
-
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Validation failed', details: error.errors },
-        { status: 400 }
-      );
-    }
-
-    console.error('POST /api/auto-claude/sync error:', error);
-    return NextResponse.json(
-      { error: 'Failed to sync Auto-Claude files' },
-      { status: 500 }
-    );
-  }
+  return response;
 }

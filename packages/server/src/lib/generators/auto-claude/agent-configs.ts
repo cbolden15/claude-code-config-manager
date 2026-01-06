@@ -1,4 +1,5 @@
 import { AutoClaudeAgentConfig } from '../../../../../shared/src/types/auto-claude';
+import { timeOperationSync } from '../../performance-monitor';
 
 interface AgentConfigsOptions {
   agentConfigs: AutoClaudeAgentConfig[];
@@ -16,24 +17,46 @@ interface AgentConfigsExport {
 }
 
 /**
- * Generates JSON export of AGENT_CONFIGS with tool permissions and MCP dependencies
+ * Generates JSON export of AGENT_CONFIGS with tool permissions and MCP dependencies - optimized version
  */
 export function generateAgentConfigs(options: AgentConfigsOptions): string {
-  const { agentConfigs } = options;
-  const agentConfigsExport: AgentConfigsExport = {};
+  const { result } = timeOperationSync('agent-configs generation', () => {
+    const { agentConfigs } = options;
+    const agentConfigsExport: AgentConfigsExport = {};
 
-  for (const config of agentConfigs) {
-    agentConfigsExport[config.agentType] = {
-      agentType: config.agentType,
-      tools: [...config.tools],
-      mcpServers: [...config.mcpServers],
-      mcpServersOptional: [...config.mcpServersOptional],
-      autoClaudeTools: [...config.autoClaudeTools],
-      thinkingDefault: config.thinkingDefault
-    };
-  }
+    // Optimize for large numbers of configs
+    if (agentConfigs.length > 50) {
+      // Use Object.assign for better performance with many configs
+      const entries = agentConfigs.map(config => [
+        config.agentType,
+        {
+          agentType: config.agentType,
+          tools: [...config.tools],
+          mcpServers: [...config.mcpServers],
+          mcpServersOptional: [...config.mcpServersOptional],
+          autoClaudeTools: [...config.autoClaudeTools],
+          thinkingDefault: config.thinkingDefault
+        }
+      ]);
+      Object.assign(agentConfigsExport, Object.fromEntries(entries));
+    } else {
+      // Traditional approach for smaller sets
+      for (const config of agentConfigs) {
+        agentConfigsExport[config.agentType] = {
+          agentType: config.agentType,
+          tools: [...config.tools],
+          mcpServers: [...config.mcpServers],
+          mcpServersOptional: [...config.mcpServersOptional],
+          autoClaudeTools: [...config.autoClaudeTools],
+          thinkingDefault: config.thinkingDefault
+        };
+      }
+    }
 
-  return JSON.stringify(agentConfigsExport, null, 2);
+    return JSON.stringify(agentConfigsExport, null, 2);
+  }, agentConfigs.length);
+
+  return result;
 }
 
 /**

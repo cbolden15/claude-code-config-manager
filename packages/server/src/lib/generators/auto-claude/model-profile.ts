@@ -1,4 +1,5 @@
 import { AutoClaudeModelProfile, ClaudeModel, ThinkingLevel } from '../../../../../shared/src/types/auto-claude';
+import { timeOperationSync } from '../../performance-monitor';
 
 interface ModelProfileOptions {
   modelProfile?: AutoClaudeModelProfile | null;
@@ -20,27 +21,46 @@ interface TaskMetadata {
 }
 
 /**
- * Generates task_metadata.json with phase models and thinking configurations
+ * Generates task_metadata.json with phase models and thinking configurations - optimized version
  */
 export function generateTaskMetadata(options: ModelProfileOptions): string {
-  const { modelProfile } = options;
+  const { result } = timeOperationSync('task-metadata generation', () => {
+    const { modelProfile } = options;
 
-  const taskMetadata: TaskMetadata = {
-    models: {
-      spec: modelProfile?.phaseModels.spec || 'sonnet',
-      planning: modelProfile?.phaseModels.planning || 'sonnet',
-      coding: modelProfile?.phaseModels.coding || 'sonnet',
-      qa: modelProfile?.phaseModels.qa || 'haiku'
-    },
-    thinking: {
-      spec: modelProfile?.phaseThinking.spec || 'medium',
-      planning: modelProfile?.phaseThinking.planning || 'high',
-      coding: modelProfile?.phaseThinking.coding || 'medium',
-      qa: modelProfile?.phaseThinking.qa || 'low'
-    }
-  };
+    // Pre-compute default values to avoid repeated property access
+    const defaultModels = {
+      spec: 'sonnet' as ClaudeModel,
+      planning: 'sonnet' as ClaudeModel,
+      coding: 'sonnet' as ClaudeModel,
+      qa: 'haiku' as ClaudeModel
+    };
 
-  return JSON.stringify(taskMetadata, null, 2);
+    const defaultThinking = {
+      spec: 'medium' as ThinkingLevel,
+      planning: 'high' as ThinkingLevel,
+      coding: 'medium' as ThinkingLevel,
+      qa: 'low' as ThinkingLevel
+    };
+
+    const taskMetadata: TaskMetadata = {
+      models: {
+        spec: modelProfile?.phaseModels.spec ?? defaultModels.spec,
+        planning: modelProfile?.phaseModels.planning ?? defaultModels.planning,
+        coding: modelProfile?.phaseModels.coding ?? defaultModels.coding,
+        qa: modelProfile?.phaseModels.qa ?? defaultModels.qa
+      },
+      thinking: {
+        spec: modelProfile?.phaseThinking.spec ?? defaultThinking.spec,
+        planning: modelProfile?.phaseThinking.planning ?? defaultThinking.planning,
+        coding: modelProfile?.phaseThinking.coding ?? defaultThinking.coding,
+        qa: modelProfile?.phaseThinking.qa ?? defaultThinking.qa
+      }
+    };
+
+    return JSON.stringify(taskMetadata, null, 2);
+  }, 1); // Always 1 file generated
+
+  return result;
 }
 
 /**

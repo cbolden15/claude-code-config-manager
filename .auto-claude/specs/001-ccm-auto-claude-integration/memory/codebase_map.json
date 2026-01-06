@@ -264,7 +264,12 @@
       "description": "Enhanced Auto-Claude integration documentation with accurate CLI command reference, comprehensive workflow examples for first-time setup/development/troubleshooting/maintenance, and practical command syntax corrections",
       "category": "documentation",
       "discovered_at": "2026-01-06T06:32:12.308887+00:00"
+    },
+    "packages/server/src/lib/acceptance-criteria-validator.ts": {
+      "description": "Comprehensive acceptance criteria validation framework for Auto-Claude integration. Validates all functional requirements (import workflow, edit workflow, sync workflow, project initialization, generated configs) and non-functional requirements (security, performance, usability, reliability). Includes automated testing of generators, database schema validation, performance metrics checking, and security compliance verification. Provides detailed reporting with pass/fail status and performance timing.",
+      "category": "validation",
+      "discovered_at": "2026-01-06T07:26:49.948762+00:00"
     }
   },
-  "last_updated": "2026-01-06T06:32:12.308894+00:00"
+  "last_updated": "2026-01-06T07:26:49.948771+00:00"
 }
