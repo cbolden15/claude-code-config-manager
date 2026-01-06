@@ -20,6 +20,24 @@ A powerful configuration management tool for **Claude Code** and **Auto-Claude**
 - **One-Way Sync**: Auto-Claude configs generated from CCM database
 - **Rich Seed Data**: Comprehensive defaults from Auto-Claude for immediate use
 
+## 📸 Screenshots
+
+### CCM Dashboard
+![CCM Homepage](screenshots/CCM%20Homepage.png)
+*Main dashboard showing projects, components, and monitoring overview*
+
+### Component Management
+![All Components](screenshots/CCM%20All%20Components.png)
+*Browse and manage MCP servers, subagents, skills, commands, and hooks*
+
+### Auto-Claude Configuration
+![Auto-Claude Dashboard](screenshots/Auto-Claude%20Config%20Dashboard.png)
+*Manage Auto-Claude agent configs, prompts, and model profiles*
+
+### Prompt Editor
+![Prompt Editor](screenshots/Auto-Claude%20Prompt%20Editor.png)
+*Monaco-powered prompt editor with markdown preview and injection point configuration*
+
 ## 📦 Architecture
 
 **Client-Server Model:**
