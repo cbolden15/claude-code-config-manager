@@ -53,13 +53,15 @@ ccm init my-project --profile blockchain --auto-claude
 
 - Node.js 20.0.0+
 - pnpm 9.0.0+
-- Auto-Claude installation (optional, for Auto-Claude features)
+- **[Auto-Claude](https://github.com/coleam00/Auto-Claude)** (optional, for Auto-Claude features)
+  - CCM can import and manage Auto-Claude configurations
+  - Install Auto-Claude separately to use autonomous coding features
 
 ### Installation
 
 ```bash
 # Clone repository
-git clone https://github.com/your-org/claude-code-config-manager.git
+git clone https://github.com/cbolden-bd/claude-code-config-manager.git
 cd claude-code-config-manager
 
 # Install dependencies
@@ -305,8 +307,15 @@ MIT License - see [LICENSE](./LICENSE) file for details.
 ## 🤝 Support
 
 - **Documentation**: [Auto-Claude Integration Guide](./docs/AUTO_CLAUDE_INTEGRATION.md)
-- **Issues**: [GitHub Issues](https://github.com/your-org/claude-code-config-manager/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/your-org/claude-code-config-manager/discussions)
+- **Issues**: [GitHub Issues](https://github.com/cbolden-bd/claude-code-config-manager/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/cbolden-bd/claude-code-config-manager/discussions)
+
+## 🔗 Related Projects
+
+- **[Auto-Claude](https://github.com/coleam00/Auto-Claude)** - Autonomous coding system by coleam00
+  - CCM extends Auto-Claude by providing centralized configuration management
+  - Use CCM to manage your Auto-Claude agents, prompts, and model profiles
+- **[Claude Code](https://claude.com/claude-code)** - Anthropic's official CLI tool for Claude
 
 ---
 
