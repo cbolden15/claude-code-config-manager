@@ -171,6 +171,21 @@ class ApiClient {
   async getAutoClaudeModelProfile(id: string): Promise<ApiResponse<AutoClaudeModelProfileDetail>> {
     return this.get(`/api/auto-claude/model-profiles/${id}`);
   }
+
+  // Auto-Claude Agents
+  async listAutoClaudeAgents(options: {
+    agentType?: string;
+  } = {}): Promise<ApiResponse<AutoClaudeAgentsResponse>> {
+    const query = new URLSearchParams();
+    if (options.agentType) query.set('agentType', options.agentType);
+
+    const queryString = query.toString();
+    return this.get(`/api/auto-claude/agents${queryString ? `?${queryString}` : ''}`);
+  }
+
+  async getAutoClaudeAgent(agentType: string): Promise<ApiResponse<AutoClaudeAgentDetail>> {
+    return this.get(`/api/auto-claude/agents/${agentType}`);
+  }
 }
 
 // Types
@@ -361,6 +376,55 @@ interface AutoClaudeModelProfileDetail extends AutoClaudeModelProfileResponse {
   };
 }
 
+// Auto-Claude Agent interfaces
+interface AutoClaudeAgentConfig {
+  agentType: string;
+  tools: string[];
+  mcpServers: string[];
+  mcpServersOptional: string[];
+  autoClaudeTools: string[];
+  thinkingDefault: 'none' | 'low' | 'medium' | 'high' | 'ultrathink';
+}
+
+interface AutoClaudeAgentResponse {
+  id: string;
+  agentType: string;
+  description: string;
+  config: AutoClaudeAgentConfig;
+  enabled: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface AutoClaudeAgentsResponse {
+  agentConfigs: AutoClaudeAgentResponse[];
+  matrices: {
+    tools: {
+      agents: string[];
+      tools: string[];
+      matrix: Record<string, string[]>;
+    };
+    mcp: {
+      agents: string[];
+      servers: string[];
+      matrix: Record<string, { required: string[]; optional: string[] }>;
+    };
+  };
+  stats: {
+    total: number;
+    enabled: number;
+    uniqueTools: number;
+    uniqueMcpServers: number;
+  };
+  errors?: string[];
+}
+
+interface AutoClaudeAgentDetail extends AutoClaudeAgentResponse {
+  tags: string | null;
+  version: string | null;
+  sourceUrl: string | null;
+}
+
 export const api = new ApiClient();
 export type {
   Component,
@@ -376,5 +440,9 @@ export type {
   AutoClaudeModelProfile,
   AutoClaudeModelProfileResponse,
   AutoClaudeModelProfilesResponse,
-  AutoClaudeModelProfileDetail
+  AutoClaudeModelProfileDetail,
+  AutoClaudeAgentConfig,
+  AutoClaudeAgentResponse,
+  AutoClaudeAgentsResponse,
+  AutoClaudeAgentDetail
 };

@@ -115,17 +115,18 @@ ${chalk.gray('Examples:')}
   agentsCommand
     .command('list')
     .description('List all available agent configurations')
-    .action(async () => {
-      console.log(chalk.yellow('Auto-Claude agents list command is not yet implemented.'));
-      console.log(chalk.gray('This will be available in a future update.'));
+    .option('-v, --verbose', 'Show detailed configuration for each agent')
+    .option('-f, --format <format>', 'Output format: table (default), json', 'table')
+    .action(async (options: { verbose?: boolean; format?: string }) => {
+      await autoClaudeAgentsListCommand(options);
     });
 
   agentsCommand
     .command('show <agent>')
     .description('Show details for a specific agent configuration')
-    .action(async () => {
-      console.log(chalk.yellow('Auto-Claude agents show command is not yet implemented.'));
-      console.log(chalk.gray('This will be available in a future update.'));
+    .option('-f, --format <format>', 'Output format: table (default), json', 'table')
+    .action(async (agent: string, options: { format?: string }) => {
+      await autoClaudeAgentsShowCommand(agent, options);
     });
 
   return autoClaudeCommand;
@@ -878,8 +879,250 @@ async function autoClaudeProfilesApplyCommand(profile: string, options: { projec
 }
 
 /**
+ * Auto-Claude agents list command implementation
+ */
+async function autoClaudeAgentsListCommand(options: { verbose?: boolean; format?: string }): Promise<void> {
+  try {
+    console.log(chalk.bold('Auto-Claude Agent Configurations'));
+    console.log();
+
+    const result = await api.listAutoClaudeAgents();
+
+    if (result.error) {
+      console.log(chalk.red('Failed to fetch agent configurations:'), result.error);
+      process.exit(1);
+    }
+
+    const { agentConfigs, matrices, stats } = result.data!;
+
+    // JSON output format
+    if (options.format === 'json') {
+      console.log(JSON.stringify(result.data, null, 2));
+      return;
+    }
+
+    // Table format
+    if (agentConfigs.length === 0) {
+      console.log(chalk.gray('No agent configurations found.'));
+      console.log();
+      console.log('To get started:');
+      console.log(`  ${chalk.cyan('ccm auto-claude import --source /path/to/auto-claude')}`);
+      console.log(`  ${chalk.gray('or')}`);
+      console.log(`  Visit ${chalk.cyan('/auto-claude/agents')} in the web interface to create agents manually.`);
+      return;
+    }
+
+    // Summary statistics
+    console.log(`Total Configurations: ${chalk.cyan(stats.total)}`);
+    console.log(`Enabled: ${chalk.green(stats.enabled)} / Disabled: ${chalk.red(stats.total - stats.enabled)}`);
+    console.log(`Unique Tools: ${chalk.yellow(stats.uniqueTools)}`);
+    console.log(`Unique MCP Servers: ${chalk.magenta(stats.uniqueMcpServers)}`);
+    console.log();
+
+    if (options.verbose) {
+      // Detailed view with full configuration
+      for (const agent of agentConfigs) {
+        const statusBadge = agent.enabled ? chalk.green('✓ ENABLED') : chalk.red('✗ DISABLED');
+        console.log(`${chalk.bold.cyan(agent.agentType)} ${statusBadge}`);
+        console.log(`  Description: ${chalk.gray(agent.description)}`);
+        console.log(`  Tools (${agent.config.tools.length}): ${agent.config.tools.map(t => chalk.blue(t)).join(', ')}`);
+        console.log(`  MCP Required (${agent.config.mcpServers.length}): ${agent.config.mcpServers.map(m => chalk.magenta(m)).join(', ') || chalk.gray('none')}`);
+        console.log(`  MCP Optional (${agent.config.mcpServersOptional.length}): ${agent.config.mcpServersOptional.map(m => chalk.cyan(m)).join(', ') || chalk.gray('none')}`);
+        console.log(`  Auto-Claude Tools: ${agent.config.autoClaudeTools.map(t => chalk.yellow(t)).join(', ') || chalk.gray('none')}`);
+        console.log(`  Default Thinking: ${getThinkingBadge(agent.config.thinkingDefault)}`);
+        console.log(`  Last Updated: ${chalk.gray(new Date(agent.updatedAt).toLocaleDateString())}`);
+        console.log();
+      }
+    } else {
+      // Compact list view
+      console.log(chalk.bold('Agent Configurations:'));
+      console.log();
+
+      // Calculate column widths
+      const nameWidth = Math.max(12, ...agentConfigs.map(a => a.agentType.length));
+      const toolsWidth = Math.max(8, ...agentConfigs.map(a => a.config.tools.length.toString().length));
+
+      // Header
+      console.log(
+        chalk.gray(
+          `${'Agent Type'.padEnd(nameWidth)} ${'Status'.padEnd(8)} ${'Tools'.padEnd(toolsWidth)} ${'Required MCP'.padEnd(12)} ${'Optional MCP'.padEnd(12)} ${'Thinking'}`
+        )
+      );
+      console.log(chalk.gray('─'.repeat(nameWidth + 8 + toolsWidth + 12 + 12 + 10 + 5))); // +5 for spacing
+
+      for (const agent of agentConfigs) {
+        const status = agent.enabled ? chalk.green('enabled') : chalk.red('disabled');
+        const toolCount = chalk.cyan(agent.config.tools.length.toString());
+        const reqMcpCount = chalk.magenta(agent.config.mcpServers.length.toString());
+        const optMcpCount = chalk.cyan(agent.config.mcpServersOptional.length.toString());
+        const thinking = getThinkingBadge(agent.config.thinkingDefault);
+
+        console.log(
+          `${chalk.bold(agent.agentType.padEnd(nameWidth))} ${status.padEnd(8)} ${toolCount.padEnd(toolsWidth)} ${reqMcpCount.padEnd(12)} ${optMcpCount.padEnd(12)} ${thinking}`
+        );
+      }
+      console.log();
+
+      console.log(chalk.gray('Use --verbose for detailed configuration, or:'));
+      console.log(`  ${chalk.cyan('ccm auto-claude agents show <agent>')} to see specific details`);
+    }
+
+    // Show errors if any
+    if (result.data && result.data.errors && result.data.errors.length > 0) {
+      console.log();
+      console.log(chalk.red.bold('Configuration Errors:'));
+      for (const error of result.data.errors) {
+        console.log(chalk.red(`  • ${error}`));
+      }
+    }
+
+  } catch (error) {
+    console.log(chalk.red('Command failed:'), error instanceof Error ? error.message : 'Unknown error');
+    process.exit(1);
+  }
+}
+
+/**
+ * Auto-Claude agents show command implementation
+ */
+async function autoClaudeAgentsShowCommand(agent: string, options: { format?: string }): Promise<void> {
+  try {
+    console.log(chalk.bold(`Auto-Claude Agent: ${chalk.cyan(agent)}`));
+    console.log();
+
+    const result = await api.getAutoClaudeAgent(agent);
+
+    if (result.error) {
+      if (result.error.includes('not found')) {
+        console.log(chalk.red(`Agent configuration '${agent}' not found.`));
+        console.log();
+        console.log('Available agents:');
+
+        // List available agents
+        const listResult = await api.listAutoClaudeAgents();
+        if (listResult.error) {
+          console.log(chalk.red('Failed to fetch available agents.'));
+          return;
+        }
+
+        const agentTypes = listResult.data!.agentConfigs.map(a => a.agentType);
+        if (agentTypes.length === 0) {
+          console.log(chalk.gray('No agent configurations found.'));
+        } else {
+          for (const type of agentTypes) {
+            console.log(`  • ${chalk.cyan(type)}`);
+          }
+        }
+        process.exit(1);
+      } else {
+        console.log(chalk.red('Failed to fetch agent configuration:'), result.error);
+        process.exit(1);
+      }
+    }
+
+    const agentDetail = result.data!;
+
+    // JSON output format
+    if (options.format === 'json') {
+      console.log(JSON.stringify(agentDetail, null, 2));
+      return;
+    }
+
+    // Table format with detailed information
+    const config = agentDetail.config;
+    const statusBadge = agentDetail.enabled ? chalk.green('✓ ENABLED') : chalk.red('✗ DISABLED');
+
+    console.log(`Status: ${statusBadge}`);
+    console.log(`Description: ${chalk.gray(agentDetail.description)}`);
+    if (agentDetail.tags) {
+      console.log(`Tags: ${chalk.gray(agentDetail.tags)}`);
+    }
+    if (agentDetail.version) {
+      console.log(`Version: ${chalk.gray(agentDetail.version)}`);
+    }
+    if (agentDetail.sourceUrl) {
+      console.log(`Source: ${chalk.blue(agentDetail.sourceUrl)}`);
+    }
+    console.log();
+
+    // Configuration details
+    console.log(chalk.bold('Configuration:'));
+    console.log(`  Agent Type: ${chalk.cyan(config.agentType)}`);
+    console.log(`  Default Thinking: ${getThinkingBadge(config.thinkingDefault)}`);
+    console.log();
+
+    // Tools section
+    console.log(chalk.bold('Tools Access:'));
+    if (config.tools.length === 0) {
+      console.log(chalk.gray('  No tools configured'));
+    } else {
+      for (const tool of config.tools) {
+        console.log(`  ${chalk.green('✓')} ${chalk.blue(tool)}`);
+      }
+    }
+    console.log();
+
+    // MCP Servers section
+    console.log(chalk.bold('MCP Server Access:'));
+    if (config.mcpServers.length === 0 && config.mcpServersOptional.length === 0) {
+      console.log(chalk.gray('  No MCP servers configured'));
+    } else {
+      if (config.mcpServers.length > 0) {
+        console.log(chalk.yellow('  Required:'));
+        for (const server of config.mcpServers) {
+          console.log(`    ${chalk.green('✓')} ${chalk.magenta(server)}`);
+        }
+      }
+      if (config.mcpServersOptional.length > 0) {
+        console.log(chalk.yellow('  Optional:'));
+        for (const server of config.mcpServersOptional) {
+          console.log(`    ${chalk.blue('○')} ${chalk.cyan(server)}`);
+        }
+      }
+    }
+    console.log();
+
+    // Auto-Claude specific tools
+    if (config.autoClaudeTools.length > 0) {
+      console.log(chalk.bold('Auto-Claude Tools:'));
+      for (const tool of config.autoClaudeTools) {
+        console.log(`  ${chalk.green('✓')} ${chalk.yellow(tool)}`);
+      }
+      console.log();
+    }
+
+    // Timestamps
+    console.log(chalk.bold('Metadata:'));
+    console.log(`  Created: ${chalk.gray(new Date(agentDetail.createdAt).toLocaleString())}`);
+    console.log(`  Updated: ${chalk.gray(new Date(agentDetail.updatedAt).toLocaleString())}`);
+    console.log();
+
+    // Usage information
+    console.log(chalk.gray('Next steps:'));
+    console.log(`  • Edit in web UI: ${chalk.cyan('/auto-claude/agents')}`);
+    console.log(`  • Update via API: ${chalk.cyan(`PUT /api/auto-claude/agents/${agent}`)}`);
+    console.log(`  • Use in Auto-Claude tasks by ensuring proper MCP server configuration`);
+
+  } catch (error) {
+    console.log(chalk.red('Command failed:'), error instanceof Error ? error.message : 'Unknown error');
+    process.exit(1);
+  }
+}
+
+/**
  * Helper functions for formatting
  */
+function getThinkingBadge(thinking: string): string {
+  switch (thinking) {
+    case 'ultrathink': return chalk.red.bold('ULTRA');
+    case 'high': return chalk.yellow.bold('HIGH');
+    case 'medium': return chalk.blue.bold('MEDIUM');
+    case 'low': return chalk.green.bold('LOW');
+    case 'none': return chalk.gray.bold('NONE');
+    default: return chalk.gray(thinking.toUpperCase());
+  }
+}
+
 function getCostBadge(cost: string): string {
   switch (cost) {
     case 'high': return chalk.red.bold('HIGH');
