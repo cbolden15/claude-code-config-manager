@@ -9,6 +9,7 @@ interface InitOptions {
   description?: string;
   dryRun?: boolean;
   force?: boolean;
+  autoClaude?: boolean;
 }
 
 export async function initCommand(
@@ -20,6 +21,9 @@ export async function initCommand(
 
   console.log(chalk.bold(`Initializing project: ${projectName}`));
   console.log(chalk.gray(`Path: ${projectPath}`));
+  if (options.autoClaude) {
+    console.log(chalk.cyan(`Auto-Claude integration: enabled`));
+  }
   console.log();
 
   // Check if already initialized
@@ -71,6 +75,7 @@ export async function initCommand(
     profileName,
     projectName,
     projectDescription: options.description,
+    autoClaudeEnabled: options.autoClaude,
   });
 
   if (generateResult.error) {
@@ -169,5 +174,11 @@ export async function initCommand(
   console.log('Next steps:');
   console.log(`  1. Review the generated files in ${chalk.cyan('.claude/')}`);
   console.log(`  2. Customize ${chalk.cyan('.claude/CLAUDE.md')} for your project`);
-  console.log(`  3. Run ${chalk.cyan('ccm sync')} to update from server`);
+  if (options.autoClaude) {
+    console.log(`  3. Review Auto-Claude configuration in ${chalk.cyan('.auto-claude/.env')}`);
+    console.log(`  4. Check model profiles in ${chalk.cyan('task_metadata.json')}`);
+    console.log(`  5. Run ${chalk.cyan('ccm auto-claude sync')} to sync with Auto-Claude backend`);
+  } else {
+    console.log(`  3. Run ${chalk.cyan('ccm sync')} to update from server`);
+  }
 }

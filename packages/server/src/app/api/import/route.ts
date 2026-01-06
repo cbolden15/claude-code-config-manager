@@ -134,7 +134,7 @@ export async function POST(request: NextRequest) {
       // Import settings
       if (validated.data.settings) {
         for (const setting of validated.data.settings) {
-          await tx.setting.upsert({
+          await tx.settings.upsert({
             where: { key: setting.key },
             update: { value: JSON.stringify(setting.value) },
             create: {

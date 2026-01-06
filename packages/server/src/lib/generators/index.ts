@@ -4,6 +4,12 @@ import { generateSubagent, getSubagentFilename } from './subagent';
 import { generateSkill, getSkillFolderName } from './skill';
 import { generateCommand, getCommandFilename } from './command';
 import { generateSettingsJson } from './settings-json';
+import {
+  generateAutoClaudeEnv,
+  generateTaskMetadata,
+  generateAutoClaudePrompts,
+  generateAgentConfigs,
+} from './auto-claude';
 
 interface Component {
   type: string;
@@ -33,6 +39,12 @@ export function generateProjectFiles(options: GenerateOptions): GeneratedFile[] 
   const skills = components.filter((c) => c.type === 'SKILL');
   const commands = components.filter((c) => c.type === 'COMMAND');
   const hooks = components.filter((c) => c.type === 'HOOK');
+
+  // Auto-Claude components
+  const autoClaudeAgentConfigs = components.filter((c) => c.type === 'AUTO_CLAUDE_AGENT_CONFIG');
+  const autoClaudePrompts = components.filter((c) => c.type === 'AUTO_CLAUDE_PROMPT');
+  const autoClaudeModelProfiles = components.filter((c) => c.type === 'AUTO_CLAUDE_MODEL_PROFILE');
+  const autoClaudeProjectConfigs = components.filter((c) => c.type === 'AUTO_CLAUDE_PROJECT_CONFIG');
 
   // Generate CLAUDE.md
   const claudeMdContent = generateClaudeMd({
@@ -114,6 +126,92 @@ export function generateProjectFiles(options: GenerateOptions): GeneratedFile[] 
     }
   }
 
+  // Generate Auto-Claude files if any Auto-Claude components are present
+  const hasAutoClaudeComponents = autoClaudeProjectConfigs.length > 0 ||
+    autoClaudeAgentConfigs.length > 0 ||
+    autoClaudePrompts.length > 0 ||
+    autoClaudeModelProfiles.length > 0;
+
+  if (hasAutoClaudeComponents) {
+    // Always generate .auto-claude/.env file (even with defaults)
+    const projectConfig = autoClaudeProjectConfigs.length > 0
+      ? autoClaudeProjectConfigs[0].config as any
+      : null;
+
+    const envContent = generateAutoClaudeEnv({
+      projectConfig,
+      settings: {}, // Settings would come from API context in real usage
+    });
+    files.push({
+      path: '.auto-claude/.env',
+      content: envContent,
+    });
+
+    // Always generate task_metadata.json (use first model profile or defaults)
+    const modelProfile = autoClaudeModelProfiles.length > 0
+      ? autoClaudeModelProfiles[0].config as any
+      : null;
+
+    const taskMetadataContent = generateTaskMetadata({
+      modelProfile,
+    });
+    files.push({
+      path: '.auto-claude/task_metadata.json',
+      content: taskMetadataContent,
+    });
+
+    // Generate prompts/*.md files if prompts exist
+    if (autoClaudePrompts.length > 0) {
+      const promptsConfig = autoClaudePrompts.map((p) => {
+        const config = p.config as any;
+        return {
+          agentType: p.name,
+          promptContent: config?.promptContent || '',
+          injectionPoints: config?.injectionPoints || undefined,
+        };
+      });
+
+      const promptFiles = generateAutoClaudePrompts({
+        prompts: promptsConfig,
+        injectionContext: {
+          specDirectory: process.cwd(),
+          projectContext: projectDescription || projectName,
+          mcpDocumentation: '',
+        },
+      });
+
+      for (const promptFile of promptFiles) {
+        files.push({
+          path: promptFile.path,
+          content: promptFile.content,
+        });
+      }
+    }
+
+    // Generate AGENT_CONFIGS.json if agent configs exist
+    if (autoClaudeAgentConfigs.length > 0) {
+      const agentConfigs = autoClaudeAgentConfigs.map((a) => {
+        const config = a.config as any;
+        return {
+          agentType: a.name,
+          tools: config?.tools || [],
+          mcpServers: config?.mcpServers || [],
+          mcpServersOptional: config?.mcpServersOptional || [],
+          autoClaudeTools: config?.autoClaudeTools || [],
+          thinkingDefault: config?.thinkingDefault || 'medium',
+        };
+      });
+
+      const agentConfigsContent = generateAgentConfigs({
+        agentConfigs,
+      });
+      files.push({
+        path: '.auto-claude/AGENT_CONFIGS.json',
+        content: agentConfigsContent,
+      });
+    }
+  }
+
   return files;
 }
 
@@ -126,6 +224,10 @@ export function generateSummary(components: Component[]): Record<string, number>
     SKILL: 'skills',
     COMMAND: 'commands',
     HOOK: 'hooks',
+    AUTO_CLAUDE_AGENT_CONFIG: 'autoClaudeAgentConfigs',
+    AUTO_CLAUDE_PROMPT: 'autoClaudePrompts',
+    AUTO_CLAUDE_MODEL_PROFILE: 'autoClaudeModelProfiles',
+    AUTO_CLAUDE_PROJECT_CONFIG: 'autoClaudeProjectConfigs',
   };
 
   for (const component of components) {
@@ -146,4 +248,8 @@ export {
   generateCommand,
   getCommandFilename,
   generateSettingsJson,
+  generateAutoClaudeEnv,
+  generateTaskMetadata,
+  generateAutoClaudePrompts,
+  generateAgentConfigs,
 };

@@ -11,7 +11,7 @@ datasource db {
 }
 
 // Component types enum is handled via string field
-// MCP_SERVER, SUBAGENT, SKILL, COMMAND, HOOK, CLAUDE_MD_TEMPLATE
+// MCP_SERVER, SUBAGENT, SKILL, COMMAND, HOOK, CLAUDE_MD_TEMPLATE, AUTO_CLAUDE_AGENT_CONFIG, AUTO_CLAUDE_PROMPT, AUTO_CLAUDE_MODEL_PROFILE, AUTO_CLAUDE_PROJECT_CONFIG
 
 model Component {
   id          String   @id @default(cuid())
@@ -65,6 +65,12 @@ model Project {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
+  // Auto-Claude specific
+  autoClaudeEnabled    Boolean   @default(false)
+  autoClaudeConfigId   String?   // Link to AUTO_CLAUDE_PROJECT_CONFIG
+  modelProfileId       String?   // Link to AUTO_CLAUDE_MODEL_PROFILE
+  lastAutoClaudeSync   DateTime?
+
   profile Profile? @relation(fields: [profileId], references: [id], onDelete: SetNull)
 
   @@unique([path, machine])
@@ -82,8 +88,11 @@ model MonitoringEntry {
   createdAt DateTime @default(now())
 }
 
-model Setting {
-  key       String   @id
-  value     String   // JSON stored as TEXT
+model Settings {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String   // JSON or plain text
+  encrypted Boolean  @default(false)
+  createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

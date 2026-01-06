@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { seedAutoClaudeComponents } from './seed-auto-claude';
 
 const prisma = new PrismaClient();
 
@@ -495,7 +496,7 @@ Provide a summary with prioritized action items.`,
   // Default Settings
   // ============================================================================
 
-  await prisma.setting.upsert({
+  await prisma.settings.upsert({
     where: { key: 'defaultProfile' },
     update: {},
     create: {
@@ -504,7 +505,7 @@ Provide a summary with prioritized action items.`,
     },
   });
 
-  await prisma.setting.upsert({
+  await prisma.settings.upsert({
     where: { key: 'serverInfo' },
     update: {},
     create: {
@@ -517,12 +518,18 @@ Provide a summary with prioritized action items.`,
     },
   });
 
+  // ============================================================================
+  // Auto-Claude Components
+  // ============================================================================
+
+  await seedAutoClaudeComponents();
+
   console.log('Seeding complete!');
   console.log({
     components: await prisma.component.count(),
     profiles: await prisma.profile.count(),
     profileComponents: await prisma.profileComponent.count(),
-    settings: await prisma.setting.count(),
+    settings: await prisma.settings.count(),
   });
 }
 

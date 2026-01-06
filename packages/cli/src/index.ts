@@ -1,11 +1,14 @@
 #!/usr/bin/env node
 import { program } from 'commander';
 import chalk from 'chalk';
-import { configCommand } from './commands/config.js';
-import { listCommand } from './commands/list.js';
-import { initCommand } from './commands/init.js';
-import { applyCommand } from './commands/apply.js';
-import { syncCommand } from './commands/sync.js';
+import {
+  configCommand,
+  listCommand,
+  initCommand,
+  applyCommand,
+  syncCommand,
+  createAutoClaudeCommand
+} from './commands/index.js';
 
 program
   .name('ccm')
@@ -52,6 +55,7 @@ program
   .option('-d, --description <desc>', 'Project description')
   .option('--dry-run', 'Preview without writing files')
   .option('-f, --force', 'Overwrite existing configuration')
+  .option('--auto-claude', 'Enable Auto-Claude integration')
   .action(async (name, options) => {
     try {
       await initCommand(name, options);
@@ -91,6 +95,9 @@ program
       process.exit(1);
     }
   });
+
+// Auto-Claude command group
+program.addCommand(createAutoClaudeCommand());
 
 // Show help if no command specified
 program.showHelpAfterError();

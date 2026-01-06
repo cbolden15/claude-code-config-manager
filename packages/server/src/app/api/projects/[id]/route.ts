@@ -7,6 +7,9 @@ const UpdateProjectSchema = z.object({
   path: z.string().min(1).optional(),
   machine: z.string().min(1).optional(),
   profileId: z.string().optional().nullable(),
+  modelProfileId: z.string().optional().nullable(),
+  autoClaudeEnabled: z.boolean().optional(),
+  autoClaudeConfigId: z.string().optional().nullable(),
 });
 
 type RouteParams = { params: Promise<{ id: string }> };
@@ -85,6 +88,19 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       }
     }
 
+    // Verify model profile exists if provided
+    if (validated.modelProfileId) {
+      const modelProfile = await prisma.component.findUnique({
+        where: { id: validated.modelProfileId },
+      });
+      if (!modelProfile || modelProfile.type !== 'AUTO_CLAUDE_MODEL_PROFILE') {
+        return NextResponse.json(
+          { error: 'Model profile not found' },
+          { status: 404 }
+        );
+      }
+    }
+
     const project = await prisma.project.update({
       where: { id },
       data: {
@@ -93,6 +109,15 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         ...(validated.machine && { machine: validated.machine }),
         ...(validated.profileId !== undefined && {
           profileId: validated.profileId,
+        }),
+        ...(validated.modelProfileId !== undefined && {
+          modelProfileId: validated.modelProfileId,
+        }),
+        ...(validated.autoClaudeEnabled !== undefined && {
+          autoClaudeEnabled: validated.autoClaudeEnabled,
+        }),
+        ...(validated.autoClaudeConfigId !== undefined && {
+          autoClaudeConfigId: validated.autoClaudeConfigId,
         }),
       },
       include: {

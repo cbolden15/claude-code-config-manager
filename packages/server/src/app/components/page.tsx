@@ -15,6 +15,10 @@ const typeLabels: Record<string, string> = {
   COMMAND: 'Command',
   HOOK: 'Hook',
   CLAUDE_MD_TEMPLATE: 'Template',
+  AUTO_CLAUDE_AGENT_CONFIG: 'Auto-Claude Agent',
+  AUTO_CLAUDE_PROMPT: 'Auto-Claude Prompt',
+  AUTO_CLAUDE_MODEL_PROFILE: 'Auto-Claude Profile',
+  AUTO_CLAUDE_PROJECT_CONFIG: 'Auto-Claude Project',
 };
 
 const typeColors: Record<string, string> = {
@@ -24,6 +28,10 @@ const typeColors: Record<string, string> = {
   COMMAND: 'bg-amber-100 text-amber-800',
   HOOK: 'bg-rose-100 text-rose-800',
   CLAUDE_MD_TEMPLATE: 'bg-gray-100 text-gray-800',
+  AUTO_CLAUDE_AGENT_CONFIG: 'bg-indigo-100 text-indigo-800',
+  AUTO_CLAUDE_PROMPT: 'bg-purple-100 text-purple-800',
+  AUTO_CLAUDE_MODEL_PROFILE: 'bg-teal-100 text-teal-800',
+  AUTO_CLAUDE_PROJECT_CONFIG: 'bg-cyan-100 text-cyan-800',
 };
 
 async function getComponents() {
@@ -44,6 +52,9 @@ async function getComponents() {
 }
 
 function ComponentCard({ component }: { component: Awaited<ReturnType<typeof getComponents>>[0] }) {
+  const autoClaudeTypes = ['AUTO_CLAUDE_AGENT_CONFIG', 'AUTO_CLAUDE_PROMPT', 'AUTO_CLAUDE_MODEL_PROFILE', 'AUTO_CLAUDE_PROJECT_CONFIG'];
+  const isAutoClaudeComponent = autoClaudeTypes.includes(component.type);
+
   return (
     <Link href={`/components/${component.id}`}>
       <Card className="hover:border-gray-300 transition-colors cursor-pointer">
@@ -54,6 +65,11 @@ function ComponentCard({ component }: { component: Awaited<ReturnType<typeof get
                 <span className={`text-xs font-medium px-2 py-0.5 rounded ${typeColors[component.type]}`}>
                   {typeLabels[component.type]}
                 </span>
+                {isAutoClaudeComponent && (
+                  <Badge variant="secondary" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                    🤖 Auto-Claude
+                  </Badge>
+                )}
                 {!component.enabled && (
                   <Badge variant="outline" className="text-gray-400">Disabled</Badge>
                 )}
@@ -83,14 +99,21 @@ function ComponentCard({ component }: { component: Awaited<ReturnType<typeof get
 export default async function ComponentsPage() {
   const components = await getComponents();
 
+  const autoClaudeTypes = ['AUTO_CLAUDE_AGENT_CONFIG', 'AUTO_CLAUDE_PROMPT', 'AUTO_CLAUDE_MODEL_PROFILE', 'AUTO_CLAUDE_PROJECT_CONFIG'];
+
   const componentsByType = {
     all: components,
+    'auto-claude': components.filter((c) => autoClaudeTypes.includes(c.type)),
     MCP_SERVER: components.filter((c) => c.type === 'MCP_SERVER'),
     SUBAGENT: components.filter((c) => c.type === 'SUBAGENT'),
     SKILL: components.filter((c) => c.type === 'SKILL'),
     COMMAND: components.filter((c) => c.type === 'COMMAND'),
     HOOK: components.filter((c) => c.type === 'HOOK'),
     CLAUDE_MD_TEMPLATE: components.filter((c) => c.type === 'CLAUDE_MD_TEMPLATE'),
+    AUTO_CLAUDE_AGENT_CONFIG: components.filter((c) => c.type === 'AUTO_CLAUDE_AGENT_CONFIG'),
+    AUTO_CLAUDE_PROMPT: components.filter((c) => c.type === 'AUTO_CLAUDE_PROMPT'),
+    AUTO_CLAUDE_MODEL_PROFILE: components.filter((c) => c.type === 'AUTO_CLAUDE_MODEL_PROFILE'),
+    AUTO_CLAUDE_PROJECT_CONFIG: components.filter((c) => c.type === 'AUTO_CLAUDE_PROJECT_CONFIG'),
   };
 
   return (
@@ -109,12 +132,17 @@ export default async function ComponentsPage() {
         <Tabs defaultValue="all">
           <TabsList>
             <TabsTrigger value="all">All ({componentsByType.all.length})</TabsTrigger>
+            <TabsTrigger value="auto-claude">Auto-Claude ({componentsByType['auto-claude'].length})</TabsTrigger>
             <TabsTrigger value="MCP_SERVER">MCP ({componentsByType.MCP_SERVER.length})</TabsTrigger>
             <TabsTrigger value="SUBAGENT">Agents ({componentsByType.SUBAGENT.length})</TabsTrigger>
             <TabsTrigger value="SKILL">Skills ({componentsByType.SKILL.length})</TabsTrigger>
             <TabsTrigger value="COMMAND">Commands ({componentsByType.COMMAND.length})</TabsTrigger>
             <TabsTrigger value="HOOK">Hooks ({componentsByType.HOOK.length})</TabsTrigger>
             <TabsTrigger value="CLAUDE_MD_TEMPLATE">Templates ({componentsByType.CLAUDE_MD_TEMPLATE.length})</TabsTrigger>
+            <TabsTrigger value="AUTO_CLAUDE_AGENT_CONFIG">AC Agents ({componentsByType.AUTO_CLAUDE_AGENT_CONFIG.length})</TabsTrigger>
+            <TabsTrigger value="AUTO_CLAUDE_PROMPT">AC Prompts ({componentsByType.AUTO_CLAUDE_PROMPT.length})</TabsTrigger>
+            <TabsTrigger value="AUTO_CLAUDE_MODEL_PROFILE">AC Profiles ({componentsByType.AUTO_CLAUDE_MODEL_PROFILE.length})</TabsTrigger>
+            <TabsTrigger value="AUTO_CLAUDE_PROJECT_CONFIG">AC Projects ({componentsByType.AUTO_CLAUDE_PROJECT_CONFIG.length})</TabsTrigger>
           </TabsList>
 
           {Object.entries(componentsByType).map(([type, items]) => (

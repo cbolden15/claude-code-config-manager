@@ -75,3 +75,18 @@ export interface GenerateResponse {
     content: string;
   }>;
 }
+
+/**
+ * Auto-Claude types
+ */
+export type {
+  AutoClaudeAgentConfig,
+  AutoClaudePrompt,
+  AutoClaudeModelProfile,
+  AutoClaudeProjectConfig,
+  ThinkingLevel,
+  ClaudeModel,
+  McpServerType,
+  CustomMcpServer,
+  AgentMcpOverride,
+} from './auto-claude.js';

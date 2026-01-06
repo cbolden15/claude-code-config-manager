@@ -112,9 +112,79 @@ class ApiClient {
     return this.post(`/api/projects/${id}/sync`);
   }
 
+  async updateProject(id: string, data: Partial<{
+    name: string;
+    path: string;
+    machine: string;
+    profileId: string | null;
+    modelProfileId: string | null;
+  }>): Promise<ApiResponse<Project>> {
+    return this.put(`/api/projects/${id}`, data);
+  }
+
   // Generate
   async generate(data: GenerateRequest): Promise<ApiResponse<GenerateResponse>> {
     return this.post('/api/generate', data);
+  }
+
+  // Settings
+  async getSetting(key: string): Promise<ApiResponse<{ value: string }>> {
+    return this.get(`/api/settings/${key}`);
+  }
+
+  async setSetting(key: string, value: string): Promise<ApiResponse<{ key: string; value: string }>> {
+    return this.put(`/api/settings/${key}`, { value });
+  }
+
+  async getSettings(options: { includeSensitive?: boolean; keysOnly?: boolean; pattern?: string } = {}): Promise<ApiResponse<{ settings: Array<{ key: string; value: string; encrypted: boolean }> }>> {
+    const query = new URLSearchParams();
+    if (options.includeSensitive) query.set('includeSensitive', 'true');
+    if (options.keysOnly) query.set('keysOnly', 'true');
+    if (options.pattern) query.set('pattern', options.pattern);
+
+    const queryString = query.toString();
+    return this.get(`/api/settings${queryString ? `?${queryString}` : ''}`);
+  }
+
+  // Auto-Claude
+  async autoClaudeImport(data: AutoClaudeImportRequest): Promise<ApiResponse<AutoClaudeImportResponse>> {
+    return this.post('/api/auto-claude/import', data);
+  }
+
+  async autoClaudeSync(data: AutoClaudeSyncRequest): Promise<ApiResponse<AutoClaudeSyncResponse>> {
+    return this.post('/api/auto-claude/sync', data);
+  }
+
+  // Auto-Claude Model Profiles
+  async listAutoClaudeModelProfiles(options: {
+    profileName?: string;
+    includePhaseDetails?: boolean;
+  } = {}): Promise<ApiResponse<AutoClaudeModelProfilesResponse>> {
+    const query = new URLSearchParams();
+    if (options.profileName) query.set('profileName', options.profileName);
+    if (options.includePhaseDetails) query.set('includePhaseDetails', 'true');
+
+    const queryString = query.toString();
+    return this.get(`/api/auto-claude/model-profiles${queryString ? `?${queryString}` : ''}`);
+  }
+
+  async getAutoClaudeModelProfile(id: string): Promise<ApiResponse<AutoClaudeModelProfileDetail>> {
+    return this.get(`/api/auto-claude/model-profiles/${id}`);
+  }
+
+  // Auto-Claude Agents
+  async listAutoClaudeAgents(options: {
+    agentType?: string;
+  } = {}): Promise<ApiResponse<AutoClaudeAgentsResponse>> {
+    const query = new URLSearchParams();
+    if (options.agentType) query.set('agentType', options.agentType);
+
+    const queryString = query.toString();
+    return this.get(`/api/auto-claude/agents${queryString ? `?${queryString}` : ''}`);
+  }
+
+  async getAutoClaudeAgent(agentType: string): Promise<ApiResponse<AutoClaudeAgentDetail>> {
+    return this.get(`/api/auto-claude/agents/${agentType}`);
   }
 }
 
@@ -171,6 +241,7 @@ interface GenerateRequest {
   profileName?: string;
   projectName: string;
   projectDescription?: string;
+  autoClaudeEnabled?: boolean;
 }
 
 interface GenerateResponse {
@@ -178,5 +249,201 @@ interface GenerateResponse {
   summary: Record<string, number>;
 }
 
+interface AutoClaudeImportRequest {
+  autoClaudeInstallPath: string;
+  dryRun?: boolean;
+}
+
+interface AutoClaudeImportResponse {
+  success: boolean;
+  dryRun?: boolean;
+  preview?: {
+    agentConfigs: number;
+    prompts: number;
+    modelProfiles: number;
+    projectConfig: number;
+  };
+  stats?: {
+    agentConfigsImported: number;
+    promptsImported: number;
+    modelProfilesImported: number;
+    projectConfigImported: number;
+    errors: string[];
+  };
+  configs?: any; // For dry-run preview
+}
+
+interface AutoClaudeSyncRequest {
+  backendPath?: string; // Override backend path if provided
+  projectId?: string;   // Specific project to sync (optional)
+  dryRun?: boolean;     // Preview without writing files
+}
+
+interface AutoClaudeSyncResponse {
+  success: boolean;
+  stats: {
+    promptsWritten: number;
+    agentConfigsWritten: number;
+    filesWritten: string[];
+    errors: string[];
+  };
+  backendPath: string;
+  dryRun?: boolean;
+}
+
+// Auto-Claude Model Profile interfaces
+interface AutoClaudeModelProfile {
+  name: string;
+  description: string;
+  phaseModels: {
+    spec: string;
+    planning: string;
+    coding: string;
+    qa: string;
+  };
+  phaseThinking: {
+    spec: string;
+    planning: string;
+    coding: string;
+    qa: string;
+  };
+}
+
+interface AutoClaudeModelProfileResponse {
+  id: string;
+  name: string;
+  description: string;
+  config: AutoClaudeModelProfile;
+  enabled: boolean;
+  tags: string | null;
+  version: string | null;
+  sourceUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
+  phaseAnalysis?: {
+    modelDistribution: Record<string, number>;
+    thinkingDistribution: Record<string, number>;
+    costEstimate: string;
+    qualityLevel: string;
+  };
+}
+
+interface AutoClaudeModelProfilesResponse {
+  modelProfiles: AutoClaudeModelProfileResponse[];
+  matrices: {
+    phases: string[];
+    profiles: string[];
+    models: string[];
+    thinkingLevels: string[];
+    matrix: Record<string, {
+      models: { spec: string; planning: string; coding: string; qa: string };
+      thinking: { spec: string; planning: string; coding: string; qa: string };
+    }>;
+  };
+  stats: {
+    total: number;
+    enabled: number;
+    uniqueModels: number;
+    uniqueThinkingLevels: number;
+    phases: number;
+  };
+  errors?: string[];
+}
+
+interface AutoClaudeModelProfileDetail extends AutoClaudeModelProfileResponse {
+  analysis: {
+    models: {
+      distribution: Record<string, number>;
+      phases: { spec: string; planning: string; coding: string; qa: string };
+    };
+    thinking: {
+      distribution: Record<string, number>;
+      phases: { spec: string; planning: string; coding: string; qa: string };
+    };
+    cost: {
+      perPhase: Record<string, number>;
+      total: number;
+    };
+    quality: {
+      perPhase: Record<string, number>;
+    };
+    characteristics: {
+      costEstimate: string;
+      qualityLevel: string;
+      totalPhases: number;
+      uniformModels: boolean;
+      uniformThinking: boolean;
+    };
+  };
+}
+
+// Auto-Claude Agent interfaces
+interface AutoClaudeAgentConfig {
+  agentType: string;
+  tools: string[];
+  mcpServers: string[];
+  mcpServersOptional: string[];
+  autoClaudeTools: string[];
+  thinkingDefault: 'none' | 'low' | 'medium' | 'high' | 'ultrathink';
+}
+
+interface AutoClaudeAgentResponse {
+  id: string;
+  agentType: string;
+  description: string;
+  config: AutoClaudeAgentConfig;
+  enabled: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface AutoClaudeAgentsResponse {
+  agentConfigs: AutoClaudeAgentResponse[];
+  matrices: {
+    tools: {
+      agents: string[];
+      tools: string[];
+      matrix: Record<string, string[]>;
+    };
+    mcp: {
+      agents: string[];
+      servers: string[];
+      matrix: Record<string, { required: string[]; optional: string[] }>;
+    };
+  };
+  stats: {
+    total: number;
+    enabled: number;
+    uniqueTools: number;
+    uniqueMcpServers: number;
+  };
+  errors?: string[];
+}
+
+interface AutoClaudeAgentDetail extends AutoClaudeAgentResponse {
+  tags: string | null;
+  version: string | null;
+  sourceUrl: string | null;
+}
+
 export const api = new ApiClient();
-export type { Component, Profile, ProfileDetail, Project, GenerateRequest, GenerateResponse };
+export type {
+  Component,
+  Profile,
+  ProfileDetail,
+  Project,
+  GenerateRequest,
+  GenerateResponse,
+  AutoClaudeImportRequest,
+  AutoClaudeImportResponse,
+  AutoClaudeSyncRequest,
+  AutoClaudeSyncResponse,
+  AutoClaudeModelProfile,
+  AutoClaudeModelProfileResponse,
+  AutoClaudeModelProfilesResponse,
+  AutoClaudeModelProfileDetail,
+  AutoClaudeAgentConfig,
+  AutoClaudeAgentResponse,
+  AutoClaudeAgentsResponse,
+  AutoClaudeAgentDetail
+};
