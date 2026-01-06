@@ -269,7 +269,12 @@
       "description": "Comprehensive acceptance criteria validation framework for Auto-Claude integration. Validates all functional requirements (import workflow, edit workflow, sync workflow, project initialization, generated configs) and non-functional requirements (security, performance, usability, reliability). Includes automated testing of generators, database schema validation, performance metrics checking, and security compliance verification. Provides detailed reporting with pass/fail status and performance timing.",
       "category": "validation",
       "discovered_at": "2026-01-06T07:26:49.948762+00:00"
+    },
+    "packages/server/src/lib/performance-monitor.ts": {
+      "description": "Comprehensive performance monitoring system used throughout Auto-Claude integration for tracking operation durations, memory usage, throughput metrics, and trend analysis. All generators, parsers, and API endpoints now use this centralized monitoring to ensure performance targets are met (import <10s, sync <5s).",
+      "category": "performance",
+      "discovered_at": "2026-01-06T07:27:25.228771+00:00"
     }
   },
-  "last_updated": "2026-01-06T07:26:49.948771+00:00"
+  "last_updated": "2026-01-06T07:27:25.228779+00:00"
 }
