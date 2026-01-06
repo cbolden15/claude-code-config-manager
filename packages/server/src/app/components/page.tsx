@@ -52,6 +52,9 @@ async function getComponents() {
 }
 
 function ComponentCard({ component }: { component: Awaited<ReturnType<typeof getComponents>>[0] }) {
+  const autoClaudeTypes = ['AUTO_CLAUDE_AGENT_CONFIG', 'AUTO_CLAUDE_PROMPT', 'AUTO_CLAUDE_MODEL_PROFILE', 'AUTO_CLAUDE_PROJECT_CONFIG'];
+  const isAutoClaudeComponent = autoClaudeTypes.includes(component.type);
+
   return (
     <Link href={`/components/${component.id}`}>
       <Card className="hover:border-gray-300 transition-colors cursor-pointer">
@@ -62,6 +65,11 @@ function ComponentCard({ component }: { component: Awaited<ReturnType<typeof get
                 <span className={`text-xs font-medium px-2 py-0.5 rounded ${typeColors[component.type]}`}>
                   {typeLabels[component.type]}
                 </span>
+                {isAutoClaudeComponent && (
+                  <Badge variant="secondary" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                    🤖 Auto-Claude
+                  </Badge>
+                )}
                 {!component.enabled && (
                   <Badge variant="outline" className="text-gray-400">Disabled</Badge>
                 )}
@@ -91,8 +99,11 @@ function ComponentCard({ component }: { component: Awaited<ReturnType<typeof get
 export default async function ComponentsPage() {
   const components = await getComponents();
 
+  const autoClaudeTypes = ['AUTO_CLAUDE_AGENT_CONFIG', 'AUTO_CLAUDE_PROMPT', 'AUTO_CLAUDE_MODEL_PROFILE', 'AUTO_CLAUDE_PROJECT_CONFIG'];
+
   const componentsByType = {
     all: components,
+    'auto-claude': components.filter((c) => autoClaudeTypes.includes(c.type)),
     MCP_SERVER: components.filter((c) => c.type === 'MCP_SERVER'),
     SUBAGENT: components.filter((c) => c.type === 'SUBAGENT'),
     SKILL: components.filter((c) => c.type === 'SKILL'),
@@ -121,6 +132,7 @@ export default async function ComponentsPage() {
         <Tabs defaultValue="all">
           <TabsList>
             <TabsTrigger value="all">All ({componentsByType.all.length})</TabsTrigger>
+            <TabsTrigger value="auto-claude">Auto-Claude ({componentsByType['auto-claude'].length})</TabsTrigger>
             <TabsTrigger value="MCP_SERVER">MCP ({componentsByType.MCP_SERVER.length})</TabsTrigger>
             <TabsTrigger value="SUBAGENT">Agents ({componentsByType.SUBAGENT.length})</TabsTrigger>
             <TabsTrigger value="SKILL">Skills ({componentsByType.SKILL.length})</TabsTrigger>
