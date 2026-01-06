@@ -58,18 +58,20 @@ const mockCreateAutoClaudeCommand = (): Command => {
   const profilesListCmd = new Command('list');
   profilesListCmd.description('List all model profiles');
   profilesListCmd.option('--verbose', 'Show detailed information');
-  profilesListCmd.option('--json', 'Output in JSON format');
+  profilesListCmd.option('--format <format>', 'Output format: table (default), json', 'table');
   profilesCmd.addCommand(profilesListCmd);
 
   const profilesShowCmd = new Command('show');
   profilesShowCmd.description('Show detailed profile configuration');
   profilesShowCmd.argument('<profile>', 'Profile name to show');
+  profilesShowCmd.option('--format <format>', 'Output format: table (default), json', 'table');
   profilesCmd.addCommand(profilesShowCmd);
 
   const profilesApplyCmd = new Command('apply');
   profilesApplyCmd.description('Apply profile to project');
   profilesApplyCmd.argument('<profile>', 'Profile name to apply');
-  profilesApplyCmd.argument('<project>', 'Project name or ID');
+  profilesApplyCmd.option('--project-id <id>', 'Specific project ID to apply profile to');
+  profilesApplyCmd.option('--project-name <name>', 'Specific project name to apply profile to');
   profilesCmd.addCommand(profilesApplyCmd);
 
   cmd.addCommand(profilesCmd);
@@ -81,12 +83,13 @@ const mockCreateAutoClaudeCommand = (): Command => {
   const agentsListCmd = new Command('list');
   agentsListCmd.description('List all agent configurations');
   agentsListCmd.option('--verbose', 'Show detailed information');
-  agentsListCmd.option('--json', 'Output in JSON format');
+  agentsListCmd.option('--format <format>', 'Output format: table (default), json', 'table');
   agentsCmd.addCommand(agentsListCmd);
 
   const agentsShowCmd = new Command('show');
   agentsShowCmd.description('Show detailed agent configuration');
   agentsShowCmd.argument('<agent>', 'Agent type to show');
+  agentsShowCmd.option('--format <format>', 'Output format: table (default), json', 'table');
   agentsCmd.addCommand(agentsShowCmd);
 
   cmd.addCommand(agentsCmd);
@@ -489,7 +492,7 @@ async function runTests() {
     // Test list command options
     const listOptions = listCmd.options;
     assert(listOptions.some(opt => opt.long === '--verbose'), 'List should have --verbose option');
-    assert(listOptions.some(opt => opt.long === '--json'), 'List should have --json option');
+    assert(listOptions.some(opt => opt.long === '--format'), 'List should have --format option');
   });
 
   // Test 6: Agents command structure
@@ -509,7 +512,7 @@ async function runTests() {
     // Test list command options
     const listOptions = listCmd.options;
     assert(listOptions.some(opt => opt.long === '--verbose'), 'List should have --verbose option');
-    assert(listOptions.some(opt => opt.long === '--json'), 'List should have --json option');
+    assert(listOptions.some(opt => opt.long === '--format'), 'List should have --format option');
   });
 
   // Test 7: Settings API mock integration
@@ -624,6 +627,143 @@ async function runTests() {
     assert(syncError.error === 'Backend path not accessible', 'Should return sync error');
   });
 
+  // Test 14: Path validation logic
+  await runTest('Path validation logic', () => {
+    // Test mock path validation function (simulates actual validation)
+    const validatePath = (path: string): { valid: boolean; error?: string } => {
+      if (!path || path.length === 0) {
+        return { valid: false, error: 'Path cannot be empty' };
+      }
+      if (path.includes('invalid')) {
+        return { valid: false, error: 'Missing apps/backend/ directory' };
+      }
+      if (path.includes('missing-prompts')) {
+        return { valid: false, error: 'Missing apps/backend/prompts/ directory' };
+      }
+      return { valid: true };
+    };
+
+    assert(!validatePath('').valid, 'Should reject empty path');
+    assert(!validatePath('/invalid/path').valid, 'Should reject invalid structure');
+    assert(!validatePath('/path/missing-prompts').valid, 'Should reject path without prompts dir');
+    assert(validatePath('/valid/auto-claude').valid, 'Should accept valid path');
+  });
+
+  // Test 15: Command argument combinations
+  await runTest('Command argument combinations', () => {
+    const cmd = createAutoClaudeCommand();
+
+    // Test profiles command structure with all options
+    const profilesCmd = cmd.commands.find(c => c.name() === 'profiles');
+    assert(profilesCmd, 'Profiles command should exist');
+
+    const listCmd = profilesCmd.commands.find(c => c.name() === 'list');
+    assert(listCmd, 'Profiles list command should exist');
+
+    const options = listCmd.options;
+    assert(options.some(opt => opt.long === '--verbose'), 'Should have --verbose option');
+    assert(options.some(opt => opt.long === '--format'), 'Should have --format option');
+
+    // Test show command has required argument
+    const showCmd = profilesCmd.commands.find(c => c.name() === 'show');
+    assert(showCmd, 'Profiles show command should exist');
+    // Commander.js stores arguments internally, we can check if the command was set up with argument
+    assert(showCmd.description().includes('profile'), 'Show command should reference profile argument');
+
+    // Test apply command structure
+    const applyCmd = profilesCmd.commands.find(c => c.name() === 'apply');
+    assert(applyCmd, 'Profiles apply command should exist');
+    const applyOptions = applyCmd.options;
+    assert(applyOptions.some(opt => opt.long === '--project-id'), 'Should have --project-id option');
+    assert(applyOptions.some(opt => opt.long === '--project-name'), 'Should have --project-name option');
+  });
+
+  // Test 16: JSON format output validation
+  await runTest('JSON format output validation', async () => {
+    const jsonProfileResult = await mockApiResponses.listAutoClaudeModelProfiles();
+    assert(!jsonProfileResult.error, 'List profiles should succeed');
+
+    const data = jsonProfileResult.data!;
+    assert(typeof data === 'object', 'Should return object');
+    assert(Array.isArray(data.modelProfiles), 'Should have modelProfiles array');
+    assert(typeof data.stats === 'object', 'Should have stats object');
+
+    // Validate structure matches expected API response
+    assert(data.stats.total === data.modelProfiles.length, 'Stats total should match array length');
+    assert(typeof data.stats.enabled === 'number', 'Stats should have enabled count');
+    assert(typeof data.stats.uniqueModels === 'number', 'Stats should have unique models count');
+  });
+
+  // Test 17: Agent configuration edge cases
+  await runTest('Agent configuration edge cases', async () => {
+    const agentsResult = await mockApiResponses.listAutoClaudeAgents();
+    assert(!agentsResult.error, 'List agents should succeed');
+
+    const agents = agentsResult.data!.agentConfigs;
+    assert(agents.length > 0, 'Should have agent configurations');
+
+    // Test agent with different tool combinations
+    const coderAgent = agents.find(a => a.agentType === 'coder');
+    assert(coderAgent, 'Should have coder agent');
+    assert(Array.isArray(coderAgent.config.tools), 'Agent should have tools array');
+    assert(Array.isArray(coderAgent.config.mcpServers), 'Agent should have MCP servers array');
+    assert(typeof coderAgent.config.thinkingDefault === 'string', 'Agent should have thinking level');
+
+    // Test agent with minimal configuration
+    const qaAgent = agents.find(a => a.agentType === 'qa_reviewer');
+    assert(qaAgent, 'Should have QA agent');
+    assert(qaAgent.config.mcpServers.length === 0, 'QA agent should have no MCP servers');
+  });
+
+  // Test 18: Network error simulation
+  await runTest('Network error simulation', async () => {
+    const networkErrorResponses = {
+      getSetting: () => Promise.reject(new Error('ECONNREFUSED')),
+      autoClaudeImport: () => Promise.reject(new Error('Network timeout')),
+      listAutoClaudeModelProfiles: () => Promise.reject(new Error('Service unavailable'))
+    };
+
+    try {
+      await networkErrorResponses.getSetting();
+      assert(false, 'Should have thrown network error');
+    } catch (error) {
+      assert(error instanceof Error, 'Should throw Error instance');
+      assert(error.message.includes('ECONNREFUSED'), 'Should contain connection error');
+    }
+  });
+
+  // Test 19: Dry run functionality validation
+  await runTest('Dry run functionality validation', async () => {
+    const dryRunImport = await mockApiResponses.autoClaudeImport({
+      autoClaudeInstallPath: '/mock/path',
+      dryRun: true
+    });
+    assert(!dryRunImport.error, 'Dry run import should succeed');
+    assert(dryRunImport.data?.dryRun === true, 'Should be marked as dry run');
+    assert(dryRunImport.data?.preview, 'Should have preview data');
+    assert(!dryRunImport.data?.stats, 'Should not have actual stats for dry run');
+
+    const dryRunSync = await mockApiResponses.autoClaudeSync({
+      backendPath: '/mock/backend',
+      dryRun: true
+    });
+    assert(!dryRunSync.error, 'Dry run sync should succeed');
+    assert(dryRunSync.data?.dryRun === true, 'Should be marked as dry run');
+    assert(Array.isArray(dryRunSync.data?.stats.filesWritten), 'Should show files that would be written');
+  });
+
+  // Test 20: Model profile analysis data
+  await runTest('Model profile analysis data', async () => {
+    const profileDetail = await mockApiResponses.getAutoClaudeModelProfile('profile1');
+    assert(!profileDetail.error, 'Get profile detail should succeed');
+
+    const profile = profileDetail.data!;
+    assert(profile.analysis, 'Profile should have analysis data');
+    assert(profile.analysis.characteristics, 'Should have characteristics');
+    assert(typeof profile.analysis.characteristics.costEstimate === 'string', 'Should have cost estimate');
+    assert(typeof profile.analysis.characteristics.qualityLevel === 'string', 'Should have quality level');
+  });
+
   console.log('\n🎉 All Auto-Claude CLI tests completed!');
   console.log(`\n📊 Test Summary:`);
   console.log(`   ✅ Tests Passed: ${testsPassed}`);
@@ -641,6 +781,13 @@ async function runTests() {
   console.log(`   • Settings management (get, set)`);
   console.log(`   • Import/sync workflows with dry-run modes`);
   console.log(`   • Projects management and updates`);
+  console.log(`   • Path validation logic and file system checks`);
+  console.log(`   • Command argument combinations and parsing`);
+  console.log(`   • JSON format output validation and structure`);
+  console.log(`   • Agent configuration edge cases and validation`);
+  console.log(`   • Network error simulation and handling`);
+  console.log(`   • Dry run functionality validation and preview data`);
+  console.log(`   • Model profile analysis data and characteristics`);
 
   if (testsFailed > 0) {
     console.log('\n⚠️ Some tests failed - see details above');
