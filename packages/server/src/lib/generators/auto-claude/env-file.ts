@@ -13,19 +13,31 @@ export function generateAutoClaudeEnv(options: EnvFileOptions): string {
   const { result } = timeOperationSync('env-file generation', () => {
     const { projectConfig, settings = {} } = options;
 
-    // Use StringBuilder approach for better performance with large configs
-    const parts: string[] = [];
-
-    // Pre-compute common values to avoid repeated computations
+    // Pre-compute all values to avoid repeated computations during generation
     const hasCustomServers = projectConfig?.customMcpServers && projectConfig.customMcpServers.length > 0;
     const hasAgentOverrides = projectConfig?.agentMcpOverrides && Object.keys(projectConfig.agentMcpOverrides).length > 0;
     const isEnabled = projectConfig !== null && projectConfig !== undefined;
 
-    // Optimized section builder using direct string concatenation
+    // Pre-compute API key values to avoid repeated lookups
+    const apiKeyValues = {
+      anthropic: settings.anthropicApiKey || '',
+      linear: settings.linearApiKey || projectConfig?.linearApiKey || '',
+      github: settings.githubToken || projectConfig?.githubToken || '',
+      graphiti: settings.graphitiApiKey || ''
+    };
+
+    // Use StringBuilder approach with pre-allocated capacity estimate
+    const estimatedSections = 5 + (hasCustomServers ? 1 : 0) + (hasAgentOverrides ? 1 : 0);
+    const parts: string[] = new Array(estimatedSections * 10); // Rough estimate for total lines
+    let partIndex = 0;
+
+    // Optimized section builder using direct indexing for better performance
     const addSection = (title: string, content: string[]): void => {
-      parts.push(`# === ${title} ===`);
-      parts.push(...content);
-      parts.push('');
+      parts[partIndex++] = `# === ${title} ===`;
+      for (const line of content) {
+        parts[partIndex++] = line;
+      }
+      parts[partIndex++] = '';
     };
 
     // Header comment
@@ -39,14 +51,6 @@ export function generateAutoClaudeEnv(options: EnvFileOptions): string {
       '# Auto-Claude backend integration',
       `AUTO_CLAUDE_ENABLED=${isEnabled ? 'true' : 'false'}`
     ]);
-
-    // API Keys section - optimize by pre-computing values
-    const apiKeyValues = {
-      anthropic: settings.anthropicApiKey || '',
-      linear: settings.linearApiKey || projectConfig?.linearApiKey || '',
-      github: settings.githubToken || projectConfig?.githubToken || '',
-      graphiti: settings.graphitiApiKey || ''
-    };
 
     addSection('API Keys', [
       '# Anthropic API key for Claude models',
@@ -151,7 +155,8 @@ export function generateAutoClaudeEnv(options: EnvFileOptions): string {
       'AUTO_CLAUDE_LOG_LEVEL=info'
     ]);
 
-    // Optimized join with single allocation
+    // Trim the parts array to actual size and join efficiently
+    parts.length = partIndex;
     return parts.join('\n') + '\n';
   }, 1); // 1 file generated
 

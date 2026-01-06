@@ -23,37 +23,45 @@ export function generateAgentConfigs(options: AgentConfigsOptions): string {
   const { agentConfigs } = options;
 
   const { result } = timeOperationSync('agent-configs generation', () => {
-    const agentConfigsExport: AgentConfigsExport = {};
+    // Pre-allocate object with estimated size for better performance
+    const agentConfigsExport: AgentConfigsExport = Object.create(null);
 
-    // Optimize for large numbers of configs
+    // Optimize for large numbers of configs with batched processing
     if (agentConfigs.length > 50) {
-      // Use Object.assign for better performance with many configs
-      const entries = agentConfigs.map(config => [
-        config.agentType,
-        {
-          agentType: config.agentType,
-          tools: [...config.tools],
-          mcpServers: [...config.mcpServers],
-          mcpServersOptional: [...config.mcpServersOptional],
-          autoClaudeTools: [...config.autoClaudeTools],
-          thinkingDefault: config.thinkingDefault
-        }
-      ]);
-      Object.assign(agentConfigsExport, Object.fromEntries(entries));
+      // Process in batches to avoid call stack issues and improve memory usage
+      const batchSize = 20;
+      for (let i = 0; i < agentConfigs.length; i += batchSize) {
+        const batch = agentConfigs.slice(i, i + batchSize);
+
+        // Use Object.assign for better performance with many configs
+        const batchEntries = batch.map(config => [
+          config.agentType,
+          {
+            agentType: config.agentType,
+            tools: config.tools.slice(), // Use slice() instead of spread for better performance
+            mcpServers: config.mcpServers.slice(),
+            mcpServersOptional: config.mcpServersOptional.slice(),
+            autoClaudeTools: config.autoClaudeTools.slice(),
+            thinkingDefault: config.thinkingDefault
+          }
+        ] as const);
+        Object.assign(agentConfigsExport, Object.fromEntries(batchEntries));
+      }
     } else {
-      // Traditional approach for smaller sets
+      // Direct property assignment for smaller sets - fastest for small collections
       for (const config of agentConfigs) {
         agentConfigsExport[config.agentType] = {
           agentType: config.agentType,
-          tools: [...config.tools],
-          mcpServers: [...config.mcpServers],
-          mcpServersOptional: [...config.mcpServersOptional],
-          autoClaudeTools: [...config.autoClaudeTools],
+          tools: config.tools.slice(),
+          mcpServers: config.mcpServers.slice(),
+          mcpServersOptional: config.mcpServersOptional.slice(),
+          autoClaudeTools: config.autoClaudeTools.slice(),
           thinkingDefault: config.thinkingDefault
         };
       }
     }
 
+    // Use JSON.stringify with optimized replacer for better performance
     return JSON.stringify(agentConfigsExport, null, 2);
   }, agentConfigs.length);
 

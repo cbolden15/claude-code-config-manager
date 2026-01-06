@@ -38,15 +38,17 @@ const INJECTION_PATTERNS = {
   mcpDocumentation: /\{\{\s*mcpDocumentation\s*\}\}/gi,
 };
 
+// Pre-compiled string patterns for faster indexOf-based detection
+const INJECTION_STRINGS = {
+  specDirectory: '{{specDirectory}}',
+  projectContext: '{{projectContext}}',
+  mcpDocumentation: '{{mcpDocumentation}}'
+};
+
 /**
- * Detect injection points in prompt content - optimized version
+ * Detect injection points in prompt content - optimized version with string search
  */
 function detectInjectionPoints(content: string): { specDirectory: boolean; projectContext: boolean; mcpDocumentation: boolean } {
-  // Reset global regex states
-  INJECTION_PATTERNS.specDirectory.lastIndex = 0;
-  INJECTION_PATTERNS.projectContext.lastIndex = 0;
-  INJECTION_PATTERNS.mcpDocumentation.lastIndex = 0;
-
   // Use more efficient approach - check all patterns in one pass
   const results = {
     specDirectory: false,
@@ -59,9 +61,20 @@ function detectInjectionPoints(content: string): { specDirectory: boolean; proje
     return results;
   }
 
-  results.specDirectory = INJECTION_PATTERNS.specDirectory.test(content);
-  results.projectContext = INJECTION_PATTERNS.projectContext.test(content);
-  results.mcpDocumentation = INJECTION_PATTERNS.mcpDocumentation.test(content);
+  // Use faster string.includes() for initial detection, fall back to regex for whitespace variants
+  results.specDirectory = content.includes(INJECTION_STRINGS.specDirectory) ||
+    (content.includes('{{ specDirectory }}') || INJECTION_PATTERNS.specDirectory.test(content));
+
+  results.projectContext = content.includes(INJECTION_STRINGS.projectContext) ||
+    (content.includes('{{ projectContext }}') || INJECTION_PATTERNS.projectContext.test(content));
+
+  results.mcpDocumentation = content.includes(INJECTION_STRINGS.mcpDocumentation) ||
+    (content.includes('{{ mcpDocumentation }}') || INJECTION_PATTERNS.mcpDocumentation.test(content));
+
+  // Reset regex states for next call
+  INJECTION_PATTERNS.specDirectory.lastIndex = 0;
+  INJECTION_PATTERNS.projectContext.lastIndex = 0;
+  INJECTION_PATTERNS.mcpDocumentation.lastIndex = 0;
 
   return results;
 }

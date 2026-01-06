@@ -88,25 +88,22 @@ export class ModelsParser {
 
     const startPosition = this.position + 1; // Skip opening quote
     this.position++;
-    let result = '';
-    let escaped = false;
 
     // Use a more efficient approach for simple strings (no escape sequences)
-    let hasEscapes = false;
     const endQuoteIndex = this.content.indexOf(quote, this.position);
 
     if (endQuoteIndex !== -1) {
       // Quick check if string contains escape sequences
       const substring = this.content.substring(this.position, endQuoteIndex);
-      hasEscapes = substring.includes('\\');
+      const hasEscapes = substring.includes('\\');
 
       if (!hasEscapes) {
-        // Fast path for simple strings
+        // Fast path for simple strings - avoid creating intermediate variables
         this.position = endQuoteIndex + 1;
-        // Update line/column tracking
-        const newlines = (substring.match(/\n/g) || []).length;
-        if (newlines > 0) {
-          this.line += newlines;
+        // Optimized line/column tracking with minimal allocations
+        const newlineCount = (substring.match(/\n/g) || []).length;
+        if (newlineCount > 0) {
+          this.line += newlineCount;
           this.column = substring.length - substring.lastIndexOf('\n');
         } else {
           this.column += substring.length + 2; // +2 for quotes
@@ -116,6 +113,9 @@ export class ModelsParser {
     }
 
     // Fallback to character-by-character parsing for complex strings
+    let result = '';
+    let escaped = false;
+
     while (this.position < this.contentLength) {
       const char = this.content[this.position];
 
@@ -144,7 +144,7 @@ export class ModelsParser {
   }
 
   /**
-   * Parse a list [item1, item2, ...] - optimized version
+   * Parse a list [item1, item2, ...] - optimized version with pre-allocation
    */
   private parseList(): string[] | null {
     this.skipWhitespaceAndComments();
@@ -154,21 +154,20 @@ export class ModelsParser {
     }
 
     this.position++; // Skip opening bracket
-    const items: string[] = [];
 
-    // Fast path: Try to find the complete list pattern quickly
-    const startPos = this.position;
+    // Estimate list size for pre-allocation - count commas for better initial capacity
+    let estimatedSize = 1;
     let bracketCount = 1;
     let inString = false;
     let stringChar = '';
 
-    // Find the end of the list quickly
     for (let i = this.position; i < this.contentLength && bracketCount > 0; i++) {
       const char = this.content[i];
 
       if (!inString) {
         if (char === '[') bracketCount++;
         else if (char === ']') bracketCount--;
+        else if (char === ',' && bracketCount === 1) estimatedSize++;
         else if (char === '"' || char === "'") {
           inString = true;
           stringChar = char;
@@ -178,7 +177,11 @@ export class ModelsParser {
       }
     }
 
-    // Use the original parsing logic
+    // Pre-allocate array with estimated size for better performance
+    const items: string[] = new Array(estimatedSize);
+    let itemCount = 0;
+
+    // Parse items efficiently
     while (this.position < this.contentLength) {
       this.skipWhitespaceAndComments();
 
@@ -186,6 +189,8 @@ export class ModelsParser {
 
       if (this.content[this.position] === ']') {
         this.position++; // Skip closing bracket
+        // Trim array to actual size to save memory
+        items.length = itemCount;
         return items;
       }
 
@@ -196,13 +201,15 @@ export class ModelsParser {
 
       const item = this.parseString();
       if (item !== null) {
-        items.push(item);
+        items[itemCount++] = item;
       } else {
         // Skip unknown token
         this.position++;
       }
     }
 
+    // Trim array to actual size
+    items.length = itemCount;
     return items;
   }
 

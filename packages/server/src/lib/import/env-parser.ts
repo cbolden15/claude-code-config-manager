@@ -24,27 +24,42 @@ export interface EnvParseResult {
 }
 
 /**
- * Parse environment variable content into key-value pairs
+ * Parse environment variable content into key-value pairs - optimized version
  */
 function parseEnvVars(content: string): Record<string, string> {
   const envVars: Record<string, string> = {};
-  const lines = content.split('\n');
 
-  for (const line of lines) {
-    const trimmed = line.trim();
+  // Avoid split() allocation by using indexOf to iterate through lines
+  let start = 0;
+  let lineNumber = 0;
 
-    // Skip empty lines and comments
-    if (!trimmed || trimmed.startsWith('#')) {
-      continue;
+  while (start < content.length) {
+    const end = content.indexOf('\n', start);
+    const line = end === -1 ? content.substring(start) : content.substring(start, end);
+    lineNumber++;
+
+    // Skip empty lines and comments more efficiently
+    const firstChar = line.charAt(0);
+    if (line.length === 0 || firstChar === '#' || firstChar === ' ') {
+      // Quick check for whitespace-only lines
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('#')) {
+        start = end === -1 ? content.length : end + 1;
+        continue;
+      }
     }
 
-    // Parse key=value pairs
-    const equalsIndex = trimmed.indexOf('=');
+    // Parse key=value pairs with optimized trimming
+    const equalsIndex = line.indexOf('=');
     if (equalsIndex > 0) {
-      const key = trimmed.substring(0, equalsIndex).trim();
-      const value = trimmed.substring(equalsIndex + 1).trim();
-      envVars[key] = value;
+      const key = line.substring(0, equalsIndex).trim();
+      const value = line.substring(equalsIndex + 1).trim();
+      if (key.length > 0) {
+        envVars[key] = value;
+      }
     }
+
+    start = end === -1 ? content.length : end + 1;
   }
 
   return envVars;
