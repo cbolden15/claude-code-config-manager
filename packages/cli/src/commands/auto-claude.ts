@@ -8,10 +8,13 @@ import { api, type AutoClaudeImportRequest, type AutoClaudeImportResponse, type 
  * Create and configure the auto-claude command group
  */
 export function createAutoClaudeCommand(): Command {
-  const autoClaudeCommand = new Command('auto-claude');
+  const autoClaudeCmd = new Command('auto-claude');
 
-  autoClaudeCommand
+  autoClaudeCmd
     .description('Auto-Claude integration commands')
+    .action(async () => {
+      await autoClaudeMainCommand();
+    })
     .addHelpText('before', chalk.bold('Auto-Claude Integration'))
     .addHelpText('after', `
 
@@ -34,7 +37,7 @@ ${chalk.gray('Documentation:')}
   // Placeholder subcommands (to be implemented in subsequent subtasks)
 
   // Config subcommand
-  autoClaudeCommand
+  autoClaudeCmd
     .command('config')
     .description('Configure Auto-Claude backend path and settings')
     .option('-p, --path <path>', 'Set Auto-Claude backend installation path')
@@ -44,7 +47,7 @@ ${chalk.gray('Documentation:')}
     });
 
   // Import subcommand
-  autoClaudeCommand
+  autoClaudeCmd
     .command('import')
     .description('Import existing Auto-Claude configurations')
     .option('-s, --source <path>', 'Source directory containing Auto-Claude configs')
@@ -54,7 +57,7 @@ ${chalk.gray('Documentation:')}
     });
 
   // Sync subcommand
-  autoClaudeCommand
+  autoClaudeCmd
     .command('sync')
     .description('Sync configurations to Auto-Claude backend')
     .option('-b, --backend <path>', 'Auto-Claude backend directory path')
@@ -64,7 +67,7 @@ ${chalk.gray('Documentation:')}
     });
 
   // Profiles subcommand group - Will be implemented in subtask 6_5
-  const profilesCommand = autoClaudeCommand
+  const profilesCommand = autoClaudeCmd
     .command('profiles')
     .description('Manage Auto-Claude model profiles')
     .addHelpText('after', `
@@ -102,7 +105,7 @@ ${chalk.gray('Examples:')}
     });
 
   // Agents subcommand group - Will be implemented in subtask 6_6
-  const agentsCommand = autoClaudeCommand
+  const agentsCommand = autoClaudeCmd
     .command('agents')
     .description('Manage Auto-Claude agent configurations')
     .addHelpText('after', `
@@ -129,7 +132,7 @@ ${chalk.gray('Examples:')}
       await autoClaudeAgentsShowCommand(agent, options);
     });
 
-  return autoClaudeCommand;
+  return autoClaudeCmd;
 }
 
 /**
@@ -552,7 +555,7 @@ function validateAutoClaudePath(path: string): { valid: boolean; error?: string;
  * Main auto-claude command handler
  * This is the entry point when 'ccm auto-claude' is called without subcommands
  */
-export async function autoClaudeCommand(): Promise<void> {
+export async function autoClaudeMainCommand(): Promise<void> {
   console.log(chalk.bold('Auto-Claude Integration'));
   console.log();
   console.log('CCM Auto-Claude integration allows you to:');

@@ -12,5 +12,5 @@ export { syncCommand } from './sync.js';
 // Auto-Claude command group and main command handler
 export {
   createAutoClaudeCommand,
-  autoClaudeCommand
+  autoClaudeMainCommand
 } from './auto-claude.js';
