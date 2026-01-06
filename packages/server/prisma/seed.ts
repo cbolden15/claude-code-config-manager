@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { seedAutoClaudeComponents } from './seed-auto-claude';
 
 const prisma = new PrismaClient();
 
@@ -516,6 +517,12 @@ Provide a summary with prioritized action items.`,
       }),
     },
   });
+
+  // ============================================================================
+  // Auto-Claude Components
+  // ============================================================================
+
+  await seedAutoClaudeComponents();
 
   console.log('Seeding complete!');
   console.log({
