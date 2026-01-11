@@ -96,3 +96,192 @@ model Settings {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+// ============================================================================
+// CCM v2.0 - Machine Registry
+// ============================================================================
+
+model Machine {
+  id               String   @id @default(cuid())
+  name             String   @unique
+  hostname         String?
+  platform         String   // "darwin", "linux", "win32"
+  arch             String?  // "arm64", "x64"
+  homeDir          String?  // For path resolution
+  lastSeen         DateTime @default(now())
+  lastSyncedAt     DateTime?
+  syncEnabled      Boolean  @default(true)
+  isCurrentMachine Boolean  @default(false)
+
+  overrides MachineOverride[]
+  syncLogs  SyncLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([lastSeen])
+  @@index([syncEnabled])
+}
+
+model MachineOverride {
+  id           String   @id @default(cuid())
+  machineId    String
+  configType   String   // "mcp_server", "hook", "permission", "env_var", "plugin"
+  configKey    String   // ID or name of the config being overridden
+  action       String   // "include", "exclude", "modify"
+  overrideData String?  // JSON override data if action is "modify"
+  reason       String?  // Why this override exists
+
+  machine Machine @relation(fields: [machineId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([machineId, configType, configKey])
+  @@index([machineId])
+}
+
+// ============================================================================
+// CCM v2.0 - Global Hooks
+// ============================================================================
+
+model GlobalHook {
+  id          String   @id @default(cuid())
+  hookType    String   // "PreToolUse", "PostToolUse", "SessionStart", "Stop", "Notification", "SubagentStop"
+  matcher     String   // Tool matcher pattern, e.g., "Edit|Write", "*"
+  command     String   @default("") // Shell command to run (can be multi-line)
+  timeout     Int?     // Timeout in seconds
+  description String?
+  enabled     Boolean  @default(true)
+  order       Int      @default(0)
+  category    String?  // For UI grouping: "git", "security", "formatting", "notifications"
+  tags        String   @default("") // Comma-separated tags
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([hookType])
+  @@index([enabled])
+  @@index([category])
+}
+
+// ============================================================================
+// CCM v2.0 - Global Permissions
+// ============================================================================
+
+model GlobalPermission {
+  id          String   @id @default(cuid())
+  permission  String   // e.g., "Bash(git:*)", "WebFetch(domain:github.com)"
+  action      String   // "allow" or "deny"
+  description String?
+  enabled     Boolean  @default(true)
+  category    String?  // "git", "network", "shell", "file", "docker", "cloud"
+  priority    Int      @default(0) // Higher = evaluated first
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([permission, action])
+  @@index([action])
+  @@index([category])
+  @@index([enabled])
+}
+
+// ============================================================================
+// CCM v2.0 - Global Environment Variables
+// ============================================================================
+
+model GlobalEnvVar {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String   // Encrypted for sensitive values
+  encrypted   Boolean  @default(false)
+  sensitive   Boolean  @default(false) // Mask in UI even if not encrypted
+  description String?
+  scope       String   @default("all") // "all", "claude-desktop", "claude-code", "cli"
+  category    String?  // "api_keys", "paths", "webhooks", "database"
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([scope])
+  @@index([category])
+}
+
+// ============================================================================
+// CCM v2.0 - Claude Desktop Configuration
+// ============================================================================
+
+model ClaudeDesktopMcp {
+  id              String   @id @default(cuid())
+  componentId     String   // Reference to Component with type MCP_SERVER
+  enabled         Boolean  @default(true)
+
+  // Desktop-specific overrides (JSON)
+  commandOverride String?  // Override command for desktop
+  argsOverride    String?  // Override args for desktop (JSON array)
+  envOverrides    String?  // Additional/override env vars (JSON object)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([componentId])
+  @@index([enabled])
+}
+
+model ClaudeDesktopPlugin {
+  id       String   @id @default(cuid())
+  pluginId String   // e.g., "frontend-design@claude-plugins-official"
+  enabled  Boolean  @default(true)
+  config   String?  // Plugin-specific config (JSON)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([pluginId])
+}
+
+// ============================================================================
+// CCM v2.0 - Sync System
+// ============================================================================
+
+model SyncLog {
+  id           String    @id @default(cuid())
+  machineId    String
+  syncType     String    // "full", "incremental", "push", "pull"
+  status       String    // "started", "in_progress", "completed", "failed"
+
+  // Stats
+  filesCreated Int @default(0)
+  filesUpdated Int @default(0)
+  filesDeleted Int @default(0)
+  filesSkipped Int @default(0)
+
+  // Details
+  details      String?  // JSON with detailed sync info
+  errorMessage String?
+
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  machine Machine @relation(fields: [machineId], references: [id], onDelete: Cascade)
+
+  @@index([machineId])
+  @@index([status])
+  @@index([startedAt])
+}
+
+model SyncState {
+  id           String    @id @default(cuid())
+  machineId    String
+  configType   String    // "hook", "permission", "mcp_server", "agent", etc.
+  configId     String    // ID of the config item
+  localHash    String?   // Hash of local file content
+  serverHash   String?   // Hash of server content
+  lastSyncedAt DateTime?
+  syncStatus   String    @default("unknown") // "synced", "local_newer", "server_newer", "conflict"
+
+  @@unique([machineId, configType, configId])
+  @@index([syncStatus])
+  @@index([machineId])
+}

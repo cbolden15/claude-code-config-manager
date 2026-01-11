@@ -90,3 +90,105 @@ export type {
   CustomMcpServer,
   AgentMcpOverride,
 } from './auto-claude.js';
+
+/**
+ * CCM v2.0 - Machine Registry types
+ */
+export type {
+  ConfigType,
+  OverrideAction,
+  Machine,
+  MachineOverride,
+  MachineRegistration,
+  MachineWithOverrides,
+  MachineWithStats,
+  MachineUpdate,
+  MachineOverrideCreate,
+  MachineListStats,
+} from './machines.js';
+
+/**
+ * CCM v2.0 - Global Hooks types
+ */
+export type {
+  HookType,
+  HookCategory,
+  GlobalHook,
+  GlobalHookCreate,
+  GlobalHookUpdate,
+  ClaudeSettingsHook,
+  ClaudeSettingsHookGroup,
+  HooksImportResult,
+  HooksExportFormat,
+  HooksListResponse,
+  HookFilters,
+} from './hooks.js';
+
+/**
+ * CCM v2.0 - Global Permissions types
+ */
+export type {
+  PermissionAction,
+  PermissionCategory,
+  PermissionToolType,
+  GlobalPermission,
+  GlobalPermissionCreate,
+  GlobalPermissionUpdate,
+  ParsedPermission,
+  ClaudeSettingsPermissions,
+  PermissionsImportResult,
+  PermissionsListResponse,
+  PermissionFilters,
+} from './permissions.js';
+
+/**
+ * CCM v2.0 - Global Environment Variables types
+ */
+export type {
+  EnvScope,
+  EnvCategory,
+  GlobalEnvVar,
+  GlobalEnvVarCreate,
+  GlobalEnvVarUpdate,
+  GlobalEnvVarMasked,
+  EnvVarListResponse,
+  EnvVarFilters,
+  EnvVarExportFormat,
+} from './env.js';
+
+/**
+ * CCM v2.0 - Claude Desktop Integration types
+ */
+export type {
+  ClaudeDesktopMcp,
+  ClaudeDesktopPlugin,
+  ClaudeDesktopConfigFile,
+  ClaudeDesktopMcpWithComponent,
+  ClaudeDesktopMcpCreate,
+  ClaudeDesktopMcpUpdate,
+  ClaudeDesktopPluginCreate,
+  ClaudeDesktopPluginUpdate,
+  ClaudeDesktopSyncResult,
+  ClaudeDesktopListResponse,
+} from './claude-desktop.js';
+
+/**
+ * CCM v2.0 - Sync System types
+ */
+export type {
+  SyncType,
+  SyncStatus,
+  SyncItemStatus,
+  SyncLog,
+  SyncState,
+  SyncPreview,
+  SyncItem,
+  SyncConflict,
+  SyncOptions,
+  SyncResult,
+  SyncPayload,
+  SyncHistoryResponse,
+  SyncStatusResponse,
+  ConflictResolution,
+  SyncProgressEvent,
+} from './sync.js';
