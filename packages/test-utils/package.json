@@ -1,0 +1,30 @@
+{
+  "name": "@ccm/test-utils",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Shared test utilities, factories, and mocks for CCM",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./factories": "./src/factories/index.ts",
+    "./mocks": "./src/mocks/index.ts",
+    "./db": "./src/db/index.ts",
+    "./utils": "./src/utils/index.ts"
+  },
+  "scripts": {
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage"
+  },
+  "dependencies": {
+    "@ccm/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@vitest/ui": "^1.2.0",
+    "typescript": "^5.3.3",
+    "vitest": "^1.2.0"
+  }
+}

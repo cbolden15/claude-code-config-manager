@@ -14,3 +14,14 @@ export {
   createAutoClaudeCommand,
   autoClaudeMainCommand
 } from './auto-claude.js';
+
+// Settings command groups
+export { createSettingsCommand } from './settings.js';
+export { createEnvCommand } from './settings-env.js';
+export { createSettingsHooksCommand } from './settings-hooks.js';
+
+// Machine command group
+export { createMachineCommand } from './machine.js';
+
+// Desktop command group
+export { createDesktopCommand } from './desktop.js';

@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { prisma } from '@/lib/db';
 import { getAllSettings } from '@/lib/settings';
 
@@ -6,6 +7,7 @@ export const dynamic = 'force-dynamic';
 import { Header } from '@/components/layout/header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
 import { EnhancedSettingsForm } from './components/enhanced-settings-form';
 import { ExportImportSection } from './export-import-section';
 
@@ -32,14 +34,17 @@ async function getSettings() {
 }
 
 async function getStats() {
-  const [components, profiles, projects, monitoring] = await Promise.all([
+  const [components, profiles, projects, monitoring, permissions, hooks, envVars] = await Promise.all([
     prisma.component.count(),
     prisma.profile.count(),
     prisma.project.count(),
     prisma.monitoringEntry.count(),
+    prisma.globalPermission.count(),
+    prisma.globalHook.count(),
+    prisma.globalEnvVar.count(),
   ]);
 
-  return { components, profiles, projects, monitoring };
+  return { components, profiles, projects, monitoring, permissions, hooks, envVars };
 }
 
 export default async function SettingsPage() {
@@ -54,6 +59,65 @@ export default async function SettingsPage() {
       />
 
       <div className="p-6 space-y-6">
+        {/* Quick Navigation Cards */}
+        <div className="grid grid-cols-3 gap-4">
+          <Link href="/settings/permissions" className="block">
+            <Card className="hover:shadow-md transition-shadow cursor-pointer">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 bg-violet-100 rounded-lg flex items-center justify-center">
+                    <svg className="w-6 h-6 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
+                  </div>
+                  <Badge variant="secondary">{stats.permissions}</Badge>
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-1">Permissions</h3>
+                <p className="text-sm text-gray-500">
+                  Manage global permissions and actions
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link href="/settings/hooks" className="block">
+            <Card className="hover:shadow-md transition-shadow cursor-pointer">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                  </div>
+                  <Badge variant="secondary">{stats.hooks}</Badge>
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-1">Hooks</h3>
+                <p className="text-sm text-gray-500">
+                  Configure hooks and automation
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link href="/settings/env" className="block">
+            <Card className="hover:shadow-md transition-shadow cursor-pointer">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                    <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                  </div>
+                  <Badge variant="secondary">{stats.envVars}</Badge>
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-1">Environment Variables</h3>
+                <p className="text-sm text-gray-500">
+                  Manage environment variables and secrets
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
+        </div>
         {/* Settings Configuration */}
         <EnhancedSettingsForm settings={settings} />
 

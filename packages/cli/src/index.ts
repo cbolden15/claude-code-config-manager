@@ -7,7 +7,11 @@ import {
   initCommand,
   applyCommand,
   syncCommand,
-  createAutoClaudeCommand
+  createAutoClaudeCommand,
+  createSettingsCommand,
+  createEnvCommand,
+  createMachineCommand,
+  createDesktopCommand
 } from './commands/index.js';
 
 program
@@ -98,6 +102,18 @@ program
 
 // Auto-Claude command group
 program.addCommand(createAutoClaudeCommand());
+
+// Settings command group (permissions, hooks, env)
+program.addCommand(createSettingsCommand());
+
+// Environment variables command group
+program.addCommand(createEnvCommand());
+
+// Machine command group
+program.addCommand(createMachineCommand());
+
+// Desktop command group
+program.addCommand(createDesktopCommand());
 
 // Show help if no command specified
 program.showHelpAfterError();

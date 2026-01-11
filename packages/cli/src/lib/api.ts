@@ -64,6 +64,13 @@ class ApiClient {
     });
   }
 
+  async patch<T>(path: string, body?: unknown): Promise<ApiResponse<T>> {
+    return this.request<T>(path, {
+      method: 'PATCH',
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  }
+
   async delete<T>(path: string): Promise<ApiResponse<T>> {
     return this.request<T>(path, { method: 'DELETE' });
   }
@@ -108,8 +115,19 @@ class ApiClient {
     return this.post('/api/projects', data);
   }
 
-  async syncProject(id: string): Promise<ApiResponse<Project>> {
-    return this.post(`/api/projects/${id}/sync`);
+  async syncProject(id: string, machineId: string, options?: {
+    syncType?: 'full' | 'incremental' | 'selective';
+    dryRun?: boolean;
+  }): Promise<ApiResponse<SyncProjectResponse>> {
+    return this.post(`/api/projects/${id}/sync`, {
+      machineId,
+      syncType: options?.syncType || 'full',
+      dryRun: options?.dryRun || false,
+    });
+  }
+
+  async getSyncStatus(projectId: string, machineId: string): Promise<ApiResponse<SyncStatusResponse>> {
+    return this.get(`/api/projects/${projectId}/sync?machineId=${machineId}`);
   }
 
   async updateProject(id: string, data: Partial<{
@@ -424,6 +442,47 @@ interface AutoClaudeAgentDetail extends AutoClaudeAgentResponse {
   tags: string | null;
   version: string | null;
   sourceUrl: string | null;
+}
+
+interface SyncProjectResponse {
+  success: boolean;
+  syncLogId?: string;
+  stats: {
+    filesCreated: number;
+    filesUpdated: number;
+    filesDeleted: number;
+    filesSkipped: number;
+  };
+  filesGenerated: number;
+  dryRun: boolean;
+  files: Array<{
+    path: string;
+    action: 'created' | 'updated' | 'skipped';
+    contentLength: number;
+  }>;
+}
+
+interface SyncStatusResponse {
+  project: {
+    id: string;
+    name: string;
+    path: string;
+    profileId: string | null;
+    profileName?: string;
+    lastSyncedAt: string | null;
+  };
+  latestSync: {
+    id: string;
+    syncType: 'full' | 'incremental' | 'selective';
+    status: string;
+    filesCreated: number | null;
+    filesUpdated: number | null;
+    startedAt: string;
+    completedAt: string | null;
+    errorMessage: string | null;
+  } | null;
+  syncNeeded: boolean;
+  reason?: string;
 }
 
 export const api = new ApiClient();
