@@ -1,0 +1,1555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CCM - Claude Code Config Manager</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    .page { display: none; }
+    .page.active { display: block; }
+    .sidebar-link.active { background-color: rgb(243 244 246); }
+    .badge { font-size: 0.65rem; padding: 0.15rem 0.4rem; }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+  <div class="flex min-h-screen">
+    
+    <!-- Sidebar -->
+    <aside class="w-64 bg-white border-r border-gray-200 flex flex-col">
+      <div class="p-4 border-b border-gray-200">
+        <h1 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
+          <i class="fas fa-terminal text-violet-600"></i>
+          CCM
+        </h1>
+        <p class="text-xs text-gray-500 mt-1">Claude Code Config Manager</p>
+      </div>
+      
+      <nav class="flex-1 p-3 space-y-1">
+        <a href="#" onclick="showPage('dashboard')" data-page="dashboard" class="sidebar-link flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors">
+          <i class="fas fa-home w-5 text-center text-gray-400"></i>
+          Dashboard
+        </a>
+        <a href="#" onclick="showPage('components')" data-page="components" class="sidebar-link flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors">
+          <i class="fas fa-puzzle-piece w-5 text-center text-gray-400"></i>
+          Components
+        </a>
+        <a href="#" onclick="showPage('profiles')" data-page="profiles" class="sidebar-link flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors">
+          <i class="fas fa-layer-group w-5 text-center text-gray-400"></i>
+          Profiles
+        </a>
+        <a href="#" onclick="showPage('projects')" data-page="projects" class="sidebar-link flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors">
+          <i class="fas fa-folder w-5 text-center text-gray-400"></i>
+          Projects
+        </a>
+        <a href="#" onclick="showPage('monitoring')" data-page="monitoring" class="sidebar-link flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors">
+          <i class="fas fa-satellite-dish w-5 text-center text-gray-400"></i>
+          Monitoring
+          <span class="ml-auto bg-amber-100 text-amber-700 text-xs px-2 py-0.5 rounded-full">3</span>
+        </a>
+        
+        <div class="pt-4 mt-4 border-t border-gray-200">
+          <a href="#" onclick="showPage('settings')" data-page="settings" class="sidebar-link flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors">
+            <i class="fas fa-cog w-5 text-center text-gray-400"></i>
+            Settings
+          </a>
+          <a href="#" onclick="showPage('export')" data-page="export" class="sidebar-link flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors">
+            <i class="fas fa-download w-5 text-center text-gray-400"></i>
+            Export / Import
+          </a>
+        </div>
+      </nav>
+      
+      <div class="p-4 border-t border-gray-200">
+        <div class="text-xs text-gray-500">
+          <p>Server: <span class="text-green-600">● Connected</span></p>
+          <p class="mt-1">v1.0.0</p>
+        </div>
+      </div>
+    </aside>
+    
+    <!-- Main Content -->
+    <main class="flex-1 overflow-auto">
+      
+      <!-- ==================== DASHBOARD ==================== -->
+      <div id="page-dashboard" class="page active">
+        <header class="bg-white border-b border-gray-200 px-6 py-4">
+          <h2 class="text-xl font-semibold text-gray-900">Dashboard</h2>
+          <p class="text-sm text-gray-500 mt-1">Overview of your Claude Code configurations</p>
+        </header>
+        
+        <div class="p-6">
+          <!-- Stats Cards -->
+          <div class="grid grid-cols-4 gap-4 mb-6">
+            <div class="bg-white rounded-lg border border-gray-200 p-4">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-sm text-gray-500">Components</p>
+                  <p class="text-2xl font-semibold text-gray-900 mt-1">42</p>
+                </div>
+                <div class="w-10 h-10 bg-violet-100 rounded-lg flex items-center justify-center">
+                  <i class="fas fa-puzzle-piece text-violet-600"></i>
+                </div>
+              </div>
+              <p class="text-xs text-gray-400 mt-2">12 MCP · 8 Agents · 6 Skills</p>
+            </div>
+            
+            <div class="bg-white rounded-lg border border-gray-200 p-4">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-sm text-gray-500">Profiles</p>
+                  <p class="text-2xl font-semibold text-gray-900 mt-1">5</p>
+                </div>
+                <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <i class="fas fa-layer-group text-blue-600"></i>
+                </div>
+              </div>
+              <p class="text-xs text-gray-400 mt-2">3 active this week</p>
+            </div>
+            
+            <div class="bg-white rounded-lg border border-gray-200 p-4">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-sm text-gray-500">Projects</p>
+                  <p class="text-2xl font-semibold text-gray-900 mt-1">15</p>
+                </div>
+                <div class="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center">
+                  <i class="fas fa-folder text-emerald-600"></i>
+                </div>
+              </div>
+              <p class="text-xs text-gray-400 mt-2">8 laptop · 7 desktop</p>
+            </div>
+            
+            <div class="bg-white rounded-lg border border-gray-200 p-4">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-sm text-gray-500">Needs Sync</p>
+                  <p class="text-2xl font-semibold text-amber-600 mt-1">3</p>
+                </div>
+                <div class="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
+                  <i class="fas fa-sync text-amber-600"></i>
+                </div>
+              </div>
+              <p class="text-xs text-gray-400 mt-2">Components updated</p>
+            </div>
+          </div>
+          
+          <div class="grid grid-cols-2 gap-6">
+            <!-- Projects Needing Sync -->
+            <div class="bg-white rounded-lg border border-gray-200">
+              <div class="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
+                <h3 class="font-medium text-gray-900">Projects Needing Sync</h3>
+                <button class="text-xs text-violet-600 hover:text-violet-700 font-medium">Sync All</button>
+              </div>
+              <div class="divide-y divide-gray-100">
+                <div class="px-4 py-3 flex items-center justify-between hover:bg-gray-50">
+                  <div>
+                    <p class="text-sm font-medium text-gray-900">staking-monitor</p>
+                    <p class="text-xs text-gray-500">blockchain · ~/projects/staking-monitor</p>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded">2 outdated</span>
+                    <button class="text-xs text-violet-600 hover:text-violet-700">Sync</button>
+                  </div>
+                </div>
+                <div class="px-4 py-3 flex items-center justify-between hover:bg-gray-50">
+                  <div>
+                    <p class="text-sm font-medium text-gray-900">n8n-workflows</p>
+                    <p class="text-xs text-gray-500">automation · ~/projects/n8n-workflows</p>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded">1 outdated</span>
+                    <button class="text-xs text-violet-600 hover:text-violet-700">Sync</button>
+                  </div>
+                </div>
+                <div class="px-4 py-3 flex items-center justify-between hover:bg-gray-50">
+                  <div>
+                    <p class="text-sm font-medium text-gray-900">portfolio-site</p>
+                    <p class="text-xs text-gray-500">general · ~/projects/portfolio</p>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded">1 outdated</span>
+                    <button class="text-xs text-violet-600 hover:text-violet-700">Sync</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Recent Monitoring Alerts -->
+            <div class="bg-white rounded-lg border border-gray-200">
+              <div class="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
+                <h3 class="font-medium text-gray-900">Recent Monitoring Alerts</h3>
+                <button class="text-xs text-violet-600 hover:text-violet-700 font-medium">View All</button>
+              </div>
+              <div class="divide-y divide-gray-100">
+                <div class="px-4 py-3 flex items-center justify-between hover:bg-gray-50">
+                  <div class="flex items-center gap-3">
+                    <span class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center text-green-600">
+                      <i class="fas fa-plus text-xs"></i>
+                    </span>
+                    <div>
+                      <p class="text-sm font-medium text-gray-900">New MCP: Linear integration</p>
+                      <p class="text-xs text-gray-500">MCP GitHub · 2 days ago</p>
+                    </div>
+                  </div>
+                  <button class="text-xs text-gray-400 hover:text-gray-600">Dismiss</button>
+                </div>
+                <div class="px-4 py-3 flex items-center justify-between hover:bg-gray-50">
+                  <div class="flex items-center gap-3">
+                    <span class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600">
+                      <i class="fas fa-arrow-up text-xs"></i>
+                    </span>
+                    <div>
+                      <p class="text-sm font-medium text-gray-900">Update: @mcp/server-github v1.1.0</p>
+                      <p class="text-xs text-gray-500">npm · 3 days ago</p>
+                    </div>
+                  </div>
+                  <button class="text-xs text-gray-400 hover:text-gray-600">Dismiss</button>
+                </div>
+                <div class="px-4 py-3 flex items-center justify-between hover:bg-gray-50">
+                  <div class="flex items-center gap-3">
+                    <span class="w-8 h-8 bg-violet-100 rounded-lg flex items-center justify-center text-violet-600">
+                      <i class="fas fa-star text-xs"></i>
+                    </span>
+                    <div>
+                      <p class="text-sm font-medium text-gray-900">New feature: Parallel subagents</p>
+                      <p class="text-xs text-gray-500">Claude Code Docs · 5 days ago</p>
+                    </div>
+                  </div>
+                  <button class="text-xs text-gray-400 hover:text-gray-600">Dismiss</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Quick Actions -->
+          <div class="mt-6 flex gap-3">
+            <button onclick="showPage('component-new')" class="inline-flex items-center gap-2 bg-violet-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-violet-700 transition-colors">
+              <i class="fas fa-plus"></i>
+              New Component
+            </button>
+            <button onclick="showPage('profile-new')" class="inline-flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors">
+              <i class="fas fa-layer-group"></i>
+              New Profile
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- ==================== COMPONENTS LIST ==================== -->
+      <div id="page-components" class="page">
+        <header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+          <div>
+            <h2 class="text-xl font-semibold text-gray-900">Components</h2>
+            <p class="text-sm text-gray-500 mt-1">Manage your reusable Claude Code components</p>
+          </div>
+          <button onclick="showPage('component-new')" class="inline-flex items-center gap-2 bg-violet-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-violet-700 transition-colors">
+            <i class="fas fa-plus"></i>
+            Add Component
+          </button>
+        </header>
+        
+        <div class="p-6">
+          <!-- Filters -->
+          <div class="flex items-center gap-4 mb-6">
+            <div class="flex bg-white border border-gray-200 rounded-lg overflow-hidden">
+              <button class="px-4 py-2 text-sm font-medium bg-violet-50 text-violet-700 border-r border-gray-200">All</button>
+              <button class="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 border-r border-gray-200">MCP Servers</button>
+              <button class="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 border-r border-gray-200">Subagents</button>
+              <button class="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 border-r border-gray-200">Skills</button>
+              <button class="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 border-r border-gray-200">Commands</button>
+              <button class="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50">Hooks</button>
+            </div>
+            <div class="flex-1">
+              <input type="text" placeholder="Search components..." class="w-full max-w-sm px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent">
+            </div>
+          </div>
+          
+          <!-- Component Grid -->
+          <div class="grid grid-cols-3 gap-4">
+            <!-- MCP Server Card -->
+            <div onclick="showPage('component-edit')" class="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow cursor-pointer">
+              <div class="flex items-start justify-between mb-3">
+                <span class="badge bg-emerald-100 text-emerald-700 rounded font-medium">MCP</span>
+                <button class="text-gray-400 hover:text-gray-600">
+                  <i class="fas fa-ellipsis-v"></i>
+                </button>
+              </div>
+              <h3 class="font-medium text-gray-900 mb-1">GitHub</h3>
+              <p class="text-sm text-gray-500 mb-3">GitHub integration for repository operations, issues, PRs, and actions</p>
+              <div class="flex items-center justify-between text-xs text-gray-400">
+                <span>v1.0.0</span>
+                <span>8 projects</span>
+              </div>
+            </div>
+            
+            <div class="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow cursor-pointer">
+              <div class="flex items-start justify-between mb-3">
+                <span class="badge bg-emerald-100 text-emerald-700 rounded font-medium">MCP</span>
+                <button class="text-gray-400 hover:text-gray-600">
+                  <i class="fas fa-ellipsis-v"></i>
+                </button>
+              </div>
+              <h3 class="font-medium text-gray-900 mb-1">PostgreSQL</h3>
+              <p class="text-sm text-gray-500 mb-3">Database integration for querying and managing PostgreSQL</p>
+              <div class="flex items-center justify-between text-xs text-gray-400">
+                <span>v1.0.0</span>
+                <span>5 projects</span>
+              </div>
+            </div>
+            
+            <div class="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow cursor-pointer">
+              <div class="flex items-start justify-between mb-3">
+                <span class="badge bg-emerald-100 text-emerald-700 rounded font-medium">MCP</span>
+                <button class="text-gray-400 hover:text-gray-600">
+                  <i class="fas fa-ellipsis-v"></i>
+                </button>
+              </div>
+              <h3 class="font-medium text-gray-900 mb-1">n8n</h3>
+              <p class="text-sm text-gray-500 mb-3">Workflow automation integration with n8n</p>
+              <div class="flex items-center justify-between text-xs text-gray-400">
+                <span>v1.2.0</span>
+                <span>4 projects</span>
+              </div>
+            </div>
+            
+            <!-- Subagent Cards -->
+            <div class="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow cursor-pointer">
+              <div class="flex items-start justify-between mb-3">
+                <span class="badge bg-blue-100 text-blue-700 rounded font-medium">Agent</span>
+                <button class="text-gray-400 hover:text-gray-600">
+                  <i class="fas fa-ellipsis-v"></i>
+                </button>
+              </div>
+              <h3 class="font-medium text-gray-900 mb-1">Security Reviewer</h3>
+              <p class="text-sm text-gray-500 mb-3">Reviews code for security vulnerabilities and best practices</p>
+              <div class="flex items-center justify-between text-xs text-gray-400">
+                <span>claude-sonnet</span>
+                <span>12 projects</span>
+              </div>
+            </div>
+            
+            <div class="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow cursor-pointer">
+              <div class="flex items-start justify-between mb-3">
+                <span class="badge bg-blue-100 text-blue-700 rounded font-medium">Agent</span>
+                <button class="text-gray-400 hover:text-gray-600">
+                  <i class="fas fa-ellipsis-v"></i>
+                </button>
+              </div>
+              <h3 class="font-medium text-gray-900 mb-1">Code Reviewer</h3>
+              <p class="text-sm text-gray-500 mb-3">Reviews code for quality, patterns, and best practices</p>
+              <div class="flex items-center justify-between text-xs text-gray-400">
+                <span>claude-sonnet</span>
+                <span>10 projects</span>
+              </div>
+            </div>
+            
+            <div class="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow cursor-pointer">
+              <div class="flex items-start justify-between mb-3">
+                <span class="badge bg-blue-100 text-blue-700 rounded font-medium">Agent</span>
+                <button class="text-gray-400 hover:text-gray-600">
+                  <i class="fas fa-ellipsis-v"></i>
+                </button>
+              </div>
+              <h3 class="font-medium text-gray-900 mb-1">Test Writer</h3>
+              <p class="text-sm text-gray-500 mb-3">Generates comprehensive test suites for code</p>
+              <div class="flex items-center justify-between text-xs text-gray-400">
+                <span>claude-sonnet</span>
+                <span>6 projects</span>
+              </div>
+            </div>
+            
+            <!-- Skill Cards -->
+            <div class="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow cursor-pointer">
+              <div class="flex items-start justify-between mb-3">
+                <span class="badge bg-amber-100 text-amber-700 rounded font-medium">Skill</span>
+                <button class="text-gray-400 hover:text-gray-600">
+                  <i class="fas fa-ellipsis-v"></i>
+                </button>
+              </div>
+              <h3 class="font-medium text-gray-900 mb-1">API Documentation</h3>
+              <p class="text-sm text-gray-500 mb-3">Generates OpenAPI documentation from code</p>
+              <div class="flex items-center justify-between text-xs text-gray-400">
+                <span>3 triggers</span>
+                <span>5 projects</span>
+              </div>
+            </div>
+            
+            <!-- Command Cards -->
+            <div class="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow cursor-pointer">
+              <div class="flex items-start justify-between mb-3">
+                <span class="badge bg-violet-100 text-violet-700 rounded font-medium">Command</span>
+                <button class="text-gray-400 hover:text-gray-600">
+                  <i class="fas fa-ellipsis-v"></i>
+                </button>
+              </div>
+              <h3 class="font-medium text-gray-900 mb-1">/deploy</h3>
+              <p class="text-sm text-gray-500 mb-3">Guided deployment workflow with checks</p>
+              <div class="flex items-center justify-between text-xs text-gray-400">
+                <span>5 steps</span>
+                <span>8 projects</span>
+              </div>
+            </div>
+            
+            <!-- Hook Cards -->
+            <div class="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow cursor-pointer">
+              <div class="flex items-start justify-between mb-3">
+                <span class="badge bg-rose-100 text-rose-700 rounded font-medium">Hook</span>
+                <button class="text-gray-400 hover:text-gray-600">
+                  <i class="fas fa-ellipsis-v"></i>
+                </button>
+              </div>
+              <h3 class="font-medium text-gray-900 mb-1">Auto Format</h3>
+              <p class="text-sm text-gray-500 mb-3">Runs Prettier after file edits</p>
+              <div class="flex items-center justify-between text-xs text-gray-400">
+                <span>PostToolUse</span>
+                <span>12 projects</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- ==================== COMPONENT NEW ==================== -->
+      <div id="page-component-new" class="page">
+        <header class="bg-white border-b border-gray-200 px-6 py-4">
+          <div class="flex items-center gap-2 text-sm text-gray-500 mb-2">
+            <a href="#" onclick="showPage('components')" class="hover:text-violet-600">Components</a>
+            <i class="fas fa-chevron-right text-xs"></i>
+            <span class="text-gray-900">New Component</span>
+          </div>
+          <h2 class="text-xl font-semibold text-gray-900">Create Component</h2>
+        </header>
+        
+        <div class="p-6 max-w-4xl">
+          <form class="space-y-6">
+            <!-- Component Type -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Component Type</label>
+              <div class="grid grid-cols-5 gap-3">
+                <label class="cursor-pointer">
+                  <input type="radio" name="type" value="mcp" class="sr-only peer" checked>
+                  <div class="p-3 border border-gray-200 rounded-lg text-center peer-checked:border-violet-500 peer-checked:bg-violet-50 hover:bg-gray-50 transition-colors">
+                    <i class="fas fa-plug text-emerald-500 text-lg mb-1"></i>
+                    <p class="text-sm font-medium">MCP Server</p>
+                  </div>
+                </label>
+                <label class="cursor-pointer">
+                  <input type="radio" name="type" value="subagent" class="sr-only peer">
+                  <div class="p-3 border border-gray-200 rounded-lg text-center peer-checked:border-violet-500 peer-checked:bg-violet-50 hover:bg-gray-50 transition-colors">
+                    <i class="fas fa-robot text-blue-500 text-lg mb-1"></i>
+                    <p class="text-sm font-medium">Subagent</p>
+                  </div>
+                </label>
+                <label class="cursor-pointer">
+                  <input type="radio" name="type" value="skill" class="sr-only peer">
+                  <div class="p-3 border border-gray-200 rounded-lg text-center peer-checked:border-violet-500 peer-checked:bg-violet-50 hover:bg-gray-50 transition-colors">
+                    <i class="fas fa-wand-magic-sparkles text-amber-500 text-lg mb-1"></i>
+                    <p class="text-sm font-medium">Skill</p>
+                  </div>
+                </label>
+                <label class="cursor-pointer">
+                  <input type="radio" name="type" value="command" class="sr-only peer">
+                  <div class="p-3 border border-gray-200 rounded-lg text-center peer-checked:border-violet-500 peer-checked:bg-violet-50 hover:bg-gray-50 transition-colors">
+                    <i class="fas fa-terminal text-violet-500 text-lg mb-1"></i>
+                    <p class="text-sm font-medium">Command</p>
+                  </div>
+                </label>
+                <label class="cursor-pointer">
+                  <input type="radio" name="type" value="hook" class="sr-only peer">
+                  <div class="p-3 border border-gray-200 rounded-lg text-center peer-checked:border-violet-500 peer-checked:bg-violet-50 hover:bg-gray-50 transition-colors">
+                    <i class="fas fa-bolt text-rose-500 text-lg mb-1"></i>
+                    <p class="text-sm font-medium">Hook</p>
+                  </div>
+                </label>
+              </div>
+            </div>
+            
+            <!-- Basic Info -->
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                <input type="text" placeholder="e.g., github" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Version</label>
+                <input type="text" placeholder="e.g., 1.0.0" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500">
+              </div>
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+              <input type="text" placeholder="Brief description of what this component does" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500">
+            </div>
+            
+            <!-- MCP-specific fields -->
+            <div class="bg-gray-50 rounded-lg p-4 space-y-4">
+              <h3 class="font-medium text-gray-900">MCP Server Configuration</h3>
+              
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Command</label>
+                  <input type="text" value="npx" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-violet-500">
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Arguments</label>
+                  <input type="text" placeholder="-y @modelcontextprotocol/server-github" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-violet-500">
+                </div>
+              </div>
+              
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Environment Variables</label>
+                <div class="space-y-2">
+                  <div class="flex gap-2">
+                    <input type="text" placeholder="GITHUB_TOKEN" class="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-violet-500">
+                    <input type="text" placeholder="${GITHUB_TOKEN}" class="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-violet-500">
+                    <button type="button" class="px-3 py-2 text-gray-400 hover:text-gray-600">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </div>
+                </div>
+                <button type="button" class="mt-2 text-sm text-violet-600 hover:text-violet-700">
+                  <i class="fas fa-plus mr-1"></i> Add Variable
+                </button>
+              </div>
+              
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Documentation URL</label>
+                <input type="text" placeholder="https://github.com/..." class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-violet-500">
+              </div>
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Tags</label>
+              <input type="text" placeholder="git, vcs, collaboration (comma separated)" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500">
+            </div>
+            
+            <!-- Actions -->
+            <div class="flex items-center gap-3 pt-4 border-t border-gray-200">
+              <button type="submit" class="bg-violet-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-violet-700 transition-colors">
+                Create Component
+              </button>
+              <button type="button" onclick="showPage('components')" class="text-gray-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors">
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+      
+      <!-- ==================== COMPONENT EDIT ==================== -->
+      <div id="page-component-edit" class="page">
+        <header class="bg-white border-b border-gray-200 px-6 py-4">
+          <div class="flex items-center gap-2 text-sm text-gray-500 mb-2">
+            <a href="#" onclick="showPage('components')" class="hover:text-violet-600">Components</a>
+            <i class="fas fa-chevron-right text-xs"></i>
+            <span class="text-gray-900">GitHub</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <h2 class="text-xl font-semibold text-gray-900">Edit Component</h2>
+            <div class="flex items-center gap-2">
+              <button class="text-gray-500 hover:text-gray-700 px-3 py-2 rounded-lg text-sm hover:bg-gray-100">
+                <i class="fas fa-copy mr-1"></i> Duplicate
+              </button>
+              <button class="text-red-500 hover:text-red-700 px-3 py-2 rounded-lg text-sm hover:bg-red-50">
+                <i class="fas fa-trash mr-1"></i> Delete
+              </button>
+            </div>
+          </div>
+        </header>
+        
+        <div class="p-6">
+          <div class="grid grid-cols-3 gap-6">
+            <!-- Form -->
+            <div class="col-span-2">
+              <form class="space-y-6">
+                <div class="bg-white rounded-lg border border-gray-200 p-4">
+                  <div class="flex items-center gap-3 mb-4">
+                    <span class="badge bg-emerald-100 text-emerald-700 rounded font-medium">MCP Server</span>
+                    <span class="text-sm text-gray-500">Created 2 weeks ago</span>
+                  </div>
+                  
+                  <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                      <input type="text" value="github" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500">
+                    </div>
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 mb-1">Version</label>
+                      <input type="text" value="1.0.0" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500">
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    <input type="text" value="GitHub integration for repository operations, issues, PRs, and actions" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500">
+                  </div>
+                </div>
+                
+                <div class="bg-white rounded-lg border border-gray-200 p-4 space-y-4">
+                  <h3 class="font-medium text-gray-900">MCP Server Configuration</h3>
+                  
+                  <div class="grid grid-cols-2 gap-4">
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 mb-1">Command</label>
+                      <input type="text" value="npx" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500">
+                    </div>
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 mb-1">Arguments</label>
+                      <input type="text" value="-y @modelcontextprotocol/server-github" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500">
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Environment Variables</label>
+                    <div class="space-y-2">
+                      <div class="flex gap-2">
+                        <input type="text" value="GITHUB_TOKEN" class="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500">
+                        <input type="text" value="${GITHUB_TOKEN}" class="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500">
+                        <button type="button" class="px-3 py-2 text-gray-400 hover:text-gray-600">
+                          <i class="fas fa-trash"></i>
+                        </button>
+                      </div>
+                    </div>
+                    <button type="button" class="mt-2 text-sm text-violet-600 hover:text-violet-700">
+                      <i class="fas fa-plus mr-1"></i> Add Variable
+                    </button>
+                  </div>
+                </div>
+                
+                <div class="bg-white rounded-lg border border-gray-200 p-4">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Tags</label>
+                    <input type="text" value="git, vcs, collaboration, github" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500">
+                  </div>
+                </div>
+                
+                <div class="flex items-center gap-3">
+                  <button type="submit" class="bg-violet-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-violet-700 transition-colors">
+                    Save Changes
+                  </button>
+                  <button type="button" onclick="showPage('components')" class="text-gray-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors">
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+            
+            <!-- Preview Sidebar -->
+            <div>
+              <div class="bg-white rounded-lg border border-gray-200 p-4 sticky top-6">
+                <h3 class="font-medium text-gray-900 mb-3">Generated File Preview</h3>
+                <div class="bg-gray-900 rounded-lg p-4 text-sm font-mono text-gray-300 overflow-auto max-h-96">
+                  <p class="text-gray-500 mb-2">// .mcp.json (partial)</p>
+                  <pre>{
+  "mcpServers": {
+    "github": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-github"
+      ],
+      "env": {
+        "GITHUB_TOKEN": "${GITHUB_TOKEN}"
+      }
+    }
+  }
+}</pre>
+                </div>
+                
+                <div class="mt-4 pt-4 border-t border-gray-200">
+                  <h4 class="text-sm font-medium text-gray-700 mb-2">Used in Profiles</h4>
+                  <div class="space-y-2">
+                    <div class="flex items-center justify-between text-sm">
+                      <span class="text-gray-600">blockchain</span>
+                      <span class="text-gray-400">5 projects</span>
+                    </div>
+                    <div class="flex items-center justify-between text-sm">
+                      <span class="text-gray-600">general</span>
+                      <span class="text-gray-400">3 projects</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- ==================== PROFILES LIST ==================== -->
+      <div id="page-profiles" class="page">
+        <header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+          <div>
+            <h2 class="text-xl font-semibold text-gray-900">Profiles</h2>
+            <p class="text-sm text-gray-500 mt-1">Component bundles for different project types</p>
+          </div>
+          <button onclick="showPage('profile-new')" class="inline-flex items-center gap-2 bg-violet-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-violet-700 transition-colors">
+            <i class="fas fa-plus"></i>
+            New Profile
+          </button>
+        </header>
+        
+        <div class="p-6">
+          <div class="grid grid-cols-3 gap-4">
+            <!-- Profile Cards -->
+            <div onclick="showPage('profile-edit')" class="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow cursor-pointer">
+              <div class="flex items-center justify-between mb-3">
+                <div class="w-10 h-10 bg-gradient-to-br from-amber-400 to-orange-500 rounded-lg flex items-center justify-center text-white">
+                  <i class="fas fa-link"></i>
+                </div>
+                <span class="text-xs text-violet-600 bg-violet-50 px-2 py-1 rounded">Default</span>
+              </div>
+              <h3 class="font-medium text-gray-900 mb-1">blockchain</h3>
+              <p class="text-sm text-gray-500 mb-3">For blockchain and Web3 development projects</p>
+              <div class="flex flex-wrap gap-1 mb-3">
+                <span class="text-xs bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded">3 MCP</span>
+                <span class="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded">2 Agents</span>
+                <span class="text-xs bg-amber-50 text-amber-600 px-2 py-0.5 rounded">1 Skill</span>
+                <span class="text-xs bg-violet-50 text-violet-600 px-2 py-0.5 rounded">2 Commands</span>
+              </div>
+              <div class="text-xs text-gray-400">5 projects using this profile</div>
+            </div>
+            
+            <div class="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow cursor-pointer">
+              <div class="flex items-center justify-between mb-3">
+                <div class="w-10 h-10 bg-gradient-to-br from-green-400 to-emerald-500 rounded-lg flex items-center justify-center text-white">
+                  <i class="fas fa-diagram-project"></i>
+                </div>
+              </div>
+              <h3 class="font-medium text-gray-900 mb-1">automation</h3>
+              <p class="text-sm text-gray-500 mb-3">For n8n and workflow automation projects</p>
+              <div class="flex flex-wrap gap-1 mb-3">
+                <span class="text-xs bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded">4 MCP</span>
+                <span class="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded">1 Agent</span>
+                <span class="text-xs bg-violet-50 text-violet-600 px-2 py-0.5 rounded">1 Command</span>
+              </div>
+              <div class="text-xs text-gray-400">4 projects using this profile</div>
+            </div>
+            
+            <div class="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow cursor-pointer">
+              <div class="flex items-center justify-between mb-3">
+                <div class="w-10 h-10 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-lg flex items-center justify-center text-white">
+                  <i class="fas fa-code"></i>
+                </div>
+              </div>
+              <h3 class="font-medium text-gray-900 mb-1">general</h3>
+              <p class="text-sm text-gray-500 mb-3">Default profile for general development</p>
+              <div class="flex flex-wrap gap-1 mb-3">
+                <span class="text-xs bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded">2 MCP</span>
+                <span class="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded">2 Agents</span>
+                <span class="text-xs bg-rose-50 text-rose-600 px-2 py-0.5 rounded">1 Hook</span>
+              </div>
+              <div class="text-xs text-gray-400">6 projects using this profile</div>
+            </div>
+            
+            <div class="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow cursor-pointer">
+              <div class="flex items-center justify-between mb-3">
+                <div class="w-10 h-10 bg-gradient-to-br from-purple-400 to-pink-500 rounded-lg flex items-center justify-center text-white">
+                  <i class="fas fa-paintbrush"></i>
+                </div>
+              </div>
+              <h3 class="font-medium text-gray-900 mb-1">frontend</h3>
+              <p class="text-sm text-gray-500 mb-3">For React/Vue/Svelte frontend projects</p>
+              <div class="flex flex-wrap gap-1 mb-3">
+                <span class="text-xs bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded">1 MCP</span>
+                <span class="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded">1 Agent</span>
+                <span class="text-xs bg-rose-50 text-rose-600 px-2 py-0.5 rounded">2 Hooks</span>
+              </div>
+              <div class="text-xs text-gray-400">0 projects using this profile</div>
+            </div>
+            
+            <div class="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow cursor-pointer">
+              <div class="flex items-center justify-between mb-3">
+                <div class="w-10 h-10 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-lg flex items-center justify-center text-white">
+                  <i class="fas fa-server"></i>
+                </div>
+              </div>
+              <h3 class="font-medium text-gray-900 mb-1">backend</h3>
+              <p class="text-sm text-gray-500 mb-3">For API and backend development</p>
+              <div class="flex flex-wrap gap-1 mb-3">
+                <span class="text-xs bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded">3 MCP</span>
+                <span class="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded">2 Agents</span>
+                <span class="text-xs bg-amber-50 text-amber-600 px-2 py-0.5 rounded">1 Skill</span>
+              </div>
+              <div class="text-xs text-gray-400">0 projects using this profile</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- ==================== PROFILE NEW ==================== -->
+      <div id="page-profile-new" class="page">
+        <header class="bg-white border-b border-gray-200 px-6 py-4">
+          <div class="flex items-center gap-2 text-sm text-gray-500 mb-2">
+            <a href="#" onclick="showPage('profiles')" class="hover:text-violet-600">Profiles</a>
+            <i class="fas fa-chevron-right text-xs"></i>
+            <span class="text-gray-900">New Profile</span>
+          </div>
+          <h2 class="text-xl font-semibold text-gray-900">Create Profile</h2>
+        </header>
+        
+        <div class="p-6">
+          <div class="grid grid-cols-3 gap-6">
+            <div class="col-span-2 space-y-6">
+              <!-- Basic Info -->
+              <div class="bg-white rounded-lg border border-gray-200 p-4 space-y-4">
+                <h3 class="font-medium text-gray-900">Basic Information</h3>
+                
+                <div class="grid grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Profile Name</label>
+                    <input type="text" placeholder="e.g., blockchain" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500">
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Icon Color</label>
+                    <div class="flex gap-2">
+                      <button class="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 ring-2 ring-offset-2 ring-violet-500"></button>
+                      <button class="w-8 h-8 rounded-lg bg-gradient-to-br from-green-400 to-emerald-500"></button>
+                      <button class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-400 to-indigo-500"></button>
+                      <button class="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-400 to-pink-500"></button>
+                      <button class="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-400 to-blue-500"></button>
+                    </div>
+                  </div>
+                </div>
+                
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                  <input type="text" placeholder="Brief description of this profile" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500">
+                </div>
+              </div>
+              
+              <!-- CLAUDE.md Template -->
+              <div class="bg-white rounded-lg border border-gray-200 p-4 space-y-4">
+                <div class="flex items-center justify-between">
+                  <h3 class="font-medium text-gray-900">CLAUDE.md Template</h3>
+                  <button class="text-sm text-violet-600 hover:text-violet-700">
+                    <i class="fas fa-magic mr-1"></i> Use Starter Template
+                  </button>
+                </div>
+                <div>
+                  <textarea rows="12" placeholder="# Project: {{projectName}}
+
+## Overview
+{{projectDescription}}
+
+## Conventions
+- ...
+
+## Commands
+- ..." class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-violet-500"></textarea>
+                </div>
+                <p class="text-xs text-gray-500">
+                  Use <code class="bg-gray-100 px-1 rounded">{{projectName}}</code> and <code class="bg-gray-100 px-1 rounded">{{projectDescription}}</code> as placeholders.
+                </p>
+              </div>
+              
+              <!-- Component Selection -->
+              <div class="bg-white rounded-lg border border-gray-200 p-4 space-y-4">
+                <h3 class="font-medium text-gray-900">Select Components</h3>
+                
+                <!-- MCP Servers -->
+                <div>
+                  <h4 class="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                    <i class="fas fa-plug text-emerald-500"></i> MCP Servers
+                  </h4>
+                  <div class="grid grid-cols-3 gap-2">
+                    <label class="flex items-center gap-2 p-2 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                      <input type="checkbox" checked class="rounded text-violet-600">
+                      <span class="text-sm">GitHub</span>
+                    </label>
+                    <label class="flex items-center gap-2 p-2 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                      <input type="checkbox" checked class="rounded text-violet-600">
+                      <span class="text-sm">PostgreSQL</span>
+                    </label>
+                    <label class="flex items-center gap-2 p-2 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                      <input type="checkbox" class="rounded text-violet-600">
+                      <span class="text-sm">n8n</span>
+                    </label>
+                    <label class="flex items-center gap-2 p-2 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                      <input type="checkbox" class="rounded text-violet-600">
+                      <span class="text-sm">Notion</span>
+                    </label>
+                    <label class="flex items-center gap-2 p-2 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                      <input type="checkbox" class="rounded text-violet-600">
+                      <span class="text-sm">Slack</span>
+                    </label>
+                    <label class="flex items-center gap-2 p-2 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                      <input type="checkbox" class="rounded text-violet-600">
+                      <span class="text-sm">Linear</span>
+                    </label>
+                  </div>
+                </div>
+                
+                <!-- Subagents -->
+                <div>
+                  <h4 class="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                    <i class="fas fa-robot text-blue-500"></i> Subagents
+                  </h4>
+                  <div class="grid grid-cols-3 gap-2">
+                    <label class="flex items-center gap-2 p-2 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                      <input type="checkbox" checked class="rounded text-violet-600">
+                      <span class="text-sm">Security Reviewer</span>
+                    </label>
+                    <label class="flex items-center gap-2 p-2 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                      <input type="checkbox" checked class="rounded text-violet-600">
+                      <span class="text-sm">Code Reviewer</span>
+                    </label>
+                    <label class="flex items-center gap-2 p-2 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                      <input type="checkbox" class="rounded text-violet-600">
+                      <span class="text-sm">Test Writer</span>
+                    </label>
+                  </div>
+                </div>
+                
+                <!-- Skills -->
+                <div>
+                  <h4 class="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                    <i class="fas fa-wand-magic-sparkles text-amber-500"></i> Skills
+                  </h4>
+                  <div class="grid grid-cols-3 gap-2">
+                    <label class="flex items-center gap-2 p-2 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                      <input type="checkbox" checked class="rounded text-violet-600">
+                      <span class="text-sm">API Documentation</span>
+                    </label>
+                  </div>
+                </div>
+                
+                <!-- Commands -->
+                <div>
+                  <h4 class="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                    <i class="fas fa-terminal text-violet-500"></i> Commands
+                  </h4>
+                  <div class="grid grid-cols-3 gap-2">
+                    <label class="flex items-center gap-2 p-2 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                      <input type="checkbox" checked class="rounded text-violet-600">
+                      <span class="text-sm">/deploy</span>
+                    </label>
+                    <label class="flex items-center gap-2 p-2 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                      <input type="checkbox" class="rounded text-violet-600">
+                      <span class="text-sm">/test</span>
+                    </label>
+                  </div>
+                </div>
+                
+                <!-- Hooks -->
+                <div>
+                  <h4 class="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                    <i class="fas fa-bolt text-rose-500"></i> Hooks
+                  </h4>
+                  <div class="grid grid-cols-3 gap-2">
+                    <label class="flex items-center gap-2 p-2 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                      <input type="checkbox" checked class="rounded text-violet-600">
+                      <span class="text-sm">Auto Format</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="flex items-center gap-3">
+                <button type="submit" class="bg-violet-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-violet-700 transition-colors">
+                  Create Profile
+                </button>
+                <button type="button" onclick="showPage('profiles')" class="text-gray-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors">
+                  Cancel
+                </button>
+              </div>
+            </div>
+            
+            <!-- Preview Sidebar -->
+            <div>
+              <div class="bg-white rounded-lg border border-gray-200 p-4 sticky top-6">
+                <h3 class="font-medium text-gray-900 mb-3">Profile Summary</h3>
+                
+                <div class="space-y-3">
+                  <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-gradient-to-br from-amber-400 to-orange-500 rounded-lg flex items-center justify-center text-white">
+                      <i class="fas fa-layer-group"></i>
+                    </div>
+                    <div>
+                      <p class="font-medium text-gray-900">New Profile</p>
+                      <p class="text-xs text-gray-500">No description</p>
+                    </div>
+                  </div>
+                  
+                  <div class="pt-3 border-t border-gray-200 space-y-2">
+                    <div class="flex items-center justify-between text-sm">
+                      <span class="text-gray-500">MCP Servers</span>
+                      <span class="font-medium text-gray-900">2</span>
+                    </div>
+                    <div class="flex items-center justify-between text-sm">
+                      <span class="text-gray-500">Subagents</span>
+                      <span class="font-medium text-gray-900">2</span>
+                    </div>
+                    <div class="flex items-center justify-between text-sm">
+                      <span class="text-gray-500">Skills</span>
+                      <span class="font-medium text-gray-900">1</span>
+                    </div>
+                    <div class="flex items-center justify-between text-sm">
+                      <span class="text-gray-500">Commands</span>
+                      <span class="font-medium text-gray-900">1</span>
+                    </div>
+                    <div class="flex items-center justify-between text-sm">
+                      <span class="text-gray-500">Hooks</span>
+                      <span class="font-medium text-gray-900">1</span>
+                    </div>
+                  </div>
+                  
+                  <div class="pt-3 border-t border-gray-200">
+                    <p class="text-sm font-medium text-gray-700 mb-2">Generated Structure</p>
+                    <div class="text-xs font-mono text-gray-500 space-y-1">
+                      <p>📁 .claude/</p>
+                      <p class="pl-4">📄 CLAUDE.md</p>
+                      <p class="pl-4">📄 settings.json</p>
+                      <p class="pl-4">📁 agents/</p>
+                      <p class="pl-8">📄 security-reviewer.md</p>
+                      <p class="pl-8">📄 code-reviewer.md</p>
+                      <p class="pl-4">📁 skills/</p>
+                      <p class="pl-8">📁 api-documentation/</p>
+                      <p class="pl-4">📁 commands/</p>
+                      <p class="pl-8">📄 deploy.md</p>
+                      <p>📄 .mcp.json</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- ==================== PROFILE EDIT ==================== -->
+      <div id="page-profile-edit" class="page">
+        <header class="bg-white border-b border-gray-200 px-6 py-4">
+          <div class="flex items-center gap-2 text-sm text-gray-500 mb-2">
+            <a href="#" onclick="showPage('profiles')" class="hover:text-violet-600">Profiles</a>
+            <i class="fas fa-chevron-right text-xs"></i>
+            <span class="text-gray-900">blockchain</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 bg-gradient-to-br from-amber-400 to-orange-500 rounded-lg flex items-center justify-center text-white">
+                <i class="fas fa-link"></i>
+              </div>
+              <div>
+                <h2 class="text-xl font-semibold text-gray-900">blockchain</h2>
+                <p class="text-sm text-gray-500">5 projects using this profile</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <button class="text-gray-500 hover:text-gray-700 px-3 py-2 rounded-lg text-sm hover:bg-gray-100">
+                <i class="fas fa-copy mr-1"></i> Duplicate
+              </button>
+              <button class="text-red-500 hover:text-red-700 px-3 py-2 rounded-lg text-sm hover:bg-red-50">
+                <i class="fas fa-trash mr-1"></i> Delete
+              </button>
+            </div>
+          </div>
+        </header>
+        
+        <div class="p-6">
+          <!-- Similar to profile-new but with values filled in -->
+          <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
+            <div class="flex items-start gap-3">
+              <i class="fas fa-exclamation-triangle text-amber-600 mt-0.5"></i>
+              <div>
+                <p class="text-sm font-medium text-amber-800">5 projects use this profile</p>
+                <p class="text-sm text-amber-700 mt-1">Changes will mark those projects as "needs sync". Run <code class="bg-amber-100 px-1 rounded">ccm sync</code> on each project to apply updates.</p>
+              </div>
+            </div>
+          </div>
+          
+          <p class="text-sm text-gray-500">Form content similar to profile-new, with values pre-filled...</p>
+        </div>
+      </div>
+      
+      <!-- ==================== PROJECTS ==================== -->
+      <div id="page-projects" class="page">
+        <header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+          <div>
+            <h2 class="text-xl font-semibold text-gray-900">Projects</h2>
+            <p class="text-sm text-gray-500 mt-1">Track and manage your Claude Code projects</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <select class="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500">
+              <option>All Machines</option>
+              <option>laptop</option>
+              <option>desktop</option>
+            </select>
+            <select class="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500">
+              <option>All Profiles</option>
+              <option>blockchain</option>
+              <option>automation</option>
+              <option>general</option>
+            </select>
+          </div>
+        </header>
+        
+        <div class="p-6">
+          <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
+            <table class="w-full">
+              <thead class="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th class="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Project</th>
+                  <th class="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Profile</th>
+                  <th class="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Machine</th>
+                  <th class="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th class="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Last Synced</th>
+                  <th class="text-right px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100">
+                <tr class="hover:bg-gray-50">
+                  <td class="px-4 py-3">
+                    <p class="text-sm font-medium text-gray-900">staking-monitor</p>
+                    <p class="text-xs text-gray-500">~/projects/staking-monitor</p>
+                  </td>
+                  <td class="px-4 py-3">
+                    <span class="inline-flex items-center gap-1 text-sm text-gray-700">
+                      <span class="w-2 h-2 rounded-full bg-gradient-to-br from-amber-400 to-orange-500"></span>
+                      blockchain
+                    </span>
+                  </td>
+                  <td class="px-4 py-3 text-sm text-gray-500">laptop</td>
+                  <td class="px-4 py-3">
+                    <span class="inline-flex items-center gap-1 text-xs font-medium text-amber-700 bg-amber-50 px-2 py-1 rounded">
+                      <i class="fas fa-sync text-[10px]"></i> Needs Sync
+                    </span>
+                  </td>
+                  <td class="px-4 py-3 text-sm text-gray-500">2 days ago</td>
+                  <td class="px-4 py-3 text-right">
+                    <button class="text-violet-600 hover:text-violet-700 text-sm font-medium">Sync</button>
+                  </td>
+                </tr>
+                <tr class="hover:bg-gray-50">
+                  <td class="px-4 py-3">
+                    <p class="text-sm font-medium text-gray-900">n8n-workflows</p>
+                    <p class="text-xs text-gray-500">~/projects/n8n-workflows</p>
+                  </td>
+                  <td class="px-4 py-3">
+                    <span class="inline-flex items-center gap-1 text-sm text-gray-700">
+                      <span class="w-2 h-2 rounded-full bg-gradient-to-br from-green-400 to-emerald-500"></span>
+                      automation
+                    </span>
+                  </td>
+                  <td class="px-4 py-3 text-sm text-gray-500">laptop</td>
+                  <td class="px-4 py-3">
+                    <span class="inline-flex items-center gap-1 text-xs font-medium text-amber-700 bg-amber-50 px-2 py-1 rounded">
+                      <i class="fas fa-sync text-[10px]"></i> Needs Sync
+                    </span>
+                  </td>
+                  <td class="px-4 py-3 text-sm text-gray-500">1 week ago</td>
+                  <td class="px-4 py-3 text-right">
+                    <button class="text-violet-600 hover:text-violet-700 text-sm font-medium">Sync</button>
+                  </td>
+                </tr>
+                <tr class="hover:bg-gray-50">
+                  <td class="px-4 py-3">
+                    <p class="text-sm font-medium text-gray-900">portfolio-site</p>
+                    <p class="text-xs text-gray-500">~/projects/portfolio</p>
+                  </td>
+                  <td class="px-4 py-3">
+                    <span class="inline-flex items-center gap-1 text-sm text-gray-700">
+                      <span class="w-2 h-2 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500"></span>
+                      general
+                    </span>
+                  </td>
+                  <td class="px-4 py-3 text-sm text-gray-500">desktop</td>
+                  <td class="px-4 py-3">
+                    <span class="inline-flex items-center gap-1 text-xs font-medium text-green-700 bg-green-50 px-2 py-1 rounded">
+                      <i class="fas fa-check text-[10px]"></i> Synced
+                    </span>
+                  </td>
+                  <td class="px-4 py-3 text-sm text-gray-500">Today</td>
+                  <td class="px-4 py-3 text-right">
+                    <button class="text-gray-400 text-sm">Up to date</button>
+                  </td>
+                </tr>
+                <tr class="hover:bg-gray-50">
+                  <td class="px-4 py-3">
+                    <p class="text-sm font-medium text-gray-900">defi-dashboard</p>
+                    <p class="text-xs text-gray-500">~/projects/defi-dashboard</p>
+                  </td>
+                  <td class="px-4 py-3">
+                    <span class="inline-flex items-center gap-1 text-sm text-gray-700">
+                      <span class="w-2 h-2 rounded-full bg-gradient-to-br from-amber-400 to-orange-500"></span>
+                      blockchain
+                    </span>
+                  </td>
+                  <td class="px-4 py-3 text-sm text-gray-500">laptop</td>
+                  <td class="px-4 py-3">
+                    <span class="inline-flex items-center gap-1 text-xs font-medium text-green-700 bg-green-50 px-2 py-1 rounded">
+                      <i class="fas fa-check text-[10px]"></i> Synced
+                    </span>
+                  </td>
+                  <td class="px-4 py-3 text-sm text-gray-500">3 days ago</td>
+                  <td class="px-4 py-3 text-right">
+                    <button class="text-gray-400 text-sm">Up to date</button>
+                  </td>
+                </tr>
+                <tr class="hover:bg-gray-50">
+                  <td class="px-4 py-3">
+                    <p class="text-sm font-medium text-gray-900">api-gateway</p>
+                    <p class="text-xs text-gray-500">~/projects/api-gateway</p>
+                  </td>
+                  <td class="px-4 py-3">
+                    <span class="inline-flex items-center gap-1 text-sm text-gray-700">
+                      <span class="w-2 h-2 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500"></span>
+                      general
+                    </span>
+                  </td>
+                  <td class="px-4 py-3 text-sm text-gray-500">desktop</td>
+                  <td class="px-4 py-3">
+                    <span class="inline-flex items-center gap-1 text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                      <i class="fas fa-clock text-[10px]"></i> Never Synced
+                    </span>
+                  </td>
+                  <td class="px-4 py-3 text-sm text-gray-500">-</td>
+                  <td class="px-4 py-3 text-right">
+                    <button class="text-violet-600 hover:text-violet-700 text-sm font-medium">Initialize</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      
+      <!-- ==================== MONITORING ==================== -->
+      <div id="page-monitoring" class="page">
+        <header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+          <div>
+            <h2 class="text-xl font-semibold text-gray-900">Monitoring</h2>
+            <p class="text-sm text-gray-500 mt-1">Ecosystem updates and changelog</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <select class="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500">
+              <option>All Sources</option>
+              <option>Claude Code Docs</option>
+              <option>MCP GitHub</option>
+              <option>npm Packages</option>
+              <option>Anthropic Blog</option>
+            </select>
+            <button class="text-sm text-gray-600 hover:text-gray-800 px-3 py-2">
+              <i class="fas fa-check-double mr-1"></i> Acknowledge All
+            </button>
+          </div>
+        </header>
+        
+        <div class="p-6">
+          <!-- Week Group -->
+          <div class="mb-8">
+            <h3 class="text-sm font-medium text-gray-500 mb-3">This Week</h3>
+            <div class="space-y-3">
+              <div class="bg-white rounded-lg border border-gray-200 p-4 flex items-start justify-between">
+                <div class="flex items-start gap-4">
+                  <span class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center text-green-600 flex-shrink-0">
+                    <i class="fas fa-plus"></i>
+                  </span>
+                  <div>
+                    <div class="flex items-center gap-2 mb-1">
+                      <span class="text-xs bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded font-medium">MCP GitHub</span>
+                      <span class="text-xs bg-green-50 text-green-600 px-2 py-0.5 rounded">New Component</span>
+                    </div>
+                    <h4 class="font-medium text-gray-900">New MCP Server: Linear Integration</h4>
+                    <p class="text-sm text-gray-500 mt-1">Official MCP server for Linear issue tracking. Supports creating, updating, and querying issues.</p>
+                    <a href="#" class="text-sm text-violet-600 hover:text-violet-700 mt-2 inline-block">
+                      View on GitHub →
+                    </a>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2 flex-shrink-0">
+                  <span class="text-xs text-gray-400">2 days ago</span>
+                  <button class="text-gray-400 hover:text-gray-600 p-1">
+                    <i class="fas fa-check"></i>
+                  </button>
+                </div>
+              </div>
+              
+              <div class="bg-white rounded-lg border border-gray-200 p-4 flex items-start justify-between">
+                <div class="flex items-start gap-4">
+                  <span class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600 flex-shrink-0">
+                    <i class="fas fa-arrow-up"></i>
+                  </span>
+                  <div>
+                    <div class="flex items-center gap-2 mb-1">
+                      <span class="text-xs bg-orange-50 text-orange-600 px-2 py-0.5 rounded font-medium">npm</span>
+                      <span class="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded">Update</span>
+                    </div>
+                    <h4 class="font-medium text-gray-900">@modelcontextprotocol/server-github v1.1.0</h4>
+                    <p class="text-sm text-gray-500 mt-1">Added support for GitHub Actions integration. New tools: list_workflows, trigger_workflow, get_workflow_run.</p>
+                    <a href="#" class="text-sm text-violet-600 hover:text-violet-700 mt-2 inline-block">
+                      View changelog →
+                    </a>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2 flex-shrink-0">
+                  <span class="text-xs text-gray-400">3 days ago</span>
+                  <button class="text-gray-400 hover:text-gray-600 p-1">
+                    <i class="fas fa-check"></i>
+                  </button>
+                </div>
+              </div>
+              
+              <div class="bg-white rounded-lg border border-gray-200 p-4 flex items-start justify-between">
+                <div class="flex items-start gap-4">
+                  <span class="w-10 h-10 bg-violet-100 rounded-lg flex items-center justify-center text-violet-600 flex-shrink-0">
+                    <i class="fas fa-star"></i>
+                  </span>
+                  <div>
+                    <div class="flex items-center gap-2 mb-1">
+                      <span class="text-xs bg-violet-50 text-violet-600 px-2 py-0.5 rounded font-medium">Claude Code Docs</span>
+                      <span class="text-xs bg-violet-50 text-violet-600 px-2 py-0.5 rounded">New Feature</span>
+                    </div>
+                    <h4 class="font-medium text-gray-900">Parallel Subagents Now Available</h4>
+                    <p class="text-sm text-gray-500 mt-1">Claude Code now supports running multiple subagents in parallel via the Task tool. Useful for concurrent code review, testing, and analysis.</p>
+                    <a href="#" class="text-sm text-violet-600 hover:text-violet-700 mt-2 inline-block">
+                      Read documentation →
+                    </a>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2 flex-shrink-0">
+                  <span class="text-xs text-gray-400">5 days ago</span>
+                  <button class="text-gray-400 hover:text-gray-600 p-1">
+                    <i class="fas fa-check"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Last Week Group -->
+          <div class="mb-8">
+            <h3 class="text-sm font-medium text-gray-500 mb-3">Last Week</h3>
+            <div class="space-y-3">
+              <div class="bg-white rounded-lg border border-gray-200 p-4 flex items-start justify-between opacity-60">
+                <div class="flex items-start gap-4">
+                  <span class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400 flex-shrink-0">
+                    <i class="fas fa-book"></i>
+                  </span>
+                  <div>
+                    <div class="flex items-center gap-2 mb-1">
+                      <span class="text-xs bg-pink-50 text-pink-600 px-2 py-0.5 rounded font-medium">Anthropic Blog</span>
+                    </div>
+                    <h4 class="font-medium text-gray-700">Best Practices for Claude Code Projects</h4>
+                    <p class="text-sm text-gray-500 mt-1">New blog post covering project organization, CLAUDE.md tips, and effective use of subagents.</p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2 flex-shrink-0">
+                  <span class="text-xs text-gray-400">8 days ago</span>
+                  <span class="text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded">
+                    <i class="fas fa-check mr-1"></i> Acknowledged
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- ==================== SETTINGS ==================== -->
+      <div id="page-settings" class="page">
+        <header class="bg-white border-b border-gray-200 px-6 py-4">
+          <h2 class="text-xl font-semibold text-gray-900">Settings</h2>
+          <p class="text-sm text-gray-500 mt-1">Configure your CCM instance</p>
+        </header>
+        
+        <div class="p-6 max-w-2xl">
+          <div class="space-y-6">
+            <div class="bg-white rounded-lg border border-gray-200 p-4">
+              <h3 class="font-medium text-gray-900 mb-4">General</h3>
+              <div class="space-y-4">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Default Profile</label>
+                  <select class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500">
+                    <option>general</option>
+                    <option>blockchain</option>
+                    <option>automation</option>
+                  </select>
+                  <p class="text-xs text-gray-500 mt-1">Used when no profile is specified in CLI commands</p>
+                </div>
+              </div>
+            </div>
+            
+            <div class="bg-white rounded-lg border border-gray-200 p-4">
+              <h3 class="font-medium text-gray-900 mb-4">Monitoring</h3>
+              <div class="space-y-4">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <p class="text-sm font-medium text-gray-700">Claude Code Docs</p>
+                    <p class="text-xs text-gray-500">Monitor docs.anthropic.com for updates</p>
+                  </div>
+                  <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" checked class="sr-only peer">
+                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-violet-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-violet-600"></div>
+                  </label>
+                </div>
+                <div class="flex items-center justify-between">
+                  <div>
+                    <p class="text-sm font-medium text-gray-700">MCP Server Releases</p>
+                    <p class="text-xs text-gray-500">Monitor GitHub for new MCP server releases</p>
+                  </div>
+                  <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" checked class="sr-only peer">
+                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-violet-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-violet-600"></div>
+                  </label>
+                </div>
+                <div class="flex items-center justify-between">
+                  <div>
+                    <p class="text-sm font-medium text-gray-700">npm Package Updates</p>
+                    <p class="text-xs text-gray-500">Monitor npm for MCP package updates</p>
+                  </div>
+                  <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" checked class="sr-only peer">
+                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-violet-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-violet-600"></div>
+                  </label>
+                </div>
+                <div class="flex items-center justify-between">
+                  <div>
+                    <p class="text-sm font-medium text-gray-700">Anthropic Blog</p>
+                    <p class="text-xs text-gray-500">Monitor blog for Claude Code announcements</p>
+                  </div>
+                  <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" checked class="sr-only peer">
+                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-violet-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-violet-600"></div>
+                  </label>
+                </div>
+              </div>
+            </div>
+            
+            <div class="bg-white rounded-lg border border-gray-200 p-4">
+              <h3 class="font-medium text-gray-900 mb-4">n8n Integration</h3>
+              <div class="space-y-4">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Webhook URL</label>
+                  <input type="text" value="https://n8n.homelab.local/webhook/ccm-monitoring" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500">
+                  <p class="text-xs text-gray-500 mt-1">Endpoint for n8n to send monitoring updates</p>
+                </div>
+              </div>
+            </div>
+            
+            <div class="bg-white rounded-lg border border-gray-200 p-4">
+              <h3 class="font-medium text-gray-900 mb-4">Database</h3>
+              <div class="space-y-2 text-sm">
+                <div class="flex justify-between">
+                  <span class="text-gray-500">Database Path</span>
+                  <span class="text-gray-900 font-mono">/app/data/ccm.db</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-500">Size</span>
+                  <span class="text-gray-900">2.4 MB</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-500">Last Backup</span>
+                  <span class="text-gray-900">Today at 3:00 AM</span>
+                </div>
+              </div>
+              <button class="mt-4 text-sm text-violet-600 hover:text-violet-700 font-medium">
+                <i class="fas fa-download mr-1"></i> Download Backup
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- ==================== EXPORT/IMPORT ==================== -->
+      <div id="page-export" class="page">
+        <header class="bg-white border-b border-gray-200 px-6 py-4">
+          <h2 class="text-xl font-semibold text-gray-900">Export / Import</h2>
+          <p class="text-sm text-gray-500 mt-1">Backup and restore your configuration</p>
+        </header>
+        
+        <div class="p-6 max-w-2xl">
+          <div class="space-y-6">
+            <div class="bg-white rounded-lg border border-gray-200 p-6">
+              <div class="flex items-start gap-4">
+                <div class="w-12 h-12 bg-violet-100 rounded-lg flex items-center justify-center text-violet-600 flex-shrink-0">
+                  <i class="fas fa-download text-xl"></i>
+                </div>
+                <div class="flex-1">
+                  <h3 class="font-medium text-gray-900 mb-1">Export Configuration</h3>
+                  <p class="text-sm text-gray-500 mb-4">Download all components, profiles, and project data as JSON.</p>
+                  <button class="bg-violet-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-violet-700 transition-colors">
+                    Export All Data
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <div class="bg-white rounded-lg border border-gray-200 p-6">
+              <div class="flex items-start gap-4">
+                <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600 flex-shrink-0">
+                  <i class="fas fa-upload text-xl"></i>
+                </div>
+                <div class="flex-1">
+                  <h3 class="font-medium text-gray-900 mb-1">Import Configuration</h3>
+                  <p class="text-sm text-gray-500 mb-4">Restore from a previously exported JSON file.</p>
+                  <div class="border-2 border-dashed border-gray-200 rounded-lg p-6 text-center">
+                    <i class="fas fa-cloud-upload-alt text-3xl text-gray-300 mb-2"></i>
+                    <p class="text-sm text-gray-500 mb-2">Drag and drop your export file here</p>
+                    <p class="text-xs text-gray-400 mb-3">or</p>
+                    <button class="text-violet-600 hover:text-violet-700 text-sm font-medium">
+                      Browse Files
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="bg-amber-50 border border-amber-200 rounded-lg p-4">
+              <div class="flex items-start gap-3">
+                <i class="fas fa-exclamation-triangle text-amber-600 mt-0.5"></i>
+                <div>
+                  <p class="text-sm font-medium text-amber-800">Import Warning</p>
+                  <p class="text-sm text-amber-700 mt-1">Importing will merge with existing data. Conflicts will be resolved by keeping the newer version. Consider exporting first as a backup.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+    </main>
+  </div>
+  
+  <script>
+    function showPage(pageId) {
+      // Hide all pages
+      document.querySelectorAll('.page').forEach(page => {
+        page.classList.remove('active');
+      });
+      
+      // Show selected page
+      const targetPage = document.getElementById('page-' + pageId);
+      if (targetPage) {
+        targetPage.classList.add('active');
+      }
+      
+      // Update sidebar active state
+      document.querySelectorAll('.sidebar-link').forEach(link => {
+        link.classList.remove('active');
+        if (link.dataset.page === pageId) {
+          link.classList.add('active');
+        }
+      });
+      
+      // For sub-pages, highlight parent
+      const parentMap = {
+        'component-new': 'components',
+        'component-edit': 'components',
+        'profile-new': 'profiles',
+        'profile-edit': 'profiles'
+      };
+      
+      if (parentMap[pageId]) {
+        document.querySelector(`[data-page="${parentMap[pageId]}"]`)?.classList.add('active');
+      }
+      
+      return false;
+    }
+    
+    // Initialize
+    showPage('dashboard');
+  </script>
+</body>
+</html>

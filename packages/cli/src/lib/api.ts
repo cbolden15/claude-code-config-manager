@@ -1,0 +1,508 @@
+import { loadConfig } from './config.js';
+
+interface ApiResponse<T> {
+  data?: T;
+  error?: string;
+}
+
+class ApiClient {
+  private baseUrl: string;
+
+  constructor() {
+    const config = loadConfig();
+    this.baseUrl = config.serverUrl;
+  }
+
+  private async request<T>(
+    path: string,
+    options: RequestInit = {}
+  ): Promise<ApiResponse<T>> {
+    const url = `${this.baseUrl}${path}`;
+
+    try {
+      const response = await fetch(url, {
+        ...options,
+        headers: {
+          'Content-Type': 'application/json',
+          ...options.headers,
+        },
+      });
+
+      const data = await response.json() as T & { error?: string };
+
+      if (!response.ok) {
+        return { error: (data as { error?: string }).error || `HTTP ${response.status}` };
+      }
+
+      return { data: data as T };
+    } catch (error) {
+      if (error instanceof Error) {
+        if (error.message.includes('ECONNREFUSED')) {
+          return { error: `Cannot connect to server at ${this.baseUrl}` };
+        }
+        return { error: error.message };
+      }
+      return { error: 'Unknown error occurred' };
+    }
+  }
+
+  async get<T>(path: string): Promise<ApiResponse<T>> {
+    return this.request<T>(path, { method: 'GET' });
+  }
+
+  async post<T>(path: string, body?: unknown): Promise<ApiResponse<T>> {
+    return this.request<T>(path, {
+      method: 'POST',
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  }
+
+  async put<T>(path: string, body?: unknown): Promise<ApiResponse<T>> {
+    return this.request<T>(path, {
+      method: 'PUT',
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  }
+
+  async patch<T>(path: string, body?: unknown): Promise<ApiResponse<T>> {
+    return this.request<T>(path, {
+      method: 'PATCH',
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  }
+
+  async delete<T>(path: string): Promise<ApiResponse<T>> {
+    return this.request<T>(path, { method: 'DELETE' });
+  }
+
+  // Health check
+  async health(): Promise<ApiResponse<{ status: string; stats: Record<string, number> }>> {
+    return this.get('/api/health');
+  }
+
+  // Components
+  async listComponents(type?: string): Promise<ApiResponse<{ components: Component[]; total: number }>> {
+    const query = type ? `?type=${type}` : '';
+    return this.get(`/api/components${query}`);
+  }
+
+  // Profiles
+  async listProfiles(): Promise<ApiResponse<{ profiles: Profile[]; total: number }>> {
+    return this.get('/api/profiles');
+  }
+
+  async getProfile(id: string): Promise<ApiResponse<ProfileDetail>> {
+    return this.get(`/api/profiles/${id}`);
+  }
+
+  async getProfileByName(name: string): Promise<ApiResponse<ProfileDetail | null>> {
+    const result = await this.listProfiles();
+    if (result.error) return { error: result.error };
+
+    const profile = result.data?.profiles.find((p) => p.name === name);
+    if (!profile) return { data: null };
+
+    return this.getProfile(profile.id);
+  }
+
+  // Projects
+  async listProjects(machine?: string): Promise<ApiResponse<{ projects: Project[]; total: number }>> {
+    const query = machine ? `?machine=${machine}` : '';
+    return this.get(`/api/projects${query}`);
+  }
+
+  async createProject(data: CreateProjectData): Promise<ApiResponse<Project>> {
+    return this.post('/api/projects', data);
+  }
+
+  async syncProject(id: string, machineId: string, options?: {
+    syncType?: 'full' | 'incremental' | 'selective';
+    dryRun?: boolean;
+  }): Promise<ApiResponse<SyncProjectResponse>> {
+    return this.post(`/api/projects/${id}/sync`, {
+      machineId,
+      syncType: options?.syncType || 'full',
+      dryRun: options?.dryRun || false,
+    });
+  }
+
+  async getSyncStatus(projectId: string, machineId: string): Promise<ApiResponse<SyncStatusResponse>> {
+    return this.get(`/api/projects/${projectId}/sync?machineId=${machineId}`);
+  }
+
+  async updateProject(id: string, data: Partial<{
+    name: string;
+    path: string;
+    machine: string;
+    profileId: string | null;
+    modelProfileId: string | null;
+  }>): Promise<ApiResponse<Project>> {
+    return this.put(`/api/projects/${id}`, data);
+  }
+
+  // Generate
+  async generate(data: GenerateRequest): Promise<ApiResponse<GenerateResponse>> {
+    return this.post('/api/generate', data);
+  }
+
+  // Settings
+  async getSetting(key: string): Promise<ApiResponse<{ value: string }>> {
+    return this.get(`/api/settings/${key}`);
+  }
+
+  async setSetting(key: string, value: string): Promise<ApiResponse<{ key: string; value: string }>> {
+    return this.put(`/api/settings/${key}`, { value });
+  }
+
+  async getSettings(options: { includeSensitive?: boolean; keysOnly?: boolean; pattern?: string } = {}): Promise<ApiResponse<{ settings: Array<{ key: string; value: string; encrypted: boolean }> }>> {
+    const query = new URLSearchParams();
+    if (options.includeSensitive) query.set('includeSensitive', 'true');
+    if (options.keysOnly) query.set('keysOnly', 'true');
+    if (options.pattern) query.set('pattern', options.pattern);
+
+    const queryString = query.toString();
+    return this.get(`/api/settings${queryString ? `?${queryString}` : ''}`);
+  }
+
+  // Auto-Claude
+  async autoClaudeImport(data: AutoClaudeImportRequest): Promise<ApiResponse<AutoClaudeImportResponse>> {
+    return this.post('/api/auto-claude/import', data);
+  }
+
+  async autoClaudeSync(data: AutoClaudeSyncRequest): Promise<ApiResponse<AutoClaudeSyncResponse>> {
+    return this.post('/api/auto-claude/sync', data);
+  }
+
+  // Auto-Claude Model Profiles
+  async listAutoClaudeModelProfiles(options: {
+    profileName?: string;
+    includePhaseDetails?: boolean;
+  } = {}): Promise<ApiResponse<AutoClaudeModelProfilesResponse>> {
+    const query = new URLSearchParams();
+    if (options.profileName) query.set('profileName', options.profileName);
+    if (options.includePhaseDetails) query.set('includePhaseDetails', 'true');
+
+    const queryString = query.toString();
+    return this.get(`/api/auto-claude/model-profiles${queryString ? `?${queryString}` : ''}`);
+  }
+
+  async getAutoClaudeModelProfile(id: string): Promise<ApiResponse<AutoClaudeModelProfileDetail>> {
+    return this.get(`/api/auto-claude/model-profiles/${id}`);
+  }
+
+  // Auto-Claude Agents
+  async listAutoClaudeAgents(options: {
+    agentType?: string;
+  } = {}): Promise<ApiResponse<AutoClaudeAgentsResponse>> {
+    const query = new URLSearchParams();
+    if (options.agentType) query.set('agentType', options.agentType);
+
+    const queryString = query.toString();
+    return this.get(`/api/auto-claude/agents${queryString ? `?${queryString}` : ''}`);
+  }
+
+  async getAutoClaudeAgent(agentType: string): Promise<ApiResponse<AutoClaudeAgentDetail>> {
+    return this.get(`/api/auto-claude/agents/${agentType}`);
+  }
+}
+
+// Types
+interface Component {
+  id: string;
+  type: string;
+  name: string;
+  description: string;
+  enabled: boolean;
+}
+
+interface Profile {
+  id: string;
+  name: string;
+  description: string;
+  _count?: { projects: number };
+  components?: Array<{ component: { type: string } }>;
+}
+
+interface ProfileDetail extends Profile {
+  claudeMdTemplate?: string | null;
+  components: Array<{
+    component: {
+      id: string;
+      type: string;
+      name: string;
+      description: string;
+      config: string;
+    };
+    order: number;
+  }>;
+}
+
+interface Project {
+  id: string;
+  name: string;
+  path: string;
+  machine: string;
+  profileId?: string | null;
+  lastSyncedAt?: string | null;
+  profile?: { id: string; name: string } | null;
+}
+
+interface CreateProjectData {
+  name: string;
+  path: string;
+  machine: string;
+  profileId?: string | null;
+}
+
+interface GenerateRequest {
+  profileId?: string;
+  profileName?: string;
+  projectName: string;
+  projectDescription?: string;
+  autoClaudeEnabled?: boolean;
+}
+
+interface GenerateResponse {
+  files: Array<{ path: string; content: string }>;
+  summary: Record<string, number>;
+}
+
+interface AutoClaudeImportRequest {
+  autoClaudeInstallPath: string;
+  dryRun?: boolean;
+}
+
+interface AutoClaudeImportResponse {
+  success: boolean;
+  dryRun?: boolean;
+  preview?: {
+    agentConfigs: number;
+    prompts: number;
+    modelProfiles: number;
+    projectConfig: number;
+  };
+  stats?: {
+    agentConfigsImported: number;
+    promptsImported: number;
+    modelProfilesImported: number;
+    projectConfigImported: number;
+    errors: string[];
+  };
+  configs?: any; // For dry-run preview
+}
+
+interface AutoClaudeSyncRequest {
+  backendPath?: string; // Override backend path if provided
+  projectId?: string;   // Specific project to sync (optional)
+  dryRun?: boolean;     // Preview without writing files
+}
+
+interface AutoClaudeSyncResponse {
+  success: boolean;
+  stats: {
+    promptsWritten: number;
+    agentConfigsWritten: number;
+    filesWritten: string[];
+    errors: string[];
+  };
+  backendPath: string;
+  dryRun?: boolean;
+}
+
+// Auto-Claude Model Profile interfaces
+interface AutoClaudeModelProfile {
+  name: string;
+  description: string;
+  phaseModels: {
+    spec: string;
+    planning: string;
+    coding: string;
+    qa: string;
+  };
+  phaseThinking: {
+    spec: string;
+    planning: string;
+    coding: string;
+    qa: string;
+  };
+}
+
+interface AutoClaudeModelProfileResponse {
+  id: string;
+  name: string;
+  description: string;
+  config: AutoClaudeModelProfile;
+  enabled: boolean;
+  tags: string | null;
+  version: string | null;
+  sourceUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
+  phaseAnalysis?: {
+    modelDistribution: Record<string, number>;
+    thinkingDistribution: Record<string, number>;
+    costEstimate: string;
+    qualityLevel: string;
+  };
+}
+
+interface AutoClaudeModelProfilesResponse {
+  modelProfiles: AutoClaudeModelProfileResponse[];
+  matrices: {
+    phases: string[];
+    profiles: string[];
+    models: string[];
+    thinkingLevels: string[];
+    matrix: Record<string, {
+      models: { spec: string; planning: string; coding: string; qa: string };
+      thinking: { spec: string; planning: string; coding: string; qa: string };
+    }>;
+  };
+  stats: {
+    total: number;
+    enabled: number;
+    uniqueModels: number;
+    uniqueThinkingLevels: number;
+    phases: number;
+  };
+  errors?: string[];
+}
+
+interface AutoClaudeModelProfileDetail extends AutoClaudeModelProfileResponse {
+  analysis: {
+    models: {
+      distribution: Record<string, number>;
+      phases: { spec: string; planning: string; coding: string; qa: string };
+    };
+    thinking: {
+      distribution: Record<string, number>;
+      phases: { spec: string; planning: string; coding: string; qa: string };
+    };
+    cost: {
+      perPhase: Record<string, number>;
+      total: number;
+    };
+    quality: {
+      perPhase: Record<string, number>;
+    };
+    characteristics: {
+      costEstimate: string;
+      qualityLevel: string;
+      totalPhases: number;
+      uniformModels: boolean;
+      uniformThinking: boolean;
+    };
+  };
+}
+
+// Auto-Claude Agent interfaces
+interface AutoClaudeAgentConfig {
+  agentType: string;
+  tools: string[];
+  mcpServers: string[];
+  mcpServersOptional: string[];
+  autoClaudeTools: string[];
+  thinkingDefault: 'none' | 'low' | 'medium' | 'high' | 'ultrathink';
+}
+
+interface AutoClaudeAgentResponse {
+  id: string;
+  agentType: string;
+  description: string;
+  config: AutoClaudeAgentConfig;
+  enabled: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface AutoClaudeAgentsResponse {
+  agentConfigs: AutoClaudeAgentResponse[];
+  matrices: {
+    tools: {
+      agents: string[];
+      tools: string[];
+      matrix: Record<string, string[]>;
+    };
+    mcp: {
+      agents: string[];
+      servers: string[];
+      matrix: Record<string, { required: string[]; optional: string[] }>;
+    };
+  };
+  stats: {
+    total: number;
+    enabled: number;
+    uniqueTools: number;
+    uniqueMcpServers: number;
+  };
+  errors?: string[];
+}
+
+interface AutoClaudeAgentDetail extends AutoClaudeAgentResponse {
+  tags: string | null;
+  version: string | null;
+  sourceUrl: string | null;
+}
+
+interface SyncProjectResponse {
+  success: boolean;
+  syncLogId?: string;
+  stats: {
+    filesCreated: number;
+    filesUpdated: number;
+    filesDeleted: number;
+    filesSkipped: number;
+  };
+  filesGenerated: number;
+  dryRun: boolean;
+  files: Array<{
+    path: string;
+    action: 'created' | 'updated' | 'skipped';
+    contentLength: number;
+  }>;
+}
+
+interface SyncStatusResponse {
+  project: {
+    id: string;
+    name: string;
+    path: string;
+    profileId: string | null;
+    profileName?: string;
+    lastSyncedAt: string | null;
+  };
+  latestSync: {
+    id: string;
+    syncType: 'full' | 'incremental' | 'selective';
+    status: string;
+    filesCreated: number | null;
+    filesUpdated: number | null;
+    startedAt: string;
+    completedAt: string | null;
+    errorMessage: string | null;
+  } | null;
+  syncNeeded: boolean;
+  reason?: string;
+}
+
+export const api = new ApiClient();
+export type {
+  Component,
+  Profile,
+  ProfileDetail,
+  Project,
+  GenerateRequest,
+  GenerateResponse,
+  AutoClaudeImportRequest,
+  AutoClaudeImportResponse,
+  AutoClaudeSyncRequest,
+  AutoClaudeSyncResponse,
+  AutoClaudeModelProfile,
+  AutoClaudeModelProfileResponse,
+  AutoClaudeModelProfilesResponse,
+  AutoClaudeModelProfileDetail,
+  AutoClaudeAgentConfig,
+  AutoClaudeAgentResponse,
+  AutoClaudeAgentsResponse,
+  AutoClaudeAgentDetail
+};

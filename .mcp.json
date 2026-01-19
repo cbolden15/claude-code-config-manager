@@ -1,0 +1,24 @@
+{
+  "mcpServers": {
+    "context7": {
+      "description": "Up-to-date documentation for Prisma, Next.js, React, TypeScript. Use for API references and code examples.",
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp"]
+    },
+    "memory": {
+      "description": "Persistent memory across sessions. Store decisions, patterns, and context for v3 implementation.",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-memory"]
+    },
+    "sequential-thinking": {
+      "description": "Dynamic problem-solving through thought sequences. Use for complex algorithm design (intelligence engine, pattern detection, scoring).",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"]
+    },
+    "sqlite": {
+      "description": "Direct SQLite database access for development/debugging. Query the CCM database directly.",
+      "command": "uvx",
+      "args": ["mcp-server-sqlite", "--db-path", "./packages/server/prisma/dev.db"]
+    }
+  }
+}

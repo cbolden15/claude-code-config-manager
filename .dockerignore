@@ -1,0 +1,45 @@
+# Dependencies
+node_modules
+**/node_modules
+
+# Build outputs
+.next
+**/dist
+**/.next
+
+# Database files
+*.db
+*.db-journal
+
+# Development
+.git
+.gitignore
+.env
+.env.*
+!.env.example
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Documentation (not needed in container)
+docs/
+*.md
+!README.md
+
+# Test files
+**/*.test.ts
+**/*.spec.ts
+coverage/
+
+# CLI package (not needed in server container)
+packages/cli/
+
+# Docker files (avoid recursion)
+docker/docker-compose*.yml

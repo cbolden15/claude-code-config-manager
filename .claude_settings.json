@@ -1,0 +1,29 @@
+{
+  "sandbox": {
+    "enabled": true,
+    "autoAllowBashIfSandboxed": true
+  },
+  "permissions": {
+    "defaultMode": "acceptEdits",
+    "allow": [
+      "Read(./**)",
+      "Write(./**)",
+      "Edit(./**)",
+      "Glob(./**)",
+      "Grep(./**)",
+      "Read(/Users/calebbolden/Projects/claude-code-config-manager/.auto-claude/worktrees/tasks/001-ccm-auto-claude-integration/**)",
+      "Write(/Users/calebbolden/Projects/claude-code-config-manager/.auto-claude/worktrees/tasks/001-ccm-auto-claude-integration/**)",
+      "Edit(/Users/calebbolden/Projects/claude-code-config-manager/.auto-claude/worktrees/tasks/001-ccm-auto-claude-integration/**)",
+      "Glob(/Users/calebbolden/Projects/claude-code-config-manager/.auto-claude/worktrees/tasks/001-ccm-auto-claude-integration/**)",
+      "Grep(/Users/calebbolden/Projects/claude-code-config-manager/.auto-claude/worktrees/tasks/001-ccm-auto-claude-integration/**)",
+      "Read(/Users/calebbolden/Projects/claude-code-config-manager/.auto-claude/worktrees/tasks/001-ccm-auto-claude-integration/.auto-claude/specs/001-ccm-auto-claude-integration/**)",
+      "Write(/Users/calebbolden/Projects/claude-code-config-manager/.auto-claude/worktrees/tasks/001-ccm-auto-claude-integration/.auto-claude/specs/001-ccm-auto-claude-integration/**)",
+      "Edit(/Users/calebbolden/Projects/claude-code-config-manager/.auto-claude/worktrees/tasks/001-ccm-auto-claude-integration/.auto-claude/specs/001-ccm-auto-claude-integration/**)",
+      "Bash(*)",
+      "WebFetch(*)",
+      "WebSearch(*)",
+      "mcp__context7__resolve-library-id(*)",
+      "mcp__context7__get-library-docs(*)"
+    ]
+  }
+}

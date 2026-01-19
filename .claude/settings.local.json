@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm install:*)",
+      "Bash(npm install:*)",
+      "Bash(pnpm --version:*)",
+      "Bash(pnpm --filter server db:generate:*)",
+      "Bash(timeout 15 pnpm dev:*)",
+      "Bash(pnpm dev:*)",
+      "Bash(curl:*)",
+      "Bash(pnpm --filter server db:push:*)",
+      "Bash(pnpm --filter server db:seed:*)",
+      "Bash(npx prisma db execute:*)",
+      "Bash(sqlite3:*)",
+      "Bash(npx shadcn@latest add:*)",
+      "Bash(npx next build)",
+      "Bash(pnpm --filter cli build:*)",
+      "Bash(node:*)",
+      "Bash(cat:*)",
+      "Bash(docker build:*)",
+      "Bash(ssh:*)",
+      "Bash(rsync:*)",
+      "Bash(grep:*)"
+    ]
+  }
+}

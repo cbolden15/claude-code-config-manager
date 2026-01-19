@@ -1,0 +1,556 @@
+{
+  "version": "1.0.0",
+  "data": {
+    "components": [
+      {
+        "id": "mcp-filesystem",
+        "type": "MCP_SERVER",
+        "name": "filesystem",
+        "description": "File system operations - read, write, search files",
+        "config": {
+          "command": "npx",
+          "args": ["-y", "@modelcontextprotocol/server-filesystem", "${workspaceFolder}"]
+        },
+        "sourceUrl": "https://github.com/modelcontextprotocol/servers",
+        "version": "latest",
+        "tags": "core,filesystem",
+        "enabled": true
+      },
+      {
+        "id": "mcp-git",
+        "type": "MCP_SERVER",
+        "name": "git",
+        "description": "Git operations - status, diff, commit, branch management",
+        "config": {
+          "command": "npx",
+          "args": ["-y", "@modelcontextprotocol/server-git", "--repository", "${workspaceFolder}"]
+        },
+        "sourceUrl": "https://github.com/modelcontextprotocol/servers",
+        "version": "latest",
+        "tags": "core,git,vcs",
+        "enabled": true
+      },
+      {
+        "id": "mcp-github",
+        "type": "MCP_SERVER",
+        "name": "github",
+        "description": "GitHub API - issues, PRs, repos, actions",
+        "config": {
+          "command": "npx",
+          "args": ["-y", "@modelcontextprotocol/server-github"],
+          "env": {
+            "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}"
+          }
+        },
+        "sourceUrl": "https://github.com/modelcontextprotocol/servers",
+        "version": "latest",
+        "tags": "github,api",
+        "enabled": true
+      },
+      {
+        "id": "mcp-postgres",
+        "type": "MCP_SERVER",
+        "name": "postgres",
+        "description": "PostgreSQL database operations",
+        "config": {
+          "command": "npx",
+          "args": ["-y", "@modelcontextprotocol/server-postgres"],
+          "env": {
+            "DATABASE_URL": "${DATABASE_URL}"
+          }
+        },
+        "sourceUrl": "https://github.com/modelcontextprotocol/servers",
+        "version": "latest",
+        "tags": "database,postgres",
+        "enabled": true
+      },
+      {
+        "id": "mcp-sqlite",
+        "type": "MCP_SERVER",
+        "name": "sqlite",
+        "description": "SQLite database operations",
+        "config": {
+          "command": "npx",
+          "args": ["-y", "@modelcontextprotocol/server-sqlite", "${workspaceFolder}/database.db"]
+        },
+        "sourceUrl": "https://github.com/modelcontextprotocol/servers",
+        "version": "latest",
+        "tags": "database,sqlite",
+        "enabled": true
+      },
+      {
+        "id": "mcp-fetch",
+        "type": "MCP_SERVER",
+        "name": "fetch",
+        "description": "HTTP fetch operations for web requests",
+        "config": {
+          "command": "npx",
+          "args": ["-y", "@modelcontextprotocol/server-fetch"]
+        },
+        "sourceUrl": "https://github.com/modelcontextprotocol/servers",
+        "version": "latest",
+        "tags": "http,web,api",
+        "enabled": true
+      },
+      {
+        "id": "mcp-memory",
+        "type": "MCP_SERVER",
+        "name": "memory",
+        "description": "Persistent memory/knowledge graph for context",
+        "config": {
+          "command": "npx",
+          "args": ["-y", "@modelcontextprotocol/server-memory"]
+        },
+        "sourceUrl": "https://github.com/modelcontextprotocol/servers",
+        "version": "latest",
+        "tags": "memory,context",
+        "enabled": true
+      },
+      {
+        "id": "mcp-puppeteer",
+        "type": "MCP_SERVER",
+        "name": "puppeteer",
+        "description": "Browser automation for web scraping and testing",
+        "config": {
+          "command": "npx",
+          "args": ["-y", "@modelcontextprotocol/server-puppeteer"]
+        },
+        "sourceUrl": "https://github.com/modelcontextprotocol/servers",
+        "version": "latest",
+        "tags": "browser,automation,testing",
+        "enabled": true
+      },
+      {
+        "id": "mcp-slack",
+        "type": "MCP_SERVER",
+        "name": "slack",
+        "description": "Slack workspace integration",
+        "config": {
+          "command": "npx",
+          "args": ["-y", "@modelcontextprotocol/server-slack"],
+          "env": {
+            "SLACK_BOT_TOKEN": "${SLACK_BOT_TOKEN}",
+            "SLACK_TEAM_ID": "${SLACK_TEAM_ID}"
+          }
+        },
+        "sourceUrl": "https://github.com/modelcontextprotocol/servers",
+        "version": "latest",
+        "tags": "slack,communication",
+        "enabled": true
+      },
+      {
+        "id": "mcp-sequential-thinking",
+        "type": "MCP_SERVER",
+        "name": "sequential-thinking",
+        "description": "Enhanced reasoning through step-by-step thinking",
+        "config": {
+          "command": "npx",
+          "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"]
+        },
+        "sourceUrl": "https://github.com/modelcontextprotocol/servers",
+        "version": "latest",
+        "tags": "reasoning,thinking",
+        "enabled": true
+      },
+      {
+        "id": "mcp-supabase",
+        "type": "MCP_SERVER",
+        "name": "supabase",
+        "description": "Supabase database and auth operations",
+        "config": {
+          "command": "npx",
+          "args": ["-y", "supabase-mcp-server"],
+          "env": {
+            "SUPABASE_URL": "${SUPABASE_URL}",
+            "SUPABASE_SERVICE_ROLE_KEY": "${SUPABASE_SERVICE_ROLE_KEY}"
+          }
+        },
+        "sourceUrl": "https://github.com/supabase/supabase-mcp",
+        "version": "latest",
+        "tags": "database,supabase,auth",
+        "enabled": true
+      },
+      {
+        "id": "mcp-docker",
+        "type": "MCP_SERVER",
+        "name": "docker",
+        "description": "Docker container management",
+        "config": {
+          "command": "npx",
+          "args": ["-y", "mcp-server-docker"]
+        },
+        "sourceUrl": "https://github.com/docker/mcp-server",
+        "version": "latest",
+        "tags": "docker,containers,devops",
+        "enabled": true
+      },
+      {
+        "id": "mcp-linear",
+        "type": "MCP_SERVER",
+        "name": "linear",
+        "description": "Linear issue tracking integration",
+        "config": {
+          "command": "npx",
+          "args": ["-y", "mcp-server-linear"],
+          "env": {
+            "LINEAR_API_KEY": "${LINEAR_API_KEY}"
+          }
+        },
+        "sourceUrl": "https://github.com/linear/mcp-server-linear",
+        "version": "latest",
+        "tags": "linear,issues,project-management",
+        "enabled": true
+      },
+      {
+        "id": "subagent-code-reviewer",
+        "type": "SUBAGENT",
+        "name": "code-reviewer",
+        "description": "Reviews code for quality, security, and best practices",
+        "config": {
+          "filename": "code-reviewer.md",
+          "content": "# Code Reviewer Agent\n\nYou are a code review specialist. Your role is to:\n\n1. **Review code changes** for quality, readability, and maintainability\n2. **Identify security vulnerabilities** and potential bugs\n3. **Suggest improvements** while respecting existing code style\n4. **Check for test coverage** and documentation\n\n## Review Checklist\n- [ ] Code follows project conventions\n- [ ] No obvious security issues (injection, XSS, etc.)\n- [ ] Error handling is appropriate\n- [ ] Tests cover new functionality\n- [ ] Documentation is updated if needed\n\n## Output Format\nProvide feedback in sections:\n- **Critical Issues**: Must fix before merge\n- **Suggestions**: Nice to have improvements\n- **Praise**: What was done well"
+        },
+        "tags": "review,quality,security",
+        "enabled": true
+      },
+      {
+        "id": "subagent-test-writer",
+        "type": "SUBAGENT",
+        "name": "test-writer",
+        "description": "Generates comprehensive test suites for code",
+        "config": {
+          "filename": "test-writer.md",
+          "content": "# Test Writer Agent\n\nYou are a testing specialist. Your role is to:\n\n1. **Analyze code** to identify testable units\n2. **Write comprehensive tests** covering happy paths and edge cases\n3. **Use appropriate testing patterns** (AAA, mocking, fixtures)\n4. **Ensure good coverage** without redundant tests\n\n## Test Types to Consider\n- Unit tests for individual functions\n- Integration tests for module interactions\n- Edge cases and error conditions\n- Performance-sensitive paths\n\n## Framework Guidelines\n- Use the project's existing test framework\n- Follow naming conventions: `describe/it` or `test`\n- Keep tests focused and independent\n- Use descriptive test names"
+        },
+        "tags": "testing,quality",
+        "enabled": true
+      },
+      {
+        "id": "subagent-documentation",
+        "type": "SUBAGENT",
+        "name": "documentation-writer",
+        "description": "Creates and maintains project documentation",
+        "config": {
+          "filename": "documentation-writer.md",
+          "content": "# Documentation Writer Agent\n\nYou are a technical writing specialist. Your role is to:\n\n1. **Create clear documentation** for code, APIs, and features\n2. **Update existing docs** when code changes\n3. **Write user guides** and tutorials\n4. **Generate API references** from code\n\n## Documentation Types\n- README files\n- API documentation\n- Code comments and JSDoc/docstrings\n- Architecture decision records (ADRs)\n- User guides and tutorials\n\n## Writing Guidelines\n- Be concise but complete\n- Use examples liberally\n- Structure with clear headings\n- Keep language accessible"
+        },
+        "tags": "documentation,writing",
+        "enabled": true
+      },
+      {
+        "id": "subagent-security-auditor",
+        "type": "SUBAGENT",
+        "name": "security-auditor",
+        "description": "Audits code for security vulnerabilities",
+        "config": {
+          "filename": "security-auditor.md",
+          "content": "# Security Auditor Agent\n\nYou are a security specialist. Your role is to:\n\n1. **Identify vulnerabilities** in code and configuration\n2. **Check for OWASP Top 10** issues\n3. **Review authentication/authorization** logic\n4. **Audit dependencies** for known CVEs\n\n## Security Checklist\n- [ ] Input validation and sanitization\n- [ ] SQL/NoSQL injection prevention\n- [ ] XSS prevention\n- [ ] CSRF protection\n- [ ] Secure authentication flows\n- [ ] Proper secret management\n- [ ] Secure HTTP headers\n- [ ] Rate limiting\n\n## Severity Levels\n- **Critical**: Immediate exploitation possible\n- **High**: Significant risk, fix soon\n- **Medium**: Should be addressed\n- **Low**: Minor issues"
+        },
+        "tags": "security,audit",
+        "enabled": true
+      },
+      {
+        "id": "subagent-refactoring",
+        "type": "SUBAGENT",
+        "name": "refactoring-assistant",
+        "description": "Helps refactor code for better quality",
+        "config": {
+          "filename": "refactoring-assistant.md",
+          "content": "# Refactoring Assistant Agent\n\nYou are a refactoring specialist. Your role is to:\n\n1. **Identify code smells** and technical debt\n2. **Suggest refactoring strategies** with minimal risk\n3. **Preserve behavior** while improving structure\n4. **Apply design patterns** where appropriate\n\n## Common Refactorings\n- Extract method/function\n- Extract class/module\n- Rename for clarity\n- Remove duplication (DRY)\n- Simplify conditionals\n- Introduce abstractions\n\n## Guidelines\n- Small, incremental changes\n- Ensure tests pass after each step\n- Document significant changes\n- Consider backwards compatibility"
+        },
+        "tags": "refactoring,quality",
+        "enabled": true
+      },
+      {
+        "id": "subagent-database-expert",
+        "type": "SUBAGENT",
+        "name": "database-expert",
+        "description": "Database design and query optimization specialist",
+        "config": {
+          "filename": "database-expert.md",
+          "content": "# Database Expert Agent\n\nYou are a database specialist. Your role is to:\n\n1. **Design schemas** that are normalized and performant\n2. **Optimize queries** for speed and efficiency\n3. **Write migrations** that are safe and reversible\n4. **Advise on indexing** strategies\n\n## Expertise Areas\n- PostgreSQL, MySQL, SQLite\n- Schema design and normalization\n- Query optimization and EXPLAIN analysis\n- Index design and maintenance\n- Migration strategies\n- Data integrity and constraints\n\n## Best Practices\n- Always use transactions for multi-step operations\n- Index foreign keys and commonly queried columns\n- Avoid N+1 queries\n- Use appropriate data types\n- Consider read/write patterns"
+        },
+        "tags": "database,sql,optimization",
+        "enabled": true
+      },
+      {
+        "id": "subagent-devops",
+        "type": "SUBAGENT",
+        "name": "devops-engineer",
+        "description": "CI/CD, Docker, and infrastructure specialist",
+        "config": {
+          "filename": "devops-engineer.md",
+          "content": "# DevOps Engineer Agent\n\nYou are a DevOps specialist. Your role is to:\n\n1. **Configure CI/CD pipelines** for automated testing and deployment\n2. **Containerize applications** with Docker best practices\n3. **Manage infrastructure** with IaC (Terraform, etc.)\n4. **Set up monitoring** and alerting\n\n## Expertise Areas\n- GitHub Actions, GitLab CI, CircleCI\n- Docker and Docker Compose\n- Kubernetes basics\n- Terraform and infrastructure as code\n- Monitoring (Prometheus, Grafana)\n- Log aggregation\n\n## Best Practices\n- Keep containers small and focused\n- Use multi-stage builds\n- Never store secrets in images\n- Implement health checks\n- Use semantic versioning for releases"
+        },
+        "tags": "devops,ci-cd,docker,infrastructure",
+        "enabled": true
+      },
+      {
+        "id": "subagent-api-designer",
+        "type": "SUBAGENT",
+        "name": "api-designer",
+        "description": "REST and GraphQL API design specialist",
+        "config": {
+          "filename": "api-designer.md",
+          "content": "# API Designer Agent\n\nYou are an API design specialist. Your role is to:\n\n1. **Design RESTful APIs** following best practices\n2. **Create OpenAPI/Swagger** specifications\n3. **Design GraphQL schemas** when appropriate\n4. **Ensure API consistency** and developer experience\n\n## REST Guidelines\n- Use proper HTTP methods (GET, POST, PUT, DELETE, PATCH)\n- Consistent URL naming (plural nouns, kebab-case)\n- Proper status codes (200, 201, 400, 401, 404, 500)\n- Pagination for list endpoints\n- Versioning strategy (URL or header)\n\n## Response Format\n```json\n{\n  \"data\": {},\n  \"meta\": { \"page\": 1, \"total\": 100 },\n  \"error\": { \"code\": \"string\", \"message\": \"string\" }\n}\n```"
+        },
+        "tags": "api,rest,graphql,design",
+        "enabled": true
+      },
+      {
+        "id": "command-commit",
+        "type": "COMMAND",
+        "name": "commit",
+        "description": "Generate a conventional commit message and commit changes",
+        "config": {
+          "filename": "commit.md",
+          "content": "Analyze the staged changes using `git diff --staged` and generate a conventional commit message.\n\n## Commit Format\n```\n<type>(<scope>): <description>\n\n[optional body]\n\n[optional footer]\n```\n\n## Types\n- feat: New feature\n- fix: Bug fix\n- docs: Documentation\n- style: Formatting\n- refactor: Code restructuring\n- test: Adding tests\n- chore: Maintenance\n\nAfter generating the message, ask for confirmation before committing."
+        },
+        "tags": "git,commit",
+        "enabled": true
+      },
+      {
+        "id": "command-pr",
+        "type": "COMMAND",
+        "name": "pr",
+        "description": "Create a pull request with generated description",
+        "config": {
+          "filename": "pr.md",
+          "content": "Create a pull request for the current branch.\n\n1. Get the diff from main/master: `git diff main...HEAD`\n2. Analyze all commits on this branch\n3. Generate a PR description with:\n   - Summary of changes\n   - List of modified files\n   - Testing instructions\n   - Screenshots if UI changes\n\n## PR Template\n```markdown\n## Summary\n[Brief description]\n\n## Changes\n- [Change 1]\n- [Change 2]\n\n## Testing\n- [ ] Test case 1\n- [ ] Test case 2\n\n## Screenshots\n[If applicable]\n```"
+        },
+        "tags": "git,pr,github",
+        "enabled": true
+      },
+      {
+        "id": "command-test",
+        "type": "COMMAND",
+        "name": "test",
+        "description": "Run tests and fix any failures",
+        "config": {
+          "filename": "test.md",
+          "content": "Run the project's test suite and handle any failures.\n\n1. Detect the test framework (Jest, Vitest, pytest, etc.)\n2. Run tests: `npm test` or `pnpm test` or `pytest`\n3. If tests fail:\n   - Analyze the failure\n   - Identify the root cause\n   - Fix the issue\n   - Re-run tests\n4. Continue until all tests pass\n\nReport the final status and any fixes made."
+        },
+        "tags": "testing,automation",
+        "enabled": true
+      },
+      {
+        "id": "command-lint",
+        "type": "COMMAND",
+        "name": "lint",
+        "description": "Run linters and fix issues automatically",
+        "config": {
+          "filename": "lint.md",
+          "content": "Run linting tools and automatically fix issues.\n\n1. Detect linting tools (ESLint, Prettier, Biome, etc.)\n2. Run with auto-fix: `npm run lint -- --fix`\n3. For issues that can't be auto-fixed:\n   - List them clearly\n   - Suggest manual fixes\n4. Run type checking if TypeScript\n\nReport all fixes made and remaining issues."
+        },
+        "tags": "linting,quality",
+        "enabled": true
+      },
+      {
+        "id": "command-deps",
+        "type": "COMMAND",
+        "name": "deps",
+        "description": "Check and update project dependencies",
+        "config": {
+          "filename": "deps.md",
+          "content": "Analyze and update project dependencies.\n\n1. Check for outdated packages: `npm outdated` or `pnpm outdated`\n2. Identify security vulnerabilities: `npm audit`\n3. For each outdated package:\n   - Show current vs latest version\n   - Note breaking changes if major update\n   - Recommend update strategy\n4. Optionally update with: `npm update` or `pnpm update`\n\nBe cautious with major version updates - suggest testing after."
+        },
+        "tags": "dependencies,security",
+        "enabled": true
+      },
+      {
+        "id": "hook-pre-commit",
+        "type": "HOOK",
+        "name": "pre-commit-lint",
+        "description": "Run linting before commits",
+        "config": {
+          "hook": "PreCommit",
+          "command": "npm run lint"
+        },
+        "tags": "git,hook,lint",
+        "enabled": true
+      },
+      {
+        "id": "hook-pre-push",
+        "type": "HOOK",
+        "name": "pre-push-test",
+        "description": "Run tests before pushing",
+        "config": {
+          "hook": "PrePush",
+          "command": "npm test"
+        },
+        "tags": "git,hook,test",
+        "enabled": true
+      },
+      {
+        "id": "template-general",
+        "type": "CLAUDE_MD_TEMPLATE",
+        "name": "general-template",
+        "description": "General purpose CLAUDE.md template",
+        "config": {
+          "content": "# Project Name\n\n## Overview\n[Brief description of the project]\n\n## Tech Stack\n- Language: [e.g., TypeScript]\n- Framework: [e.g., Next.js]\n- Database: [e.g., PostgreSQL]\n\n## Commands\n```bash\n# Development\npnpm dev\n\n# Testing\npnpm test\n\n# Build\npnpm build\n```\n\n## Project Structure\n```\nsrc/\n  components/  # UI components\n  lib/         # Utilities\n  app/         # Pages/routes\n```\n\n## Conventions\n- Use TypeScript strict mode\n- Follow ESLint configuration\n- Write tests for new features\n- Use conventional commits"
+        },
+        "tags": "template,general",
+        "enabled": true
+      },
+      {
+        "id": "template-nextjs",
+        "type": "CLAUDE_MD_TEMPLATE",
+        "name": "nextjs-template",
+        "description": "Next.js specific CLAUDE.md template",
+        "config": {
+          "content": "# Next.js Project\n\n## Tech Stack\n- Next.js 14+ (App Router)\n- TypeScript\n- Tailwind CSS\n- shadcn/ui components\n\n## Commands\n```bash\npnpm dev          # Start dev server\npnpm build        # Production build\npnpm lint         # Run ESLint\npnpm test         # Run tests\n```\n\n## Project Structure\n```\napp/\n  (routes)/       # Route groups\n  api/            # API routes\n  layout.tsx      # Root layout\ncomponents/\n  ui/             # shadcn components\n  [feature]/      # Feature components\nlib/\n  utils.ts        # Utilities\n  db.ts           # Database client\n```\n\n## Conventions\n- Use Server Components by default\n- Add 'use client' only when needed\n- Colocate components with routes\n- Use Zod for validation\n- Prefer server actions over API routes"
+        },
+        "tags": "template,nextjs,react",
+        "enabled": true
+      },
+      {
+        "id": "template-api",
+        "type": "CLAUDE_MD_TEMPLATE",
+        "name": "api-template",
+        "description": "Backend API CLAUDE.md template",
+        "config": {
+          "content": "# API Service\n\n## Tech Stack\n- Runtime: Node.js / Python\n- Framework: Express / FastAPI\n- Database: PostgreSQL\n- ORM: Prisma / SQLAlchemy\n\n## Commands\n```bash\npnpm dev          # Start dev server\npnpm test         # Run tests\npnpm db:migrate   # Run migrations\npnpm db:seed      # Seed database\n```\n\n## API Conventions\n- RESTful endpoints: `/api/v1/resources`\n- Use proper HTTP methods\n- Return consistent JSON format:\n  ```json\n  { \"data\": {}, \"error\": null }\n  ```\n- Include pagination for lists\n- Validate all inputs with schemas\n\n## Error Handling\n- 400: Bad Request (validation)\n- 401: Unauthorized\n- 403: Forbidden\n- 404: Not Found\n- 500: Internal Error"
+        },
+        "tags": "template,api,backend",
+        "enabled": true
+      },
+      {
+        "id": "template-cli",
+        "type": "CLAUDE_MD_TEMPLATE",
+        "name": "cli-template",
+        "description": "CLI tool CLAUDE.md template",
+        "config": {
+          "content": "# CLI Tool\n\n## Tech Stack\n- TypeScript\n- Commander.js\n- chalk (colors)\n- ora (spinners)\n\n## Commands\n```bash\npnpm build        # Build CLI\npnpm start        # Run CLI\nnpm link          # Link globally\n```\n\n## CLI Structure\n```\nsrc/\n  index.ts        # Entry point\n  commands/       # Command implementations\n  lib/            # Shared utilities\nbin/\n  cli.js          # Executable entry\n```\n\n## Conventions\n- Use Commander.js for argument parsing\n- Provide helpful --help output\n- Use chalk for colored output\n- Handle errors gracefully\n- Support both interactive and non-interactive modes"
+        },
+        "tags": "template,cli",
+        "enabled": true
+      },
+      {
+        "id": "template-monorepo",
+        "type": "CLAUDE_MD_TEMPLATE",
+        "name": "monorepo-template",
+        "description": "Monorepo CLAUDE.md template",
+        "config": {
+          "content": "# Monorepo\n\n## Tech Stack\n- Package Manager: pnpm\n- Build: Turborepo\n- TypeScript\n\n## Commands\n```bash\npnpm install              # Install all deps\npnpm dev                  # Dev all packages\npnpm build                # Build all packages\npnpm --filter <pkg> dev   # Dev specific package\n```\n\n## Structure\n```\npackages/\n  shared/         # Shared types/utils\n  web/            # Web application\n  api/            # API server\n  cli/            # CLI tool\napps/\n  docs/           # Documentation site\n```\n\n## Conventions\n- Shared code goes in `packages/shared`\n- Use workspace protocol: `\"shared\": \"workspace:*\"`\n- Each package has its own tsconfig extending root\n- Use Turborepo for task orchestration"
+        },
+        "tags": "template,monorepo,pnpm",
+        "enabled": true
+      },
+      {
+        "id": "template-python",
+        "type": "CLAUDE_MD_TEMPLATE",
+        "name": "python-template",
+        "description": "Python project CLAUDE.md template",
+        "config": {
+          "content": "# Python Project\n\n## Tech Stack\n- Python 3.11+\n- Package Manager: uv / poetry\n- Framework: FastAPI / Django\n- Testing: pytest\n\n## Commands\n```bash\nuv sync           # Install dependencies\nuv run python     # Run with venv\npytest            # Run tests\nruff check .      # Lint code\nruff format .     # Format code\n```\n\n## Structure\n```\nsrc/\n  __init__.py\n  main.py         # Entry point\n  api/            # API routes\n  models/         # Data models\n  services/       # Business logic\ntests/\n  conftest.py     # Fixtures\n  test_*.py       # Test files\n```\n\n## Conventions\n- Use type hints everywhere\n- Follow PEP 8 style\n- Use Pydantic for validation\n- Async where beneficial"
+        },
+        "tags": "template,python",
+        "enabled": true
+      },
+      {
+        "id": "template-blockchain",
+        "type": "CLAUDE_MD_TEMPLATE",
+        "name": "blockchain-template",
+        "description": "Blockchain/Web3 CLAUDE.md template",
+        "config": {
+          "content": "# Web3 Project\n\n## Tech Stack\n- Solidity / Rust (Solana)\n- Hardhat / Foundry\n- ethers.js / viem\n- wagmi + RainbowKit\n\n## Commands\n```bash\npnpm compile      # Compile contracts\npnpm test         # Test contracts\npnpm deploy:local # Deploy to local\npnpm deploy:test  # Deploy to testnet\n```\n\n## Structure\n```\ncontracts/\n  *.sol           # Smart contracts\nscripts/\n  deploy.ts       # Deployment scripts\ntest/\n  *.test.ts       # Contract tests\nfrontend/\n  src/            # dApp frontend\n```\n\n## Security Checklist\n- [ ] Reentrancy protection\n- [ ] Integer overflow checks\n- [ ] Access control\n- [ ] Gas optimization\n- [ ] Audit before mainnet"
+        },
+        "tags": "template,blockchain,web3,solidity",
+        "enabled": true
+      },
+      {
+        "id": "template-devops",
+        "type": "CLAUDE_MD_TEMPLATE",
+        "name": "devops-template",
+        "description": "DevOps/Infrastructure CLAUDE.md template",
+        "config": {
+          "content": "# Infrastructure\n\n## Tech Stack\n- Docker & Docker Compose\n- Terraform\n- GitHub Actions\n- Kubernetes (optional)\n\n## Commands\n```bash\ndocker compose up -d     # Start services\nterraform plan           # Preview changes\nterraform apply          # Apply changes\nkubectl apply -f k8s/    # Deploy to k8s\n```\n\n## Structure\n```\ndocker/\n  Dockerfile\n  docker-compose.yml\nterraform/\n  main.tf\n  variables.tf\n  outputs.tf\n.github/\n  workflows/\n    ci.yml\n    deploy.yml\n```\n\n## Conventions\n- Use multi-stage Docker builds\n- Never commit secrets\n- Tag all resources\n- Use workspaces for environments"
+        },
+        "tags": "template,devops,docker,terraform",
+        "enabled": true
+      }
+    ],
+    "profiles": [
+      {
+        "id": "profile-general",
+        "name": "general",
+        "description": "General purpose configuration for any project type",
+        "claudeMdTemplate": null,
+        "componentIds": ["mcp-filesystem", "mcp-git", "mcp-github", "mcp-fetch", "subagent-code-reviewer", "subagent-test-writer", "command-commit", "command-test", "command-lint", "template-general"]
+      },
+      {
+        "id": "profile-nextjs",
+        "name": "nextjs",
+        "description": "Next.js web application with React and Tailwind",
+        "claudeMdTemplate": null,
+        "componentIds": ["mcp-filesystem", "mcp-git", "mcp-github", "mcp-fetch", "mcp-puppeteer", "subagent-code-reviewer", "subagent-test-writer", "subagent-documentation", "command-commit", "command-pr", "command-test", "command-lint", "hook-pre-commit-lint", "template-nextjs"]
+      },
+      {
+        "id": "profile-fullstack",
+        "name": "fullstack",
+        "description": "Full-stack application with frontend, backend, and database",
+        "claudeMdTemplate": null,
+        "componentIds": ["mcp-filesystem", "mcp-git", "mcp-github", "mcp-fetch", "mcp-postgres", "mcp-puppeteer", "subagent-code-reviewer", "subagent-test-writer", "subagent-database-expert", "subagent-api-designer", "command-commit", "command-pr", "command-test", "command-lint", "command-deps", "template-nextjs"]
+      },
+      {
+        "id": "profile-api",
+        "name": "api",
+        "description": "Backend API service with database integration",
+        "claudeMdTemplate": null,
+        "componentIds": ["mcp-filesystem", "mcp-git", "mcp-github", "mcp-postgres", "subagent-code-reviewer", "subagent-test-writer", "subagent-security-auditor", "subagent-database-expert", "subagent-api-designer", "command-commit", "command-test", "command-deps", "template-api"]
+      },
+      {
+        "id": "profile-cli",
+        "name": "cli",
+        "description": "Command-line tool development",
+        "claudeMdTemplate": null,
+        "componentIds": ["mcp-filesystem", "mcp-git", "mcp-github", "subagent-code-reviewer", "subagent-test-writer", "subagent-documentation", "command-commit", "command-test", "command-lint", "template-cli"]
+      },
+      {
+        "id": "profile-monorepo",
+        "name": "monorepo",
+        "description": "pnpm workspace monorepo with multiple packages",
+        "claudeMdTemplate": null,
+        "componentIds": ["mcp-filesystem", "mcp-git", "mcp-github", "mcp-fetch", "subagent-code-reviewer", "subagent-test-writer", "subagent-documentation", "subagent-refactoring", "command-commit", "command-pr", "command-test", "command-lint", "command-deps", "template-monorepo"]
+      },
+      {
+        "id": "profile-python",
+        "name": "python",
+        "description": "Python application with FastAPI or data science focus",
+        "claudeMdTemplate": null,
+        "componentIds": ["mcp-filesystem", "mcp-git", "mcp-github", "mcp-postgres", "subagent-code-reviewer", "subagent-test-writer", "subagent-database-expert", "command-commit", "command-test", "template-python"]
+      },
+      {
+        "id": "profile-blockchain",
+        "name": "blockchain",
+        "description": "Web3 and smart contract development",
+        "claudeMdTemplate": null,
+        "componentIds": ["mcp-filesystem", "mcp-git", "mcp-github", "mcp-fetch", "subagent-code-reviewer", "subagent-security-auditor", "subagent-test-writer", "command-commit", "command-test", "template-blockchain"]
+      },
+      {
+        "id": "profile-devops",
+        "name": "devops",
+        "description": "DevOps, Docker, and infrastructure projects",
+        "claudeMdTemplate": null,
+        "componentIds": ["mcp-filesystem", "mcp-git", "mcp-github", "mcp-docker", "subagent-devops", "subagent-security-auditor", "command-commit", "template-devops"]
+      },
+      {
+        "id": "profile-supabase",
+        "name": "supabase",
+        "description": "Supabase-powered application",
+        "claudeMdTemplate": null,
+        "componentIds": ["mcp-filesystem", "mcp-git", "mcp-github", "mcp-supabase", "mcp-fetch", "subagent-code-reviewer", "subagent-test-writer", "subagent-database-expert", "subagent-security-auditor", "command-commit", "command-test", "template-nextjs"]
+      }
+    ],
+    "settings": [
+      {
+        "key": "defaultProfile",
+        "value": "general"
+      },
+      {
+        "key": "autoSync",
+        "value": false
+      }
+    ]
+  }
+}
