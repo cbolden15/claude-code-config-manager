@@ -71,7 +71,6 @@ interface ScheduledTask {
   name: string;
   taskType: string;
   taskConfig: string; // JSON
-  projectFilter: string | null; // JSON array
 }
 
 /**
@@ -81,27 +80,14 @@ interface ScheduledTask {
  * @returns Array of project paths
  */
 async function getProjectsForTask(task: ScheduledTask): Promise<string[]> {
-  let projects: string[] = [];
-
-  // Get projects from filter or database
-  if (task.projectFilter) {
-    try {
-      projects = JSON.parse(task.projectFilter);
-    } catch {
-      projects = [];
-    }
-  } else {
-    // Get all projects for this machine or all machines
-    const dbProjects = await prisma.project.findMany({
-      where: task.machineId
-        ? { machine: task.machineId }
-        : {},
-      select: { path: true },
-    });
-    projects = dbProjects.map((p) => p.path);
-  }
-
-  return projects;
+  // Get all projects for this machine or all machines
+  const dbProjects = await prisma.project.findMany({
+    where: task.machineId
+      ? { machineId: task.machineId }
+      : {},
+    select: { path: true },
+  });
+  return dbProjects.map((p) => p.path);
 }
 
 /**
@@ -165,9 +151,10 @@ export async function executeAnalyzeTask(task: ScheduledTask): Promise<TaskResul
             sections: JSON.stringify(analysis.classified),
             issues: JSON.stringify(analysis.issues),
             estimatedSavings: analysis.summary.estimatedSavings,
-            optimizationScore: analysis.optimizationScore,
+            currentScore: analysis.optimizationScore,
+            potentialScore: analysis.optimizationScore + 10, // Estimate improvement potential
             status: 'analyzed',
-            lastAnalyzedAt: new Date(),
+            analyzedAt: new Date(),
           },
           create: {
             machineId: task.machineId,
@@ -178,7 +165,8 @@ export async function executeAnalyzeTask(task: ScheduledTask): Promise<TaskResul
             sections: JSON.stringify(analysis.classified),
             issues: JSON.stringify(analysis.issues),
             estimatedSavings: analysis.summary.estimatedSavings,
-            optimizationScore: analysis.optimizationScore,
+            currentScore: analysis.optimizationScore,
+            potentialScore: analysis.optimizationScore + 10, // Estimate improvement potential
             status: 'analyzed',
           },
         });
@@ -286,20 +274,19 @@ export async function executeOptimizeTask(task: ScheduledTask): Promise<TaskResu
           // Store archives
           if (task.machineId) {
             for (const archive of output.archives) {
-              const summaryLines = archive.metadata.summary.split('\n').length;
+              const summaryTokens = Math.round(archive.metadata.summary.length / 4); // Estimate tokens
               await prisma.contextArchive.create({
                 data: {
                   machineId: task.machineId,
                   projectPath,
                   sourceFile: 'CLAUDE.md',
-                  archiveFile: archive.path,
+                  archivePath: archive.path,
                   sectionName: archive.metadata.sectionName,
-                  originalLines: archive.metadata.originalLines,
+                  reason: archive.metadata.reason,
                   originalTokens: archive.metadata.originalTokens,
-                  summaryLines,
+                  summaryTokens,
                   archivedContent: archive.content,
                   summaryContent: archive.metadata.summary,
-                  archiveReason: archive.metadata.reason,
                 },
               });
             }
@@ -457,7 +444,7 @@ async function updateHealthScore(
     orderBy: { timestamp: 'desc' },
   });
 
-  const previousScore = previousHealth?.totalScore || contextScore;
+  const previousScore = previousHealth?.score || contextScore;
   const trend =
     contextScore > previousScore
       ? 'improving'
@@ -469,15 +456,16 @@ async function updateHealthScore(
   await prisma.healthScore.create({
     data: {
       machineId,
-      totalScore: contextScore,
+      score: contextScore,
       mcpScore: 70, // Default - would need MCP analysis
       skillScore: 70, // Default - would need skill analysis
       contextScore,
       patternScore: 70, // Default - would need pattern analysis
       activeRecommendations: activeIssues,
       appliedRecommendations: 0,
-      estimatedDailyWaste: 0,
-      estimatedDailySavings: 0,
+      dismissedRecommendations: 0,
+      estimatedMonthlyWaste: 0,
+      estimatedMonthlySavings: 0,
       previousScore,
       trend,
     },
@@ -533,9 +521,9 @@ export async function getMetricValue(
           machineId,
           projectPath,
         },
-        orderBy: { lastAnalyzedAt: 'desc' },
+        orderBy: { analyzedAt: 'desc' },
       });
-      return analysis?.optimizationScore || 100;
+      return analysis?.currentScore || 100;
     }
 
     case 'token_count': {
@@ -544,7 +532,7 @@ export async function getMetricValue(
           machineId,
           projectPath,
         },
-        orderBy: { lastAnalyzedAt: 'desc' },
+        orderBy: { analyzedAt: 'desc' },
       });
       return analysis?.totalTokens || 0;
     }
@@ -555,7 +543,7 @@ export async function getMetricValue(
           machineId,
           projectPath,
         },
-        orderBy: { lastAnalyzedAt: 'desc' },
+        orderBy: { analyzedAt: 'desc' },
       });
       const issues = analysis?.issues ? JSON.parse(analysis.issues) : [];
       return issues.length;
@@ -592,9 +580,9 @@ export async function getAverageMetricValue(
     case 'optimization_score': {
       const result = await prisma.contextAnalysis.aggregate({
         where: { machineId },
-        _avg: { optimizationScore: true },
+        _avg: { currentScore: true },
       });
-      return result._avg.optimizationScore || 100;
+      return result._avg.currentScore || 100;
     }
 
     case 'token_count': {

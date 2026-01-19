@@ -45,24 +45,41 @@ export async function GET(request: NextRequest) {
             startedAt: true,
             completedAt: true,
             durationMs: true,
-            projectsProcessed: true,
-            issuesFound: true,
-            tokensSaved: true
+            result: true
           }
         }
       },
       orderBy: { createdAt: 'desc' }
     });
 
-    // Compute stats for each task
+    // Compute stats for each task by parsing result JSON
     const tasksWithStats = tasks.map(task => {
       const recentExecutions = task.executions;
       const successfulRuns = recentExecutions.filter(e => e.status === 'completed').length;
       const failedRuns = recentExecutions.filter(e => e.status === 'failed').length;
-      const totalTokensSaved = recentExecutions.reduce((sum, e) => sum + e.tokensSaved, 0);
+
+      // Parse result JSON to get tokensSaved
+      let totalTokensSaved = 0;
+      for (const exec of recentExecutions) {
+        if (exec.result) {
+          try {
+            const result = JSON.parse(exec.result);
+            totalTokensSaved += result.tokensSaved || 0;
+          } catch {
+            // Ignore parse errors
+          }
+        }
+      }
+
+      // Parse executions' result fields for response
+      const parsedExecutions = recentExecutions.map(exec => ({
+        ...exec,
+        result: exec.result ? JSON.parse(exec.result) : null
+      }));
 
       return {
         ...task,
+        executions: parsedExecutions,
         stats: {
           recentRuns: recentExecutions.length,
           successfulRuns,
@@ -95,15 +112,11 @@ export async function POST(request: NextRequest) {
       taskType,
       scheduleType,
       cronExpression,
-      intervalMinutes,
+      intervalHours,
       thresholdMetric,
       thresholdValue,
-      thresholdOperator,
-      projectFilter,
+      thresholdOp,
       taskConfig,
-      notifyOnSuccess,
-      notifyOnFailure,
-      webhookIds,
       machineId,
       enabled
     } = body;
@@ -116,7 +129,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const validTaskTypes = ['analyze', 'optimize', 'health_check', 'custom'];
+    const validTaskTypes = ['analyze_context', 'generate_recommendations', 'health_check'];
     if (!taskType || !validTaskTypes.includes(taskType)) {
       return NextResponse.json(
         { error: `taskType must be one of: ${validTaskTypes.join(', ')}` },
@@ -140,22 +153,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (scheduleType === 'interval' && !intervalMinutes) {
+    if (scheduleType === 'interval' && !intervalHours) {
       return NextResponse.json(
-        { error: 'intervalMinutes is required for interval schedule type' },
+        { error: 'intervalHours is required for interval schedule type' },
         { status: 400 }
       );
     }
 
     if (scheduleType === 'threshold') {
-      if (!thresholdMetric || !thresholdValue || !thresholdOperator) {
+      if (!thresholdMetric || !thresholdValue || !thresholdOp) {
         return NextResponse.json(
-          { error: 'thresholdMetric, thresholdValue, and thresholdOperator are required for threshold schedule type' },
+          { error: 'thresholdMetric, thresholdValue, and thresholdOp are required for threshold schedule type' },
           { status: 400 }
         );
       }
 
-      const validMetrics = ['optimization_score', 'token_count', 'issue_count', 'file_size'];
+      const validMetrics = ['health_score', 'context_tokens'];
       if (!validMetrics.includes(thresholdMetric)) {
         return NextResponse.json(
           { error: `thresholdMetric must be one of: ${validMetrics.join(', ')}` },
@@ -163,10 +176,10 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const validOperators = ['lt', 'gt', 'eq', 'lte', 'gte'];
-      if (!validOperators.includes(thresholdOperator)) {
+      const validOperators = ['lt', 'gt'];
+      if (!validOperators.includes(thresholdOp)) {
         return NextResponse.json(
-          { error: `thresholdOperator must be one of: ${validOperators.join(', ')}` },
+          { error: `thresholdOp must be one of: ${validOperators.join(', ')}` },
           { status: 400 }
         );
       }
@@ -191,8 +204,8 @@ export async function POST(request: NextRequest) {
       // TODO: Calculate next cron run (Terminal 2 will provide cron parsing)
       // For now, set to 1 hour from now as placeholder
       nextRunAt = new Date(Date.now() + 60 * 60 * 1000);
-    } else if (scheduleType === 'interval' && intervalMinutes) {
-      nextRunAt = new Date(Date.now() + intervalMinutes * 60 * 1000);
+    } else if (scheduleType === 'interval' && intervalHours) {
+      nextRunAt = new Date(Date.now() + intervalHours * 60 * 60 * 1000);
     }
 
     const task = await prisma.scheduledTask.create({
@@ -202,15 +215,11 @@ export async function POST(request: NextRequest) {
         taskType,
         scheduleType,
         cronExpression: cronExpression || null,
-        intervalMinutes: intervalMinutes || null,
+        intervalHours: intervalHours || null,
         thresholdMetric: thresholdMetric || null,
         thresholdValue: thresholdValue || null,
-        thresholdOperator: thresholdOperator || null,
-        projectFilter: projectFilter ? JSON.stringify(projectFilter) : null,
+        thresholdOp: thresholdOp || null,
         taskConfig: taskConfig ? JSON.stringify(taskConfig) : '{}',
-        notifyOnSuccess: notifyOnSuccess ?? false,
-        notifyOnFailure: notifyOnFailure ?? true,
-        webhookIds: webhookIds ? JSON.stringify(webhookIds) : null,
         machineId: machineId || null,
         enabled: enabled ?? true,
         nextRunAt

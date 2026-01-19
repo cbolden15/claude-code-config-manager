@@ -41,13 +41,13 @@ export async function GET(request: NextRequest) {
     // Calculate stats
     const stats = {
       total: archives.length,
-      totalLinesArchived: archives.reduce((sum, a) => sum + a.originalLines, 0),
       totalTokensArchived: archives.reduce((sum, a) => sum + a.originalTokens, 0),
+      totalTokensSaved: archives.reduce((sum, a) => sum + (a.originalTokens - a.summaryTokens), 0),
       byReason: {
-        completed_work: archives.filter(a => a.archiveReason === 'completed_work').length,
-        outdated: archives.filter(a => a.archiveReason === 'outdated').length,
-        verbose: archives.filter(a => a.archiveReason === 'verbose').length,
-        duplicate: archives.filter(a => a.archiveReason === 'duplicate').length
+        completed_work: archives.filter(a => a.reason === 'completed_work').length,
+        outdated: archives.filter(a => a.reason === 'outdated').length,
+        verbose: archives.filter(a => a.reason === 'verbose').length,
+        duplicate: archives.filter(a => a.reason === 'duplicate').length
       }
     };
 

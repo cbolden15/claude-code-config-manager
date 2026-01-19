@@ -6,19 +6,25 @@ export async function GET() {
     // Check database connectivity
     await prisma.$queryRaw`SELECT 1`;
 
-    const componentCount = await prisma.component.count();
-    const profileCount = await prisma.profile.count();
+    const machineCount = await prisma.machine.count();
     const projectCount = await prisma.project.count();
+    const sessionCount = await prisma.session.count();
+    const patternCount = await prisma.pattern.count();
+    const recommendationCount = await prisma.recommendation.count();
+    const appliedConfigCount = await prisma.appliedConfig.count();
 
     return NextResponse.json({
       status: 'healthy',
       timestamp: new Date().toISOString(),
-      version: '0.1.0',
+      version: '4.0.0',
       database: 'connected',
       stats: {
-        components: componentCount,
-        profiles: profileCount,
+        machines: machineCount,
         projects: projectCount,
+        sessions: sessionCount,
+        patterns: patternCount,
+        recommendations: recommendationCount,
+        appliedConfigs: appliedConfigCount,
       },
     });
   } catch (error) {

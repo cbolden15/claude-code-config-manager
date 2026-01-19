@@ -4,12 +4,6 @@ import { z } from 'zod';
 
 const UpdateProjectSchema = z.object({
   name: z.string().min(1).max(100).optional(),
-  path: z.string().min(1).optional(),
-  machine: z.string().min(1).optional(),
-  profileId: z.string().optional().nullable(),
-  modelProfileId: z.string().optional().nullable(),
-  autoClaudeEnabled: z.boolean().optional(),
-  autoClaudeConfigId: z.string().optional().nullable(),
 });
 
 type RouteParams = { params: Promise<{ id: string }> };
@@ -21,14 +15,14 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const project = await prisma.project.findUnique({
       where: { id },
       include: {
-        profile: {
-          include: {
-            components: {
-              include: { component: true },
-              orderBy: { order: 'asc' },
-            },
-          },
-        },
+        machine: {
+          select: {
+            id: true,
+            name: true,
+            hostname: true,
+            platform: true
+          }
+        }
       },
     });
 
@@ -39,18 +33,11 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       );
     }
 
+    // Parse JSON fields
     return NextResponse.json({
       ...project,
-      profile: project.profile
-        ? {
-            ...project.profile,
-            components: project.profile.components.map((pc) => ({
-              ...pc.component,
-              config: JSON.parse(pc.component.config),
-              order: pc.order,
-            })),
-          }
-        : null,
+      detectedTechs: project.detectedTechs ? JSON.parse(project.detectedTechs) : [],
+      detectedPatterns: project.detectedPatterns ? JSON.parse(project.detectedPatterns) : [],
     });
   } catch (error) {
     console.error('GET /api/projects/[id] error:', error);
@@ -75,59 +62,29 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    // Verify profile exists if provided
-    if (validated.profileId) {
-      const profile = await prisma.profile.findUnique({
-        where: { id: validated.profileId },
-      });
-      if (!profile) {
-        return NextResponse.json(
-          { error: 'Profile not found' },
-          { status: 404 }
-        );
-      }
-    }
-
-    // Verify model profile exists if provided
-    if (validated.modelProfileId) {
-      const modelProfile = await prisma.component.findUnique({
-        where: { id: validated.modelProfileId },
-      });
-      if (!modelProfile || modelProfile.type !== 'AUTO_CLAUDE_MODEL_PROFILE') {
-        return NextResponse.json(
-          { error: 'Model profile not found' },
-          { status: 404 }
-        );
-      }
-    }
-
     const project = await prisma.project.update({
       where: { id },
       data: {
         ...(validated.name && { name: validated.name }),
-        ...(validated.path && { path: validated.path }),
-        ...(validated.machine && { machine: validated.machine }),
-        ...(validated.profileId !== undefined && {
-          profileId: validated.profileId,
-        }),
-        ...(validated.modelProfileId !== undefined && {
-          modelProfileId: validated.modelProfileId,
-        }),
-        ...(validated.autoClaudeEnabled !== undefined && {
-          autoClaudeEnabled: validated.autoClaudeEnabled,
-        }),
-        ...(validated.autoClaudeConfigId !== undefined && {
-          autoClaudeConfigId: validated.autoClaudeConfigId,
-        }),
+        lastActiveAt: new Date(),
       },
       include: {
-        profile: {
-          select: { id: true, name: true },
-        },
+        machine: {
+          select: {
+            id: true,
+            name: true,
+            hostname: true,
+            platform: true
+          }
+        }
       },
     });
 
-    return NextResponse.json(project);
+    return NextResponse.json({
+      ...project,
+      detectedTechs: project.detectedTechs ? JSON.parse(project.detectedTechs) : [],
+      detectedPatterns: project.detectedPatterns ? JSON.parse(project.detectedPatterns) : [],
+    });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(

@@ -35,10 +35,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
             completedAt: true,
             durationMs: true,
             result: true,
-            error: true,
-            projectsProcessed: true,
-            issuesFound: true,
-            tokensSaved: true
+            error: true
           }
         }
       }
@@ -51,25 +48,51 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    // Compute stats
+    // Parse result JSON for each execution and compute stats
     const allExecutions = await prisma.taskExecution.findMany({
       where: { taskId: id },
       select: {
         status: true,
-        tokensSaved: true,
-        projectsProcessed: true
+        result: true
       }
     });
+
+    let totalTokensSaved = 0;
+    let totalProjectsProcessed = 0;
+
+    for (const exec of allExecutions) {
+      if (exec.result) {
+        try {
+          const result = JSON.parse(exec.result);
+          totalTokensSaved += result.tokensSaved || 0;
+          totalProjectsProcessed += result.projectsProcessed || result.analyzed || 0;
+        } catch {
+          // Ignore parse errors
+        }
+      }
+    }
 
     const stats = {
       totalRuns: allExecutions.length,
       successfulRuns: allExecutions.filter(e => e.status === 'completed').length,
       failedRuns: allExecutions.filter(e => e.status === 'failed').length,
-      totalTokensSaved: allExecutions.reduce((sum, e) => sum + e.tokensSaved, 0),
-      totalProjectsProcessed: allExecutions.reduce((sum, e) => sum + e.projectsProcessed, 0)
+      totalTokensSaved,
+      totalProjectsProcessed
     };
 
-    return NextResponse.json({ task: { ...task, stats } });
+    // Parse result JSON for recent executions
+    const executionsWithParsedResults = task.executions.map(exec => ({
+      ...exec,
+      result: exec.result ? JSON.parse(exec.result) : null
+    }));
+
+    return NextResponse.json({
+      task: {
+        ...task,
+        executions: executionsWithParsedResults,
+        stats
+      }
+    });
   } catch (error) {
     console.error('[GET /api/scheduler/tasks/[id]]', error);
     return NextResponse.json(
@@ -106,22 +129,18 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       taskType,
       scheduleType,
       cronExpression,
-      intervalMinutes,
+      intervalHours,
       thresholdMetric,
       thresholdValue,
-      thresholdOperator,
-      projectFilter,
+      thresholdOp,
       taskConfig,
-      notifyOnSuccess,
-      notifyOnFailure,
-      webhookIds,
       machineId,
       enabled
     } = body;
 
     // Validate taskType if provided
     if (taskType) {
-      const validTaskTypes = ['analyze', 'optimize', 'health_check', 'custom'];
+      const validTaskTypes = ['analyze_context', 'generate_recommendations', 'health_check'];
       if (!validTaskTypes.includes(taskType)) {
         return NextResponse.json(
           { error: `taskType must be one of: ${validTaskTypes.join(', ')}` },
@@ -162,20 +181,12 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     if (taskType !== undefined) updateData.taskType = taskType;
     if (scheduleType !== undefined) updateData.scheduleType = scheduleType;
     if (cronExpression !== undefined) updateData.cronExpression = cronExpression;
-    if (intervalMinutes !== undefined) updateData.intervalMinutes = intervalMinutes;
+    if (intervalHours !== undefined) updateData.intervalHours = intervalHours;
     if (thresholdMetric !== undefined) updateData.thresholdMetric = thresholdMetric;
     if (thresholdValue !== undefined) updateData.thresholdValue = thresholdValue;
-    if (thresholdOperator !== undefined) updateData.thresholdOperator = thresholdOperator;
-    if (projectFilter !== undefined) {
-      updateData.projectFilter = projectFilter ? JSON.stringify(projectFilter) : null;
-    }
+    if (thresholdOp !== undefined) updateData.thresholdOp = thresholdOp;
     if (taskConfig !== undefined) {
       updateData.taskConfig = JSON.stringify(taskConfig);
-    }
-    if (notifyOnSuccess !== undefined) updateData.notifyOnSuccess = notifyOnSuccess;
-    if (notifyOnFailure !== undefined) updateData.notifyOnFailure = notifyOnFailure;
-    if (webhookIds !== undefined) {
-      updateData.webhookIds = webhookIds ? JSON.stringify(webhookIds) : null;
     }
     if (machineId !== undefined) updateData.machineId = machineId || null;
     if (enabled !== undefined) updateData.enabled = enabled;
@@ -183,14 +194,14 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     // Recalculate nextRunAt if schedule changed
     const finalScheduleType = scheduleType || existingTask.scheduleType;
     const finalCronExpression = cronExpression !== undefined ? cronExpression : existingTask.cronExpression;
-    const finalIntervalMinutes = intervalMinutes !== undefined ? intervalMinutes : existingTask.intervalMinutes;
+    const finalIntervalHours = intervalHours !== undefined ? intervalHours : existingTask.intervalHours;
 
-    if (scheduleType || cronExpression !== undefined || intervalMinutes !== undefined) {
+    if (scheduleType || cronExpression !== undefined || intervalHours !== undefined) {
       if (finalScheduleType === 'cron' && finalCronExpression) {
         // TODO: Calculate next cron run
         updateData.nextRunAt = new Date(Date.now() + 60 * 60 * 1000);
-      } else if (finalScheduleType === 'interval' && finalIntervalMinutes) {
-        updateData.nextRunAt = new Date(Date.now() + finalIntervalMinutes * 60 * 1000);
+      } else if (finalScheduleType === 'interval' && finalIntervalHours) {
+        updateData.nextRunAt = new Date(Date.now() + finalIntervalHours * 60 * 60 * 1000);
       } else if (finalScheduleType === 'threshold' || finalScheduleType === 'manual') {
         updateData.nextRunAt = null;
       }

@@ -1,11 +1,11 @@
 /**
  * Pattern Detection Engine for CCM v3.0 Smart Recommendations
  *
- * Analyzes session activity data to detect recurring patterns that indicate
+ * Analyzes session data to detect recurring patterns that indicate
  * opportunities for optimization through MCP servers or skills.
  */
 
-import type { SessionActivity } from '@prisma/client';
+import type { Session } from '@prisma/client';
 
 /**
  * Detected pattern with supporting evidence
@@ -23,8 +23,8 @@ export interface DetectedPattern {
   confidence: number;
   /** Session IDs where pattern was detected */
   sessionIds: string[];
-  /** Project IDs where pattern was detected */
-  projectIds: string[];
+  /** Project paths where pattern was detected */
+  projectPaths: string[];
 }
 
 /**
@@ -37,9 +37,9 @@ interface PatternDefinition {
   /** Technologies associated with this pattern */
   technologies: string[];
   /** Matcher function to detect pattern in session */
-  matcher: (session: SessionActivity, commands: string[], files: string[], tools: string[]) => boolean;
+  matcher: (session: Session, commands: string[], files: string[], tools: string[]) => boolean;
   /** Extract example from session */
-  extractExample: (session: SessionActivity, commands: string[]) => string | null;
+  extractExample: (session: Session, commands: string[]) => string | null;
 }
 
 /**
@@ -300,12 +300,12 @@ function safeParseArray(json: string): string[] {
 }
 
 /**
- * Detect patterns from a collection of session activities
+ * Detect patterns from a collection of sessions
  *
- * @param sessions - Array of session activity records
+ * @param sessions - Array of session records
  * @returns Array of detected patterns with confidence scores
  */
-export function detectPatterns(sessions: SessionActivity[]): DetectedPattern[] {
+export function detectPatterns(sessions: Session[]): DetectedPattern[] {
   if (sessions.length === 0) {
     return [];
   }
@@ -315,7 +315,7 @@ export function detectPatterns(sessions: SessionActivity[]): DetectedPattern[] {
     examples: Set<string>;
     technologies: Set<string>;
     sessionIds: Set<string>;
-    projectIds: Set<string>;
+    projectPaths: Set<string>;
   }>();
 
   // Initialize pattern tracking
@@ -325,7 +325,7 @@ export function detectPatterns(sessions: SessionActivity[]): DetectedPattern[] {
       examples: new Set(),
       technologies: new Set(def.technologies),
       sessionIds: new Set(),
-      projectIds: new Set()
+      projectPaths: new Set()
     });
   }
 
@@ -341,8 +341,8 @@ export function detectPatterns(sessions: SessionActivity[]): DetectedPattern[] {
         result.occurrences++;
         result.sessionIds.add(session.sessionId);
 
-        if (session.projectId) {
-          result.projectIds.add(session.projectId);
+        if (session.projectPath) {
+          result.projectPaths.add(session.projectPath);
         }
 
         const example = def.extractExample(session, commands);
@@ -370,7 +370,7 @@ export function detectPatterns(sessions: SessionActivity[]): DetectedPattern[] {
     if (result.occurrences >= def.minOccurrences) {
       // Calculate confidence based on occurrence count and consistency
       const baseConfidence = Math.min(result.occurrences / (def.minOccurrences * 4), 1.0);
-      const projectDiversity = result.projectIds.size > 1 ? 0.1 : 0;
+      const projectDiversity = result.projectPaths.size > 1 ? 0.1 : 0;
       const confidence = Math.min(baseConfidence + projectDiversity, 1.0);
 
       detectedPatterns.push({
@@ -380,7 +380,7 @@ export function detectPatterns(sessions: SessionActivity[]): DetectedPattern[] {
         technologies: Array.from(result.technologies),
         confidence,
         sessionIds: Array.from(result.sessionIds),
-        projectIds: Array.from(result.projectIds)
+        projectPaths: Array.from(result.projectPaths)
       });
     }
   }
@@ -392,7 +392,7 @@ export function detectPatterns(sessions: SessionActivity[]): DetectedPattern[] {
 /**
  * Detect patterns for a single session (for real-time detection)
  */
-export function detectSessionPatterns(session: SessionActivity): string[] {
+export function detectSessionPatterns(session: Session): string[] {
   const commands = safeParseArray(session.commandsRun);
   const files = safeParseArray(session.filesAccessed);
   const tools = safeParseArray(session.toolsUsed);

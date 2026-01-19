@@ -7,7 +7,7 @@ import { z } from 'zod';
  * Analyze usage patterns and generate smart recommendations
  *
  * This endpoint:
- * 1. Fetches session activity data for the machine
+ * 1. Fetches session data and patterns for the machine
  * 2. Detects patterns across sessions
  * 3. Generates MCP server and skill recommendations
  * 4. Saves recommendations to database
@@ -27,7 +27,7 @@ const MCP_RECOMMENDATIONS = [
     item: 'PostgreSQL MCP',
     category: 'database',
     title: 'Enable Direct PostgreSQL Access',
-    reasonTemplate: 'You query PostgreSQL {count} times via SSH in {days} days. PostgreSQL MCP provides direct database access without SSH overhead.',
+    descriptionTemplate: 'You query PostgreSQL {count} times via SSH in {days} days. PostgreSQL MCP provides direct database access without SSH overhead.',
     timeSavings: 30,
     tokenSavings: 100,
     minOccurrences: 5,
@@ -45,7 +45,7 @@ const MCP_RECOMMENDATIONS = [
     item: 'GitHub MCP',
     category: 'cicd',
     title: 'Improve Git Workflow Management',
-    reasonTemplate: 'You use git commands {count} times in {days} days. GitHub MCP provides better PR management and issue tracking.',
+    descriptionTemplate: 'You use git commands {count} times in {days} days. GitHub MCP provides better PR management and issue tracking.',
     timeSavings: 20,
     tokenSavings: 50,
     minOccurrences: 10,
@@ -63,7 +63,7 @@ const MCP_RECOMMENDATIONS = [
     item: 'n8n MCP',
     category: 'automation',
     title: 'Direct n8n Workflow Management',
-    reasonTemplate: 'You manage n8n workflows {count} times in {days} days. n8n MCP provides direct API access.',
+    descriptionTemplate: 'You manage n8n workflows {count} times in {days} days. n8n MCP provides direct API access.',
     timeSavings: 40,
     tokenSavings: 120,
     minOccurrences: 5,
@@ -78,7 +78,7 @@ const MCP_RECOMMENDATIONS = [
     item: 'Docker MCP',
     category: 'infrastructure',
     title: 'Streamline Container Management',
-    reasonTemplate: 'You manage Docker containers {count} times in {days} days. Docker MCP simplifies container operations.',
+    descriptionTemplate: 'You manage Docker containers {count} times in {days} days. Docker MCP simplifies container operations.',
     timeSavings: 15,
     tokenSavings: 40,
     minOccurrences: 5,
@@ -96,7 +96,7 @@ const SKILL_RECOMMENDATIONS = [
     item: 'homelab-database-query',
     category: 'database',
     title: 'One-Command Database Queries',
-    reasonTemplate: 'You query databases {count} times in {days} days. Create a skill to query with one command.',
+    descriptionTemplate: 'You query databases {count} times in {days} days. Create a skill to query with one command.',
     timeSavings: 60,
     tokenSavings: 150,
     minOccurrences: 10,
@@ -110,7 +110,7 @@ const SKILL_RECOMMENDATIONS = [
     item: 'n8n-workflow-status',
     category: 'automation',
     title: 'Instant n8n Workflow Overview',
-    reasonTemplate: 'You check n8n workflows {count} times in {days} days. A skill provides instant status.',
+    descriptionTemplate: 'You check n8n workflows {count} times in {days} days. A skill provides instant status.',
     timeSavings: 50,
     tokenSavings: 130,
     minOccurrences: 10,
@@ -123,7 +123,7 @@ const SKILL_RECOMMENDATIONS = [
     item: 'homelab-service-health',
     category: 'monitoring',
     title: 'Quick Service Health Checks',
-    reasonTemplate: 'You check service status {count} times in {days} days. A health check skill provides instant overview.',
+    descriptionTemplate: 'You check service status {count} times in {days} days. A health check skill provides instant overview.',
     timeSavings: 45,
     tokenSavings: 120,
     minOccurrences: 8,
@@ -137,7 +137,7 @@ const SKILL_RECOMMENDATIONS = [
     item: 'git-smart-commit',
     category: 'cicd',
     title: 'Automated Git Workflows',
-    reasonTemplate: 'You run git workflows {count} times in {days} days. A skill can automate commit, push, and PR creation.',
+    descriptionTemplate: 'You run git workflows {count} times in {days} days. A skill can automate commit, push, and PR creation.',
     timeSavings: 35,
     tokenSavings: 90,
     minOccurrences: 15,
@@ -170,70 +170,93 @@ export async function POST(request: NextRequest) {
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - daysBack);
 
-    // Get usage patterns for this machine
-    const usagePatterns = await prisma.usagePattern.findMany({
+    // Get patterns for this machine
+    const patterns = await prisma.pattern.findMany({
       where: {
         machineId,
         lastSeen: { gte: cutoffDate }
       }
     });
 
-    // Get technology usage
-    const techUsage = await prisma.technologyUsage.findMany({
+    // Get sessions to detect technologies
+    const sessions = await prisma.session.findMany({
       where: {
         machineId,
-        lastUsed: { gte: cutoffDate }
+        startedAt: { gte: cutoffDate }
+      },
+      select: {
+        detectedTechs: true
       }
     });
 
-    const techs = new Set(techUsage.map(t => t.technology));
-    const recommendations: any[] = [];
+    // Aggregate technologies from sessions
+    const techSet = new Set<string>();
+    for (const session of sessions) {
+      try {
+        const techs = JSON.parse(session.detectedTechs) as string[];
+        techs.forEach(t => techSet.add(t));
+      } catch {
+        // Ignore parse errors
+      }
+    }
+
+    const recommendations: Array<{
+      category: string;
+      item: string;
+      title: string;
+      description: string;
+      detectedPatterns: string[];
+      occurrenceCount: number;
+      projectsAffected: string[];
+      timeSavings: number;
+      tokenSavings: number;
+      monthlySavings: number;
+      confidenceScore: number;
+      priority: string;
+      configTemplate: Record<string, unknown>;
+    }> = [];
 
     // Generate MCP recommendations
     for (const mcpRec of MCP_RECOMMENDATIONS) {
-      const pattern = usagePatterns.find(p => p.patternType === mcpRec.pattern);
+      const pattern = patterns.find(p => p.type === mcpRec.pattern);
 
       if (pattern && pattern.occurrences >= mcpRec.minOccurrences) {
         // Check if recommendation already exists and is not dismissed
-        const existing = await prisma.recommendation.findUnique({
+        const existing = await prisma.recommendation.findFirst({
           where: {
-            machineId_recommendedItem: {
-              machineId,
-              recommendedItem: mcpRec.item
-            }
+            machineId,
+            title: mcpRec.title,
+            status: { not: 'dismissed' }
           }
         });
 
-        if (existing && !forceRefresh && existing.status !== 'dismissed') {
+        if (existing && !forceRefresh) {
           continue; // Skip if already exists
         }
 
-        const projectsAffected = JSON.parse(pattern.projectIds) as string[];
+        const projectsAffected = JSON.parse(pattern.projectPaths) as string[];
         const confidence = Math.min(pattern.occurrences / (mcpRec.minOccurrences * 4), 1.0);
         const priority = pattern.occurrences >= mcpRec.minOccurrences * 4 ? 'critical' :
                         pattern.occurrences >= mcpRec.minOccurrences * 2 ? 'high' :
                         'medium';
 
         const dailyOccurrences = pattern.occurrences / daysBack;
-        const dailySavings = Math.round(dailyOccurrences * mcpRec.tokenSavings);
-        const monthlySavings = dailySavings * 30;
+        const monthlySavings = Math.round(dailyOccurrences * mcpRec.tokenSavings * 30);
 
-        const reason = mcpRec.reasonTemplate
+        const description = mcpRec.descriptionTemplate
           .replace('{count}', pattern.occurrences.toString())
           .replace('{days}', daysBack.toString());
 
         recommendations.push({
-          type: 'mcp_server',
+          category: 'mcp_server',
           item: mcpRec.item,
-          category: mcpRec.category,
           title: mcpRec.title,
-          reason,
+          description,
           detectedPatterns: [mcpRec.pattern],
           occurrenceCount: pattern.occurrences,
           projectsAffected,
           timeSavings: mcpRec.timeSavings,
           tokenSavings: mcpRec.tokenSavings,
-          dailySavings,
           monthlySavings,
           confidenceScore: confidence,
           priority,
@@ -244,48 +267,44 @@ export async function POST(request: NextRequest) {
 
     // Generate skill recommendations
     for (const skillRec of SKILL_RECOMMENDATIONS) {
-      const pattern = usagePatterns.find(p => p.patternType === skillRec.pattern);
+      const pattern = patterns.find(p => p.type === skillRec.pattern);
 
       if (pattern && pattern.occurrences >= skillRec.minOccurrences) {
-        const existing = await prisma.recommendation.findUnique({
+        const existing = await prisma.recommendation.findFirst({
           where: {
-            machineId_recommendedItem: {
-              machineId,
-              recommendedItem: skillRec.item
-            }
+            machineId,
+            title: skillRec.title,
+            status: { not: 'dismissed' }
           }
         });
 
-        if (existing && !forceRefresh && existing.status !== 'dismissed') {
+        if (existing && !forceRefresh) {
           continue;
         }
 
-        const projectsAffected = JSON.parse(pattern.projectIds) as string[];
+        const projectsAffected = JSON.parse(pattern.projectPaths) as string[];
         const confidence = Math.min(pattern.occurrences / (skillRec.minOccurrences * 4), 1.0);
         const priority = pattern.occurrences >= skillRec.minOccurrences * 4 ? 'critical' :
                         pattern.occurrences >= skillRec.minOccurrences * 2 ? 'high' :
                         'medium';
 
         const dailyOccurrences = pattern.occurrences / daysBack;
-        const dailySavings = Math.round(dailyOccurrences * skillRec.tokenSavings);
-        const monthlySavings = dailySavings * 30;
+        const monthlySavings = Math.round(dailyOccurrences * skillRec.tokenSavings * 30);
 
-        const reason = skillRec.reasonTemplate
+        const description = skillRec.descriptionTemplate
           .replace('{count}', pattern.occurrences.toString())
           .replace('{days}', daysBack.toString());
 
         recommendations.push({
-          type: 'skill',
+          category: 'skill',
           item: skillRec.item,
-          category: skillRec.category,
           title: skillRec.title,
-          reason,
+          description,
           detectedPatterns: [skillRec.pattern],
           occurrenceCount: pattern.occurrences,
           projectsAffected,
           timeSavings: skillRec.timeSavings,
           tokenSavings: skillRec.tokenSavings,
-          dailySavings,
           monthlySavings,
           confidenceScore: confidence,
           priority,
@@ -297,45 +316,41 @@ export async function POST(request: NextRequest) {
     // Save recommendations to database
     const savedRecommendations = [];
     for (const rec of recommendations) {
-      const saved = await prisma.recommendation.upsert({
-        where: {
-          machineId_recommendedItem: {
-            machineId,
-            recommendedItem: rec.item
-          }
-        },
-        update: {
-          occurrenceCount: rec.occurrenceCount,
-          confidenceScore: rec.confidenceScore,
-          priority: rec.priority,
-          reason: rec.reason,
-          dailySavings: rec.dailySavings,
-          monthlySavings: rec.monthlySavings,
-          detectedPatterns: JSON.stringify(rec.detectedPatterns),
-          projectsAffected: JSON.stringify(rec.projectsAffected),
-          status: 'active',
-          updatedAt: new Date()
-        },
-        create: {
+      const evidence = {
+        patterns: rec.detectedPatterns,
+        occurrences: rec.occurrenceCount,
+        projects: rec.projectsAffected
+      };
+
+      const saved = await prisma.recommendation.create({
+        data: {
           machineId,
-          type: rec.type,
-          recommendedItem: rec.item,
           category: rec.category,
           title: rec.title,
-          reason: rec.reason,
-          detectedPatterns: JSON.stringify(rec.detectedPatterns),
-          occurrenceCount: rec.occurrenceCount,
-          projectsAffected: JSON.stringify(rec.projectsAffected),
-          timeSavings: rec.timeSavings,
-          tokenSavings: rec.tokenSavings,
-          dailySavings: rec.dailySavings,
-          monthlySavings: rec.monthlySavings,
-          confidenceScore: rec.confidenceScore,
+          description: rec.description,
           priority: rec.priority,
-          status: 'active',
-          configTemplate: JSON.stringify(rec.configTemplate)
+          evidence: JSON.stringify(evidence),
+          estimatedTokenSavings: rec.monthlySavings,
+          estimatedTimeSavings: rec.timeSavings,
+          confidenceScore: rec.confidenceScore,
+          configType: rec.category,
+          configData: JSON.stringify(rec.configTemplate),
+          status: 'active'
         }
       });
+
+      // Mark the pattern as having a recommendation
+      for (const patternType of rec.detectedPatterns) {
+        await prisma.pattern.updateMany({
+          where: {
+            machineId,
+            type: patternType
+          },
+          data: {
+            hasRecommendation: true
+          }
+        });
+      }
 
       savedRecommendations.push({
         ...saved,
@@ -346,19 +361,17 @@ export async function POST(request: NextRequest) {
     }
 
     // Calculate totals
-    const totalDailySavings = savedRecommendations.reduce((sum, r) => sum + r.dailySavings, 0);
-    const totalMonthlySavings = savedRecommendations.reduce((sum, r) => sum + r.monthlySavings, 0);
+    const totalMonthlySavings = savedRecommendations.reduce((sum, r) => sum + r.estimatedTokenSavings, 0);
 
     return NextResponse.json({
       success: true,
       count: savedRecommendations.length,
       recommendations: savedRecommendations,
       summary: {
-        patternsAnalyzed: usagePatterns.length,
-        technologiesDetected: techs.size,
-        mcpRecommendations: savedRecommendations.filter(r => r.type === 'mcp_server').length,
-        skillRecommendations: savedRecommendations.filter(r => r.type === 'skill').length,
-        totalDailySavings,
+        patternsAnalyzed: patterns.length,
+        technologiesDetected: techSet.size,
+        mcpRecommendations: savedRecommendations.filter(r => r.category === 'mcp_server').length,
+        skillRecommendations: savedRecommendations.filter(r => r.category === 'skill').length,
         totalMonthlySavings,
         periodDays: daysBack
       }

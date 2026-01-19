@@ -26,11 +26,26 @@ export async function GET() {
       },
       select: {
         status: true,
-        tokensSaved: true,
-        projectsProcessed: true,
+        result: true,
         durationMs: true
       }
     });
+
+    // Parse results and aggregate stats
+    let tokensSaved = 0;
+    let projectsProcessed = 0;
+
+    for (const exec of recentExecutions) {
+      if (exec.result) {
+        try {
+          const result = JSON.parse(exec.result);
+          tokensSaved += result.tokensSaved || 0;
+          projectsProcessed += result.projectsProcessed || result.analyzed || 0;
+        } catch {
+          // Ignore parse errors
+        }
+      }
+    }
 
     const todayStats = {
       total: recentExecutions.length,
@@ -38,8 +53,8 @@ export async function GET() {
       failed: recentExecutions.filter(e => e.status === 'failed').length,
       running: recentExecutions.filter(e => e.status === 'running').length,
       pending: recentExecutions.filter(e => e.status === 'pending').length,
-      tokensSaved: recentExecutions.reduce((sum, e) => sum + e.tokensSaved, 0),
-      projectsProcessed: recentExecutions.reduce((sum, e) => sum + e.projectsProcessed, 0)
+      tokensSaved,
+      projectsProcessed
     };
 
     // Get currently running tasks
@@ -71,12 +86,6 @@ export async function GET() {
       }
     });
 
-    // Get webhook counts
-    const [totalWebhooks, enabledWebhooks] = await Promise.all([
-      prisma.webhookConfig.count(),
-      prisma.webhookConfig.count({ where: { enabled: true } })
-    ]);
-
     // TODO: Get actual scheduler running state from scheduler engine (Terminal 2)
     // For now, return a default state
     const schedulerRunning = true; // Placeholder
@@ -91,10 +100,6 @@ export async function GET() {
         total: totalTasks,
         enabled: enabledTasks,
         disabled: disabledTasks
-      },
-      webhooks: {
-        total: totalWebhooks,
-        enabled: enabledWebhooks
       },
       today: todayStats,
       running: runningTasks.map(e => ({

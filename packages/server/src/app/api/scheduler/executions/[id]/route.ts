@@ -24,16 +24,16 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
             taskType: true,
             scheduleType: true,
             cronExpression: true,
-            intervalMinutes: true,
-            taskConfig: true
-          }
-        },
-        machine: {
-          select: {
-            id: true,
-            name: true,
-            hostname: true,
-            platform: true
+            intervalHours: true,
+            taskConfig: true,
+            machine: {
+              select: {
+                id: true,
+                name: true,
+                hostname: true,
+                platform: true
+              }
+            }
           }
         }
       }
@@ -50,7 +50,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const parsedExecution = {
       ...execution,
       result: execution.result ? JSON.parse(execution.result) : null,
-      notificationsSent: execution.notificationsSent ? JSON.parse(execution.notificationsSent) : null,
       task: {
         ...execution.task,
         taskConfig: execution.task.taskConfig ? JSON.parse(execution.task.taskConfig) : {}
@@ -96,10 +95,10 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    // Only allow retry of failed or skipped executions
-    if (!['failed', 'skipped'].includes(originalExecution.status)) {
+    // Only allow retry of failed executions
+    if (originalExecution.status !== 'failed') {
       return NextResponse.json(
-        { error: 'Can only retry failed or skipped executions' },
+        { error: 'Can only retry failed executions' },
         { status: 400 }
       );
     }
@@ -116,7 +115,6 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const newExecution = await prisma.taskExecution.create({
       data: {
         taskId: originalExecution.taskId,
-        machineId: originalExecution.machineId,
         status: 'pending',
         triggerType: 'manual' // Retry is considered a manual trigger
       }

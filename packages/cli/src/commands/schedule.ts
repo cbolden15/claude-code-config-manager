@@ -15,7 +15,7 @@ interface ScheduledTask {
   taskType: 'analyze' | 'optimize' | 'health_check' | 'custom';
   scheduleType: 'cron' | 'interval' | 'threshold' | 'manual';
   cronExpression: string | null;
-  intervalMinutes: number | null;
+  intervalHours: number | null;
   thresholdMetric: string | null;
   thresholdValue: number | null;
   thresholdOperator: string | null;
@@ -129,14 +129,14 @@ function formatSchedule(task: ScheduledTask): string {
   if (task.scheduleType === 'cron' && task.cronExpression) {
     return `cron: ${task.cronExpression}`;
   }
-  if (task.scheduleType === 'interval' && task.intervalMinutes) {
-    if (task.intervalMinutes >= 1440) {
-      return `every ${Math.floor(task.intervalMinutes / 1440)}d`;
+  if (task.scheduleType === 'interval' && task.intervalHours) {
+    if (task.intervalHours >= 1440) {
+      return `every ${Math.floor(task.intervalHours / 1440)}d`;
     }
-    if (task.intervalMinutes >= 60) {
-      return `every ${Math.floor(task.intervalMinutes / 60)}h`;
+    if (task.intervalHours >= 60) {
+      return `every ${Math.floor(task.intervalHours / 60)}h`;
     }
-    return `every ${task.intervalMinutes}m`;
+    return `every ${task.intervalHours}m`;
   }
   if (task.scheduleType === 'threshold') {
     return `${task.thresholdMetric} ${task.thresholdOperator} ${task.thresholdValue}`;
@@ -268,7 +268,7 @@ export function createScheduleCommand(): Command {
         };
 
         if (options.cron) taskData.cronExpression = options.cron;
-        if (options.interval) taskData.intervalMinutes = options.interval;
+        if (options.interval) taskData.intervalHours = options.interval;
         if (options.thresholdMetric) taskData.thresholdMetric = options.thresholdMetric;
         if (options.thresholdValue) taskData.thresholdValue = options.thresholdValue;
         if (options.thresholdOperator) taskData.thresholdOperator = options.thresholdOperator;

@@ -5,93 +5,39 @@ import { z } from 'zod';
 const CreateProjectSchema = z.object({
   name: z.string().min(1).max(100),
   path: z.string().min(1),
-  machine: z.string().min(1),
-  profileId: z.string().optional().nullable(),
+  machineId: z.string().min(1),
 });
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const machine = searchParams.get('machine');
-    const profileId = searchParams.get('profileId');
-    const includeAutoClaudeData = searchParams.get('includeAutoClaudeData') === 'true';
+    const machineId = searchParams.get('machineId');
 
     const where: Record<string, unknown> = {};
 
-    if (machine) {
-      where.machine = machine;
-    }
-
-    if (profileId) {
-      where.profileId = profileId;
+    if (machineId) {
+      where.machineId = machineId;
     }
 
     const projects = await prisma.project.findMany({
       where,
       include: {
-        profile: {
-          select: { id: true, name: true },
+        machine: {
+          select: { id: true, name: true, hostname: true, platform: true },
         },
       },
-      orderBy: [{ machine: 'asc' }, { name: 'asc' }],
+      orderBy: [{ lastActiveAt: 'desc' }, { name: 'asc' }],
     });
 
-    // If Auto-Claude data is requested, fetch the related components
-    if (includeAutoClaudeData) {
-      const projectsWithAutoClaudeData = await Promise.all(
-        projects.map(async (project) => {
-          let autoClaudeConfig = null;
-          let modelProfile = null;
-
-          // Fetch Auto-Claude project config
-          if (project.autoClaudeConfigId) {
-            try {
-              const config = await prisma.component.findUnique({
-                where: { id: project.autoClaudeConfigId },
-                select: { id: true, name: true, config: true },
-              });
-              if (config) {
-                autoClaudeConfig = {
-                  ...config,
-                  config: JSON.parse(config.config),
-                };
-              }
-            } catch (err) {
-              console.warn(`Failed to fetch Auto-Claude config for project ${project.id}:`, err);
-            }
-          }
-
-          // Fetch model profile
-          if (project.modelProfileId) {
-            try {
-              const profile = await prisma.component.findUnique({
-                where: { id: project.modelProfileId },
-                select: { id: true, name: true, description: true },
-              });
-              if (profile) {
-                modelProfile = profile;
-              }
-            } catch (err) {
-              console.warn(`Failed to fetch model profile for project ${project.id}:`, err);
-            }
-          }
-
-          return {
-            ...project,
-            autoClaudeConfig,
-            modelProfile,
-          };
-        })
-      );
-
-      return NextResponse.json({
-        projects: projectsWithAutoClaudeData,
-        total: projectsWithAutoClaudeData.length,
-      });
-    }
+    // Parse JSON fields
+    const projectsWithParsedFields = projects.map(project => ({
+      ...project,
+      detectedTechs: project.detectedTechs ? JSON.parse(project.detectedTechs) : [],
+      detectedPatterns: project.detectedPatterns ? JSON.parse(project.detectedPatterns) : [],
+    }));
 
     return NextResponse.json({
-      projects,
+      projects: projectsWithParsedFields,
       total: projects.length,
     });
   } catch (error) {
@@ -108,34 +54,67 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validated = CreateProjectSchema.parse(body);
 
-    // Verify profile exists if provided
-    if (validated.profileId) {
-      const profile = await prisma.profile.findUnique({
-        where: { id: validated.profileId },
-      });
-      if (!profile) {
-        return NextResponse.json(
-          { error: 'Profile not found' },
-          { status: 404 }
-        );
-      }
+    // Verify machine exists
+    const machine = await prisma.machine.findUnique({
+      where: { id: validated.machineId },
+    });
+    if (!machine) {
+      return NextResponse.json(
+        { error: 'Machine not found' },
+        { status: 404 }
+      );
     }
 
+    // Check for existing project with same path on this machine
+    const existing = await prisma.project.findFirst({
+      where: {
+        path: validated.path,
+        machineId: validated.machineId,
+      },
+    });
+
+    if (existing) {
+      // Update existing project
+      const updated = await prisma.project.update({
+        where: { id: existing.id },
+        data: {
+          name: validated.name,
+          lastActiveAt: new Date(),
+        },
+        include: {
+          machine: {
+            select: { id: true, name: true, hostname: true, platform: true },
+          },
+        },
+      });
+
+      return NextResponse.json({
+        ...updated,
+        detectedTechs: updated.detectedTechs ? JSON.parse(updated.detectedTechs) : [],
+        detectedPatterns: updated.detectedPatterns ? JSON.parse(updated.detectedPatterns) : [],
+      });
+    }
+
+    // Create new project
     const project = await prisma.project.create({
       data: {
         name: validated.name,
         path: validated.path,
-        machine: validated.machine,
-        profileId: validated.profileId ?? null,
+        machineId: validated.machineId,
+        lastActiveAt: new Date(),
       },
       include: {
-        profile: {
-          select: { id: true, name: true },
+        machine: {
+          select: { id: true, name: true, hostname: true, platform: true },
         },
       },
     });
 
-    return NextResponse.json(project, { status: 201 });
+    return NextResponse.json({
+      ...project,
+      detectedTechs: [],
+      detectedPatterns: [],
+    }, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(

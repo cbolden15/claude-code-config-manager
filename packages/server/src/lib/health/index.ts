@@ -57,10 +57,10 @@ export async function getQuickHealthCheck(
     // No health score exists, calculate it
     const calculated = await calculateHealthScore(machineId);
     return {
-      score: calculated.totalScore,
+      score: calculated.score,
       trend: calculated.trend,
       activeIssues: calculated.activeRecommendations,
-      potentialSavings: calculated.estimatedDailyWaste,
+      potentialSavings: calculated.estimatedMonthlyWaste,
       lastUpdated: new Date(),
       needsRecalculation: false
     };
@@ -72,10 +72,10 @@ export async function getQuickHealthCheck(
   const needsRecalculation = hoursSinceUpdate > 24;
 
   return {
-    score: latest.totalScore,
+    score: latest.score,
     trend: latest.trend as 'improving' | 'stable' | 'declining',
     activeIssues: latest.activeRecommendations,
-    potentialSavings: latest.estimatedDailyWaste,
+    potentialSavings: latest.estimatedMonthlyWaste,
     lastUpdated: latest.timestamp,
     needsRecalculation
   };
@@ -101,15 +101,15 @@ export async function refreshHealthScoreIfStale(
       // Score is still fresh, return existing data
       // Convert database record to HealthScoreResult format
       return {
-        totalScore: latest.totalScore,
+        score: latest.score,
         mcpScore: latest.mcpScore,
         skillScore: latest.skillScore,
         contextScore: latest.contextScore,
         patternScore: latest.patternScore,
         activeRecommendations: latest.activeRecommendations,
         appliedRecommendations: latest.appliedRecommendations,
-        estimatedDailyWaste: latest.estimatedDailyWaste,
-        estimatedDailySavings: latest.estimatedDailySavings,
+        estimatedMonthlyWaste: latest.estimatedMonthlyWaste,
+        estimatedMonthlySavings: latest.estimatedMonthlySavings,
         previousScore: latest.previousScore,
         trend: latest.trend as 'improving' | 'stable' | 'declining',
         breakdown: {
@@ -130,7 +130,7 @@ export async function refreshHealthScoreIfStale(
           context: {
             score: latest.contextScore,
             avgTokensPerSession: 0,
-            startupTokens: 0,
+            contextTokens: 0,
             details: ''
           },
           patterns: {
@@ -145,7 +145,7 @@ export async function refreshHealthScoreIfStale(
           high: 0,
           medium: 0,
           low: 0,
-          byType: { mcp_server: 0, skill: 0 },
+          byCategory: { mcp_server: 0, skill: 0 },
           topRecommendation: null
         }
       };
@@ -183,15 +183,15 @@ export async function compareHealthScores(
     machine1: score1,
     machine2: score2,
     comparison: {
-      totalDiff: score1.totalScore - score2.totalScore,
+      totalDiff: score1.score - score2.score,
       mcpDiff: score1.mcpScore - score2.mcpScore,
       skillDiff: score1.skillScore - score2.skillScore,
       contextDiff: score1.contextScore - score2.contextScore,
       patternDiff: score1.patternScore - score2.patternScore,
       winner:
-        score1.totalScore > score2.totalScore
+        score1.score > score2.score
           ? 'machine1'
-          : score2.totalScore > score1.totalScore
+          : score2.score > score1.score
             ? 'machine2'
             : 'tie'
     }
@@ -250,7 +250,7 @@ export async function getAggregateHealthStats(): Promise<{
     };
   }
 
-  const scores = validScores.map(s => s!.totalScore);
+  const scores = validScores.map(s => s!.score);
   const distribution = { excellent: 0, good: 0, fair: 0, needsWork: 0 };
 
   for (const score of scores) {
@@ -272,7 +272,7 @@ export async function getAggregateHealthStats(): Promise<{
       0
     ),
     totalPotentialSavings: validScores.reduce(
-      (sum, s) => sum + (s?.estimatedDailyWaste || 0),
+      (sum, s) => sum + (s?.estimatedMonthlyWaste || 0),
       0
     ),
     scoreDistribution: distribution

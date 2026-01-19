@@ -10,15 +10,11 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = request.nextUrl;
     const platform = searchParams.get('platform');
-    const syncEnabledParam = searchParams.get('syncEnabled');
 
     // Build dynamic where clause
-    const where: any = {};
+    const where: Record<string, unknown> = {};
     if (platform) {
       where.platform = platform;
-    }
-    if (syncEnabledParam !== null) {
-      where.syncEnabled = syncEnabledParam === 'true';
     }
 
     // Fetch machines with counts
@@ -27,8 +23,10 @@ export async function GET(request: NextRequest) {
       include: {
         _count: {
           select: {
-            overrides: true,
-            syncLogs: true
+            projects: true,
+            sessions: true,
+            recommendations: true,
+            appliedConfigs: true
           }
         }
       },
@@ -44,15 +42,13 @@ export async function GET(request: NextRequest) {
       const hoursSinceLastSeen = (Date.now() - lastSeenDate.getTime()) / (1000 * 60 * 60);
       return hoursSinceLastSeen < 24; // Active if seen in last 24 hours
     }).length;
-    const syncEnabledCount = machines.filter(m => m.syncEnabled).length;
 
     return NextResponse.json({
       machines,
       total: totalMachines,
       stats: {
         totalMachines,
-        activeMachines,
-        syncEnabled: syncEnabledCount
+        activeMachines
       }
     });
   } catch (error) {
@@ -86,14 +82,7 @@ export async function POST(request: NextRequest) {
 
     // Check if machine with same name exists
     const existing = await prisma.machine.findUnique({
-      where: { name: validated.name },
-      include: {
-        overrides: true,
-        syncLogs: {
-          orderBy: { startedAt: 'desc' },
-          take: 10
-        }
-      }
+      where: { name: validated.name }
     });
 
     if (existing) {
@@ -109,10 +98,13 @@ export async function POST(request: NextRequest) {
           ...(validated.isCurrentMachine !== undefined && { isCurrentMachine: validated.isCurrentMachine })
         },
         include: {
-          overrides: true,
-          syncLogs: {
-            orderBy: { startedAt: 'desc' },
-            take: 10
+          _count: {
+            select: {
+              projects: true,
+              sessions: true,
+              recommendations: true,
+              appliedConfigs: true
+            }
           }
         }
       });
@@ -136,14 +128,16 @@ export async function POST(request: NextRequest) {
         platform: validated.platform,
         arch: validated.arch,
         homeDir: validated.homeDir,
-        isCurrentMachine: validated.isCurrentMachine,
-        syncEnabled: true
+        isCurrentMachine: validated.isCurrentMachine
       },
       include: {
-        overrides: true,
-        syncLogs: {
-          orderBy: { startedAt: 'desc' },
-          take: 10
+        _count: {
+          select: {
+            projects: true,
+            sessions: true,
+            recommendations: true,
+            appliedConfigs: true
+          }
         }
       }
     });

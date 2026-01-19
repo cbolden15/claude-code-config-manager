@@ -20,9 +20,9 @@ export interface CrossProjectAnalysis {
   projectCount: number;
   /** Total number of sessions analyzed */
   sessionCount: number;
-  /** Technologies by project ID */
+  /** Technologies by project path */
   techByProject: Record<string, string[]>;
-  /** Patterns by project ID */
+  /** Patterns by project path */
   projectPatterns: Record<string, string[]>;
   /** Average session duration in seconds */
   avgSessionDuration: number;
@@ -37,8 +37,6 @@ export interface CrossProjectAnalysis {
   };
   /** Token breakdown */
   tokenBreakdown: {
-    startup: number;
-    tool: number;
     context: number;
     total: number;
   };
@@ -60,8 +58,8 @@ export interface TechnologySummary {
  * Project-level analysis result
  */
 export interface ProjectAnalysis {
-  projectId: string;
-  projectPath: string | null;
+  projectPath: string;
+  projectName: string | null;
   sessionCount: number;
   technologies: string[];
   patterns: string[];
@@ -98,12 +96,12 @@ export async function analyzeCrossProject(
   cutoffDate.setDate(cutoffDate.getDate() - daysBack);
 
   // Get all sessions from specified period
-  const sessions = await prisma.sessionActivity.findMany({
+  const sessions = await prisma.session.findMany({
     where: {
       machineId,
-      timestamp: { gte: cutoffDate }
+      startedAt: { gte: cutoffDate }
     },
-    orderBy: { timestamp: 'desc' }
+    orderBy: { startedAt: 'desc' }
   });
 
   if (sessions.length === 0) {
@@ -118,7 +116,7 @@ export async function analyzeCrossProject(
       totalTokensUsed: 0,
       avgTokensPerSession: 0,
       dateRange: { start: cutoffDate, end: new Date() },
-      tokenBreakdown: { startup: 0, tool: 0, context: 0, total: 0 }
+      tokenBreakdown: { context: 0, total: 0 }
     };
   }
 
@@ -130,12 +128,12 @@ export async function analyzeCrossProject(
     const techs = safeParseArray(session.detectedTechs);
     techs.forEach(t => allTechs.add(t));
 
-    const projectId = session.projectId;
-    if (projectId) {
-      if (!techByProject.has(projectId)) {
-        techByProject.set(projectId, new Set());
+    const projectPath = session.projectPath;
+    if (projectPath) {
+      if (!techByProject.has(projectPath)) {
+        techByProject.set(projectPath, new Set());
       }
-      techs.forEach(t => techByProject.get(projectId)!.add(t));
+      techs.forEach(t => techByProject.get(projectPath)!.add(t));
     }
   }
 
@@ -145,38 +143,36 @@ export async function analyzeCrossProject(
   // Aggregate patterns by project
   const projectPatterns = new Map<string, Set<string>>();
   for (const session of sessions) {
-    const projectId = session.projectId;
-    if (!projectId) continue;
+    const projectPath = session.projectPath;
+    if (!projectPath) continue;
 
     const sessionPatterns = safeParseArray(session.detectedPatterns);
-    if (!projectPatterns.has(projectId)) {
-      projectPatterns.set(projectId, new Set());
+    if (!projectPatterns.has(projectPath)) {
+      projectPatterns.set(projectPath, new Set());
     }
     sessionPatterns.forEach(p =>
-      projectPatterns.get(projectId)!.add(p)
+      projectPatterns.get(projectPath)!.add(p)
     );
   }
 
   // Calculate statistics
   const avgSessionDuration = sessions.length > 0
-    ? sessions.reduce((sum, s) => sum + s.duration, 0) / sessions.length
+    ? sessions.reduce((sum, s) => sum + (s.duration || 0), 0) / sessions.length
     : 0;
 
-  const totalTokensUsed = sessions.reduce((sum, s) => sum + s.totalTokens, 0);
+  const totalTokensUsed = sessions.reduce((sum, s) => sum + s.tokensUsed, 0);
   const avgTokensPerSession = sessions.length > 0
     ? totalTokensUsed / sessions.length
     : 0;
 
   // Token breakdown
   const tokenBreakdown = {
-    startup: sessions.reduce((sum, s) => sum + s.startupTokens, 0),
-    tool: sessions.reduce((sum, s) => sum + s.toolTokens, 0),
     context: sessions.reduce((sum, s) => sum + s.contextTokens, 0),
     total: totalTokensUsed
   };
 
   // Get date range
-  const timestamps = sessions.map(s => s.timestamp);
+  const timestamps = sessions.map(s => s.startedAt);
   const dateRange = {
     start: new Date(Math.min(...timestamps.map(d => d.getTime()))),
     end: new Date(Math.max(...timestamps.map(d => d.getTime())))
@@ -211,16 +207,16 @@ export async function getTechnologySummary(
   const cutoffDate = new Date();
   cutoffDate.setDate(cutoffDate.getDate() - daysBack);
 
-  const sessions = await prisma.sessionActivity.findMany({
+  const sessions = await prisma.session.findMany({
     where: {
       machineId,
-      timestamp: { gte: cutoffDate }
+      startedAt: { gte: cutoffDate }
     }
   });
 
   // Aggregate technology usage
   const techStats = new Map<string, {
-    projectIds: Set<string>;
+    projectPaths: Set<string>;
     sessionCount: number;
     commandCount: number;
     lastUsed: Date | null;
@@ -235,7 +231,7 @@ export async function getTechnologySummary(
     for (const tech of techs) {
       if (!techStats.has(tech)) {
         techStats.set(tech, {
-          projectIds: new Set(),
+          projectPaths: new Set(),
           sessionCount: 0,
           commandCount: 0,
           lastUsed: null,
@@ -246,8 +242,8 @@ export async function getTechnologySummary(
       const stats = techStats.get(tech)!;
       stats.sessionCount++;
 
-      if (session.projectId) {
-        stats.projectIds.add(session.projectId);
+      if (session.projectPath) {
+        stats.projectPaths.add(session.projectPath);
       }
 
       // Count related commands
@@ -255,8 +251,8 @@ export async function getTechnologySummary(
       stats.commandCount += techCommands.length;
 
       // Track last used
-      if (!stats.lastUsed || session.timestamp > stats.lastUsed) {
-        stats.lastUsed = session.timestamp;
+      if (!stats.lastUsed || session.startedAt > stats.lastUsed) {
+        stats.lastUsed = session.startedAt;
       }
 
       // Track related patterns
@@ -268,7 +264,7 @@ export async function getTechnologySummary(
   return Array.from(techStats.entries())
     .map(([technology, stats]) => ({
       technology,
-      projectCount: stats.projectIds.size,
+      projectCount: stats.projectPaths.size,
       sessionCount: stats.sessionCount,
       commandCount: stats.commandCount,
       lastUsed: stats.lastUsed,
@@ -287,55 +283,55 @@ export async function getProjectAnalyses(
   const cutoffDate = new Date();
   cutoffDate.setDate(cutoffDate.getDate() - daysBack);
 
-  const sessions = await prisma.sessionActivity.findMany({
+  const sessions = await prisma.session.findMany({
     where: {
       machineId,
-      timestamp: { gte: cutoffDate },
-      projectId: { not: null }
+      startedAt: { gte: cutoffDate },
+      projectPath: { not: null }
     }
   });
 
-  // Group sessions by project
+  // Group sessions by project path
   const projectSessions = new Map<string, typeof sessions>();
 
   for (const session of sessions) {
-    if (!session.projectId) continue;
+    if (!session.projectPath) continue;
 
-    if (!projectSessions.has(session.projectId)) {
-      projectSessions.set(session.projectId, []);
+    if (!projectSessions.has(session.projectPath)) {
+      projectSessions.set(session.projectPath, []);
     }
-    projectSessions.get(session.projectId)!.push(session);
+    projectSessions.get(session.projectPath)!.push(session);
   }
 
   // Analyze each project
   const analyses: ProjectAnalysis[] = [];
 
-  for (const [projectId, projectSessionList] of projectSessions) {
+  for (const [projectPath, projectSessionList] of projectSessions) {
     const technologies = new Set<string>();
     const patterns = new Set<string>();
     let totalTokens = 0;
     let totalDuration = 0;
     let lastActivity: Date | null = null;
-    let projectPath: string | null = null;
+    let projectName: string | null = null;
 
     for (const session of projectSessionList) {
       safeParseArray(session.detectedTechs).forEach(t => technologies.add(t));
       safeParseArray(session.detectedPatterns).forEach(p => patterns.add(p));
-      totalTokens += session.totalTokens;
-      totalDuration += session.duration;
+      totalTokens += session.tokensUsed;
+      totalDuration += session.duration || 0;
 
-      if (!lastActivity || session.timestamp > lastActivity) {
-        lastActivity = session.timestamp;
+      if (!lastActivity || session.startedAt > lastActivity) {
+        lastActivity = session.startedAt;
       }
 
-      if (session.projectPath) {
-        projectPath = session.projectPath;
+      if (session.projectName) {
+        projectName = session.projectName;
       }
     }
 
     analyses.push({
-      projectId,
       projectPath,
+      projectName,
       sessionCount: projectSessionList.length,
       technologies: Array.from(technologies).sort(),
       patterns: Array.from(patterns).sort(),
@@ -360,28 +356,28 @@ export async function getProjectsByPattern(
   const cutoffDate = new Date();
   cutoffDate.setDate(cutoffDate.getDate() - daysBack);
 
-  const sessions = await prisma.sessionActivity.findMany({
+  const sessions = await prisma.session.findMany({
     where: {
       machineId,
-      timestamp: { gte: cutoffDate },
-      projectId: { not: null }
+      startedAt: { gte: cutoffDate },
+      projectPath: { not: null }
     },
     select: {
-      projectId: true,
+      projectPath: true,
       detectedPatterns: true
     }
   });
 
-  const projectIds = new Set<string>();
+  const projectPaths = new Set<string>();
 
   for (const session of sessions) {
     const patterns = safeParseArray(session.detectedPatterns);
-    if (patterns.includes(patternType) && session.projectId) {
-      projectIds.add(session.projectId);
+    if (patterns.includes(patternType) && session.projectPath) {
+      projectPaths.add(session.projectPath);
     }
   }
 
-  return Array.from(projectIds);
+  return Array.from(projectPaths);
 }
 
 /**
@@ -395,28 +391,28 @@ export async function getProjectsByTechnology(
   const cutoffDate = new Date();
   cutoffDate.setDate(cutoffDate.getDate() - daysBack);
 
-  const sessions = await prisma.sessionActivity.findMany({
+  const sessions = await prisma.session.findMany({
     where: {
       machineId,
-      timestamp: { gte: cutoffDate },
-      projectId: { not: null }
+      startedAt: { gte: cutoffDate },
+      projectPath: { not: null }
     },
     select: {
-      projectId: true,
+      projectPath: true,
       detectedTechs: true
     }
   });
 
-  const projectIds = new Set<string>();
+  const projectPaths = new Set<string>();
 
   for (const session of sessions) {
     const techs = safeParseArray(session.detectedTechs);
-    if (techs.includes(technology.toLowerCase()) && session.projectId) {
-      projectIds.add(session.projectId);
+    if (techs.includes(technology.toLowerCase()) && session.projectPath) {
+      projectPaths.add(session.projectPath);
     }
   }
 
-  return Array.from(projectIds);
+  return Array.from(projectPaths);
 }
 
 /**
@@ -430,30 +426,30 @@ export async function getTokenUsageTrend(
   const cutoffDate = new Date();
   cutoffDate.setDate(cutoffDate.getDate() - daysBack);
 
-  const sessions = await prisma.sessionActivity.findMany({
+  const sessions = await prisma.session.findMany({
     where: {
       machineId,
-      timestamp: { gte: cutoffDate }
+      startedAt: { gte: cutoffDate }
     },
     select: {
-      timestamp: true,
-      totalTokens: true
+      startedAt: true,
+      tokensUsed: true
     },
-    orderBy: { timestamp: 'asc' }
+    orderBy: { startedAt: 'asc' }
   });
 
   // Group by date
   const dailyData = new Map<string, { tokens: number; sessions: number }>();
 
   for (const session of sessions) {
-    const dateKey = session.timestamp.toISOString().split('T')[0];
+    const dateKey = session.startedAt.toISOString().split('T')[0];
 
     if (!dailyData.has(dateKey)) {
       dailyData.set(dateKey, { tokens: 0, sessions: 0 });
     }
 
     const day = dailyData.get(dateKey)!;
-    day.tokens += session.totalTokens;
+    day.tokens += session.tokensUsed;
     day.sessions++;
   }
 

@@ -64,7 +64,7 @@ export async function GET(request: NextRequest) {
         taskType: task.taskType,
         scheduleType: task.scheduleType,
         cronExpression: task.cronExpression,
-        intervalMinutes: task.intervalMinutes,
+        intervalHours: task.intervalHours,
         nextRunAt: task.nextRunAt,
         minutesUntilRun,
         hoursUntilRun: minutesUntilRun ? Math.round(minutesUntilRun / 60 * 10) / 10 : null,

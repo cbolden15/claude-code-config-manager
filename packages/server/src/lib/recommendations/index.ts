@@ -95,23 +95,12 @@ export async function generateAllRecommendations(
 
   const allRecs = [...mcpRecs, ...skillRecs];
 
-  // Calculate daily/monthly savings
-  for (const rec of allRecs) {
-    if (!rec.dailySavings) {
-      const dailyOccurrences = rec.occurrenceCount / daysBack;
-      rec.dailySavings = Math.round(dailyOccurrences * rec.tokenSavings);
-    }
-    if (!rec.monthlySavings) {
-      rec.monthlySavings = (rec.dailySavings || 0) * 30;
-    }
-  }
-
-  // Sort by priority and then by daily savings
+  // Sort by priority and then by token savings
   const priorityOrder = { critical: 0, high: 1, medium: 2, low: 3 };
   allRecs.sort((a, b) => {
     const priorityDiff = priorityOrder[a.priority] - priorityOrder[b.priority];
     if (priorityDiff !== 0) return priorityDiff;
-    return (b.dailySavings || 0) - (a.dailySavings || 0);
+    return (b.tokenSavings || 0) - (a.tokenSavings || 0);
   });
 
   let savedCount = 0;
@@ -120,54 +109,28 @@ export async function generateAllRecommendations(
   if (saveToDatabase) {
     for (const rec of allRecs) {
       try {
-        await prisma.recommendation.upsert({
-          where: {
-            machineId_recommendedItem: {
-              machineId,
-              recommendedItem: rec.recommendedItem
-            }
-          },
-          update: {
-            type: rec.type,
-            category: rec.category,
-            title: rec.title,
-            reason: rec.reason,
-            detectedPatterns: JSON.stringify(rec.detectedPatterns),
-            occurrenceCount: rec.occurrenceCount,
-            projectsAffected: JSON.stringify(rec.projectsAffected),
-            exampleUsage: rec.exampleUsage || null,
-            timeSavings: rec.timeSavings,
-            tokenSavings: rec.tokenSavings,
-            dailySavings: rec.dailySavings || 0,
-            monthlySavings: rec.monthlySavings || 0,
-            confidenceScore: rec.confidenceScore,
-            priority: rec.priority,
-            configTemplate: rec.configTemplate
-              ? JSON.stringify(rec.configTemplate)
-              : null,
-            updatedAt: new Date()
-          },
-          create: {
+        // Build evidence JSON
+        const evidence = {
+          patterns: rec.detectedPatterns,
+          occurrences: rec.occurrenceCount,
+          projects: rec.projectsAffected,
+          example: rec.exampleUsage
+        };
+
+        await prisma.recommendation.create({
+          data: {
             machineId,
-            type: rec.type,
-            recommendedItem: rec.recommendedItem,
-            category: rec.category,
+            category: rec.type,
             title: rec.title,
-            reason: rec.reason,
-            detectedPatterns: JSON.stringify(rec.detectedPatterns),
-            occurrenceCount: rec.occurrenceCount,
-            projectsAffected: JSON.stringify(rec.projectsAffected),
-            exampleUsage: rec.exampleUsage || null,
-            timeSavings: rec.timeSavings,
-            tokenSavings: rec.tokenSavings,
-            dailySavings: rec.dailySavings || 0,
-            monthlySavings: rec.monthlySavings || 0,
-            confidenceScore: rec.confidenceScore,
+            description: rec.reason,
             priority: rec.priority,
-            status: 'active',
-            configTemplate: rec.configTemplate
-              ? JSON.stringify(rec.configTemplate)
-              : null
+            evidence: JSON.stringify(evidence),
+            estimatedTokenSavings: rec.monthlySavings || rec.tokenSavings * 30,
+            estimatedTimeSavings: rec.timeSavings,
+            confidenceScore: rec.confidenceScore,
+            configType: rec.type,
+            configData: rec.configTemplate ? JSON.stringify(rec.configTemplate) : '{}',
+            status: 'active'
           }
         });
         savedCount++;
@@ -193,9 +156,8 @@ export async function generateAllRecommendations(
 export async function getActiveRecommendations(
   machineId: string,
   options?: {
-    type?: 'mcp_server' | 'skill';
+    category?: 'mcp_server' | 'skill';
     priority?: 'critical' | 'high' | 'medium' | 'low';
-    category?: string;
     limit?: number;
   }
 ) {
@@ -204,14 +166,11 @@ export async function getActiveRecommendations(
     status: 'active'
   };
 
-  if (options?.type) {
-    where.type = options.type;
+  if (options?.category) {
+    where.category = options.category;
   }
   if (options?.priority) {
     where.priority = options.priority;
-  }
-  if (options?.category) {
-    where.category = options.category;
   }
 
   return prisma.recommendation.findMany({
@@ -219,7 +178,7 @@ export async function getActiveRecommendations(
     orderBy: [
       { priority: 'asc' },
       { confidenceScore: 'desc' },
-      { dailySavings: 'desc' }
+      { estimatedTokenSavings: 'desc' }
     ],
     take: options?.limit
   });
@@ -237,19 +196,14 @@ export async function getRecommendationStats(machineId: string) {
   const applied = recommendations.filter(r => r.status === 'applied');
   const dismissed = recommendations.filter(r => r.status === 'dismissed');
 
-  const totalDailySavings = active.reduce((sum, r) => sum + r.dailySavings, 0);
-  const appliedDailySavings = applied.reduce((sum, r) => sum + r.dailySavings, 0);
+  const potentialMonthlySavings = active.reduce((sum, r) => sum + r.estimatedTokenSavings, 0);
+  const realizedMonthlySavings = applied.reduce((sum, r) => sum + r.estimatedTokenSavings, 0);
 
   const byPriority = {
     critical: active.filter(r => r.priority === 'critical').length,
     high: active.filter(r => r.priority === 'high').length,
     medium: active.filter(r => r.priority === 'medium').length,
     low: active.filter(r => r.priority === 'low').length
-  };
-
-  const byType = {
-    mcp_server: active.filter(r => r.type === 'mcp_server').length,
-    skill: active.filter(r => r.type === 'skill').length
   };
 
   const byCategory: Record<string, number> = {};
@@ -262,12 +216,9 @@ export async function getRecommendationStats(machineId: string) {
     active: active.length,
     applied: applied.length,
     dismissed: dismissed.length,
-    potentialDailySavings: totalDailySavings,
-    potentialMonthlySavings: totalDailySavings * 30,
-    realizedDailySavings: appliedDailySavings,
-    realizedMonthlySavings: appliedDailySavings * 30,
+    potentialMonthlySavings,
+    realizedMonthlySavings,
     byPriority,
-    byType,
     byCategory,
     averageConfidence: active.length > 0
       ? active.reduce((sum, r) => sum + r.confidenceScore, 0) / active.length
@@ -303,17 +254,16 @@ export async function applyRecommendation(
       }
     });
 
-    // Create impact metric to track results
-    await prisma.impactMetric.create({
+    // Create AppliedConfig to track the active configuration
+    await prisma.appliedConfig.create({
       data: {
         machineId: recommendation.machineId,
+        configType: recommendation.configType,
+        configName: recommendation.title,
+        configData: recommendation.configData,
         recommendationId: recommendation.id,
-        metricType: 'token_savings',
-        beforeValue: 0,
-        afterValue: 0,
-        improvement: 0,
-        measurementStart: new Date(),
-        measurementEnd: new Date()
+        source: 'recommendation',
+        enabled: true
       }
     });
 
@@ -384,21 +334,18 @@ export async function provideRecommendationFeedback(
     await prisma.recommendation.update({
       where: { id: recommendationId },
       data: {
-        wasUseful,
+        wasHelpful: wasUseful,
         actualSavings: actualSavings || null
       }
     });
 
-    // Update impact metric if we have actual savings
+    // Update AppliedConfig with usage data if we have actual savings
     if (actualSavings !== undefined) {
-      await prisma.impactMetric.updateMany({
+      await prisma.appliedConfig.updateMany({
         where: { recommendationId },
         data: {
-          afterValue: actualSavings,
-          improvement: recommendation.dailySavings > 0
-            ? (actualSavings / recommendation.dailySavings) * 100
-            : 0,
-          measurementEnd: new Date()
+          tokensSaved: actualSavings,
+          lastUsedAt: new Date()
         }
       });
     }
@@ -427,7 +374,7 @@ export async function archiveStaleRecommendations(
       updatedAt: { lt: cutoffDate }
     },
     data: {
-      status: 'archived'
+      status: 'expired'
     }
   });
 

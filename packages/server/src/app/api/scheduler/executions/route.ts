@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (status) {
-      const validStatuses = ['pending', 'running', 'completed', 'failed', 'skipped'];
+      const validStatuses = ['pending', 'running', 'completed', 'failed'];
       if (!validStatuses.includes(status)) {
         return NextResponse.json(
           { error: `status must be one of: ${validStatuses.join(', ')}` },
@@ -31,8 +31,9 @@ export async function GET(request: NextRequest) {
       where.status = status;
     }
 
+    // Filter by machine through task
     if (machineId) {
-      where.machineId = machineId;
+      where.task = { machineId };
     }
 
     // Get total count for pagination
@@ -45,14 +46,14 @@ export async function GET(request: NextRequest) {
           select: {
             id: true,
             name: true,
-            taskType: true
-          }
-        },
-        machine: {
-          select: {
-            id: true,
-            name: true,
-            hostname: true
+            taskType: true,
+            machine: {
+              select: {
+                id: true,
+                name: true,
+                hostname: true
+              }
+            }
           }
         }
       },
@@ -61,16 +62,43 @@ export async function GET(request: NextRequest) {
       skip: offset
     });
 
-    // Compute aggregate stats
+    // Parse result JSON and compute stats
+    const parsedExecutions = executions.map(exec => ({
+      ...exec,
+      result: exec.result ? JSON.parse(exec.result) : null
+    }));
+
+    // Compute aggregate stats from all matching executions
     const allExecutions = await prisma.taskExecution.findMany({
       where,
       select: {
         status: true,
-        tokensSaved: true,
-        projectsProcessed: true,
+        result: true,
         durationMs: true
       }
     });
+
+    // Parse results and aggregate stats
+    let totalTokensSaved = 0;
+    let totalProjectsProcessed = 0;
+    let totalDuration = 0;
+    let durationCount = 0;
+
+    for (const exec of allExecutions) {
+      if (exec.result) {
+        try {
+          const result = JSON.parse(exec.result);
+          totalTokensSaved += result.tokensSaved || 0;
+          totalProjectsProcessed += result.projectsProcessed || result.analyzed || 0;
+        } catch {
+          // Ignore parse errors
+        }
+      }
+      if (exec.durationMs) {
+        totalDuration += exec.durationMs;
+        durationCount++;
+      }
+    }
 
     const stats = {
       total,
@@ -78,15 +106,13 @@ export async function GET(request: NextRequest) {
       failed: allExecutions.filter(e => e.status === 'failed').length,
       running: allExecutions.filter(e => e.status === 'running').length,
       pending: allExecutions.filter(e => e.status === 'pending').length,
-      totalTokensSaved: allExecutions.reduce((sum, e) => sum + e.tokensSaved, 0),
-      totalProjectsProcessed: allExecutions.reduce((sum, e) => sum + e.projectsProcessed, 0),
-      avgDurationMs: allExecutions.length > 0
-        ? Math.round(allExecutions.reduce((sum, e) => sum + (e.durationMs || 0), 0) / allExecutions.filter(e => e.durationMs).length)
-        : 0
+      totalTokensSaved,
+      totalProjectsProcessed,
+      avgDurationMs: durationCount > 0 ? Math.round(totalDuration / durationCount) : 0
     };
 
     return NextResponse.json({
-      executions,
+      executions: parsedExecutions,
       pagination: {
         total,
         limit,

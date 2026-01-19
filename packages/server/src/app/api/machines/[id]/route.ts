@@ -8,7 +8,7 @@ type RouteParams = {
 
 /**
  * GET /api/machines/[id]
- * Get single machine details
+ * Get single machine details with summary stats
  */
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
@@ -17,12 +17,22 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const machine = await prisma.machine.findUnique({
       where: { id },
       include: {
-        overrides: {
-          orderBy: { createdAt: 'desc' }
-        },
-        syncLogs: {
-          orderBy: { startedAt: 'desc' },
+        projects: {
+          orderBy: { lastActiveAt: 'desc' },
           take: 10
+        },
+        healthScores: {
+          orderBy: { timestamp: 'desc' },
+          take: 1
+        },
+        _count: {
+          select: {
+            projects: true,
+            sessions: true,
+            patterns: true,
+            recommendations: true,
+            appliedConfigs: true
+          }
         }
       }
     });
@@ -34,7 +44,11 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    return NextResponse.json(machine);
+    return NextResponse.json({
+      ...machine,
+      latestHealthScore: machine.healthScores[0] || null,
+      healthScores: undefined // Don't include in response
+    });
   } catch (error) {
     console.error('[GET /api/machines/[id]]', error);
     return NextResponse.json(
@@ -55,7 +69,8 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     // Validation schema
     const MachineUpdateSchema = z.object({
-      syncEnabled: z.boolean().optional(),
+      name: z.string().min(1).optional(),
+      hostname: z.string().optional(),
       isCurrentMachine: z.boolean().optional()
     });
 
@@ -88,17 +103,10 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     const updated = await prisma.machine.update({
       where: { id },
       data: {
-        ...(validated.syncEnabled !== undefined && { syncEnabled: validated.syncEnabled }),
-        ...(validated.isCurrentMachine !== undefined && { isCurrentMachine: validated.isCurrentMachine })
-      },
-      include: {
-        overrides: {
-          orderBy: { createdAt: 'desc' }
-        },
-        syncLogs: {
-          orderBy: { startedAt: 'desc' },
-          take: 10
-        }
+        ...(validated.name && { name: validated.name }),
+        ...(validated.hostname !== undefined && { hostname: validated.hostname }),
+        ...(validated.isCurrentMachine !== undefined && { isCurrentMachine: validated.isCurrentMachine }),
+        lastSeen: new Date()
       }
     });
 
@@ -147,7 +155,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    // Delete machine (cascades to overrides and syncLogs)
+    // Delete machine (cascades to related records)
     await prisma.machine.delete({
       where: { id }
     });

@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
       orderBy: { timestamp: 'desc' },
       take: 30,
       select: {
-        totalScore: true,
+        score: true,
         mcpScore: true,
         skillScore: true,
         contextScore: true,
@@ -146,64 +146,70 @@ async function calculateHealthScore(machineId: string) {
     where: { machineId, status: 'applied' }
   });
 
+  // Get dismissed recommendations
+  const dismissedRecommendations = await prisma.recommendation.findMany({
+    where: { machineId, status: 'dismissed' }
+  });
+
   // Calculate MCP Score (0-100)
   // Higher score = fewer active MCP recommendations (more optimized)
-  const mcpActive = activeRecommendations.filter(r => r.type === 'mcp_server');
-  const mcpApplied = appliedRecommendations.filter(r => r.type === 'mcp_server');
+  const mcpActive = activeRecommendations.filter(r => r.category === 'mcp_server');
+  const mcpApplied = appliedRecommendations.filter(r => r.category === 'mcp_server');
   const mcpTotal = mcpActive.length + mcpApplied.length;
   const mcpScore = mcpTotal === 0 ? 100 : Math.round((mcpApplied.length / mcpTotal) * 100);
 
   // Calculate Skill Score (0-100)
-  const skillActive = activeRecommendations.filter(r => r.type === 'skill');
-  const skillApplied = appliedRecommendations.filter(r => r.type === 'skill');
+  const skillActive = activeRecommendations.filter(r => r.category === 'skill');
+  const skillApplied = appliedRecommendations.filter(r => r.category === 'skill');
   const skillTotal = skillActive.length + skillApplied.length;
   const skillScore = skillTotal === 0 ? 100 : Math.round((skillApplied.length / skillTotal) * 100);
 
   // Calculate Context Score (0-100)
-  // Based on context token efficiency - placeholder for now
-  // Would need actual context size tracking
-  const contextScore = 75;
+  const contextActive = activeRecommendations.filter(r => r.category === 'context');
+  const contextApplied = appliedRecommendations.filter(r => r.category === 'context');
+  const contextTotal = contextActive.length + contextApplied.length;
+  const contextScore = contextTotal === 0 ? 75 : Math.round((contextApplied.length / contextTotal) * 100);
 
   // Calculate Pattern Score (0-100)
   // Based on pattern optimization
-  const usagePatterns = await prisma.usagePattern.findMany({
+  const patterns = await prisma.pattern.findMany({
     where: { machineId }
   });
-  const highConfidencePatterns = usagePatterns.filter(p => p.confidence >= 0.8);
-  const patternScore = usagePatterns.length === 0
+  const highConfidencePatterns = patterns.filter(p => p.confidence >= 0.8);
+  const patternScore = patterns.length === 0
     ? 100
-    : Math.round((highConfidencePatterns.length / usagePatterns.length) * 100);
+    : Math.round((highConfidencePatterns.length / patterns.length) * 100);
 
   // Calculate total score (weighted average)
-  const totalScore = Math.round(
+  const score = Math.round(
     mcpScore * 0.35 +      // MCP optimization is most impactful
     skillScore * 0.30 +    // Skills provide significant savings
     contextScore * 0.20 +  // Context efficiency matters
     patternScore * 0.15    // Pattern optimization helps
   );
 
-  // Calculate estimated waste (tokens from active recommendations)
-  const estimatedDailyWaste = activeRecommendations.reduce(
-    (sum, r) => sum + r.dailySavings,
+  // Calculate estimated waste (tokens from active recommendations - monthly)
+  const estimatedMonthlyWaste = activeRecommendations.reduce(
+    (sum, r) => sum + r.estimatedTokenSavings,
     0
   );
 
-  // Calculate estimated savings (from applied recommendations)
-  const estimatedDailySavings = appliedRecommendations.reduce(
-    (sum, r) => sum + r.dailySavings,
+  // Calculate estimated savings (from applied recommendations - monthly)
+  const estimatedMonthlySavings = appliedRecommendations.reduce(
+    (sum, r) => sum + r.estimatedTokenSavings,
     0
   );
 
   // Get previous score for trend calculation
-  const previousScore = await prisma.healthScore.findFirst({
+  const previousScoreRecord = await prisma.healthScore.findFirst({
     where: { machineId },
     orderBy: { timestamp: 'desc' }
   });
 
   // Determine trend
   let trend: 'improving' | 'stable' | 'declining' = 'stable';
-  if (previousScore) {
-    const diff = totalScore - previousScore.totalScore;
+  if (previousScoreRecord) {
+    const diff = score - previousScoreRecord.score;
     if (diff >= 5) trend = 'improving';
     else if (diff <= -5) trend = 'declining';
   }
@@ -212,16 +218,17 @@ async function calculateHealthScore(machineId: string) {
   const healthScore = await prisma.healthScore.create({
     data: {
       machineId,
-      totalScore,
+      score,
       mcpScore,
       skillScore,
       contextScore,
       patternScore,
       activeRecommendations: activeRecommendations.length,
       appliedRecommendations: appliedRecommendations.length,
-      estimatedDailyWaste,
-      estimatedDailySavings,
-      previousScore: previousScore?.totalScore,
+      dismissedRecommendations: dismissedRecommendations.length,
+      estimatedMonthlyWaste,
+      estimatedMonthlySavings,
+      previousScore: previousScoreRecord?.score,
       trend
     },
     include: {
@@ -241,46 +248,51 @@ async function calculateHealthScore(machineId: string) {
 /**
  * Generate actionable insights from health score
  */
-function generateInsights(score: {
-  totalScore: number;
+function generateInsights(scoreRecord: {
+  score: number;
   mcpScore: number;
   skillScore: number;
   contextScore: number;
   patternScore: number;
   activeRecommendations: number;
-  estimatedDailyWaste: number;
+  estimatedMonthlyWaste: number;
 }) {
   const insights: string[] = [];
 
   // Overall assessment
-  if (score.totalScore >= 90) {
+  if (scoreRecord.score >= 90) {
     insights.push('Excellent! Your configuration is highly optimized.');
-  } else if (score.totalScore >= 70) {
+  } else if (scoreRecord.score >= 70) {
     insights.push('Good configuration with room for improvement.');
-  } else if (score.totalScore >= 50) {
+  } else if (scoreRecord.score >= 50) {
     insights.push('Moderate optimization. Consider applying more recommendations.');
   } else {
     insights.push('Significant optimization opportunities available.');
   }
 
   // MCP insights
-  if (score.mcpScore < 50) {
+  if (scoreRecord.mcpScore < 50) {
     insights.push('MCP servers could significantly reduce your token usage.');
   }
 
   // Skill insights
-  if (score.skillScore < 50) {
+  if (scoreRecord.skillScore < 50) {
     insights.push('Custom skills can automate repetitive workflows.');
   }
 
+  // Context insights
+  if (scoreRecord.contextScore < 50) {
+    insights.push('Your CLAUDE.md files could benefit from optimization.');
+  }
+
   // Waste insights
-  if (score.estimatedDailyWaste > 500) {
-    insights.push(`You could save ~${score.estimatedDailyWaste} tokens/day by applying recommendations.`);
+  if (scoreRecord.estimatedMonthlyWaste > 5000) {
+    insights.push(`You could save ~${scoreRecord.estimatedMonthlyWaste} tokens/month by applying recommendations.`);
   }
 
   // Action insight
-  if (score.activeRecommendations > 0) {
-    insights.push(`Review ${score.activeRecommendations} active recommendation(s) in the dashboard.`);
+  if (scoreRecord.activeRecommendations > 0) {
+    insights.push(`Review ${scoreRecord.activeRecommendations} active recommendation(s) in the dashboard.`);
   }
 
   return insights;

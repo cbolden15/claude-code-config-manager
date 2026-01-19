@@ -85,7 +85,8 @@ export async function POST(request: NextRequest) {
         filePath: analysis.filePath,
         currentLines: analysis.totalLines,
         currentTokens: analysis.totalTokens,
-        optimizationScore: analysis.optimizationScore
+        currentScore: analysis.currentScore,
+        potentialScore: analysis.potentialScore
       },
       projectedChanges: {
         actions,

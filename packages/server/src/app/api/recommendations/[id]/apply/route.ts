@@ -7,10 +7,7 @@ interface RouteParams {
 
 /**
  * POST /api/recommendations/[id]/apply
- * Apply a recommendation - marks it as applied and tracks impact
- *
- * For MCP servers: stores config that CLI will sync to .mcp.json
- * For skills: stores skill template that CLI will create
+ * Apply a recommendation - marks it as applied and creates AppliedConfig
  */
 export async function POST(
   request: NextRequest,
@@ -56,64 +53,23 @@ export async function POST(
       }
     });
 
-    // Create impact metric to track before/after savings
-    // Get baseline from recent session data before applying
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    // Parse config data
+    const configData = recommendation.configData
+      ? JSON.parse(recommendation.configData)
+      : {};
 
-    const recentSessions = await prisma.sessionActivity.findMany({
-      where: {
-        machineId: recommendation.machineId,
-        timestamp: { gte: thirtyDaysAgo }
-      },
-      select: {
-        totalTokens: true
-      }
-    });
-
-    const avgTokensPerSession = recentSessions.length > 0
-      ? Math.round(recentSessions.reduce((sum, s) => sum + s.totalTokens, 0) / recentSessions.length)
-      : 0;
-
-    await prisma.impactMetric.create({
+    // Create AppliedConfig to track the active configuration
+    const appliedConfig = await prisma.appliedConfig.create({
       data: {
         machineId: recommendation.machineId,
+        configType: recommendation.configType,
+        configName: recommendation.title,
+        configData: recommendation.configData,
         recommendationId: recommendation.id,
-        metricType: 'token_savings',
-        beforeValue: avgTokensPerSession,
-        afterValue: 0, // Will be calculated after 7+ days
-        improvement: 0, // Will be calculated later
-        measurementStart: new Date(),
-        measurementEnd: new Date() // Will be updated when measured
+        source: 'recommendation',
+        enabled: true
       }
     });
-
-    // Update technology usage if applicable
-    const configTemplate = recommendation.configTemplate
-      ? JSON.parse(recommendation.configTemplate)
-      : null;
-
-    // If this is an MCP server recommendation, link it to technology usage
-    if (recommendation.type === 'mcp_server') {
-      const detectedPatterns = JSON.parse(recommendation.detectedPatterns) as string[];
-
-      // Find related technology
-      for (const pattern of detectedPatterns) {
-        const tech = patternToTechnology(pattern);
-        if (tech) {
-          await prisma.technologyUsage.updateMany({
-            where: {
-              machineId: recommendation.machineId,
-              technology: tech
-            },
-            data: {
-              hasRecommendation: true,
-              recommendationId: recommendation.id
-            }
-          });
-        }
-      }
-    }
 
     return NextResponse.json({
       success: true,
@@ -121,16 +77,19 @@ export async function POST(
         id: updated.id,
         status: updated.status,
         appliedAt: updated.appliedAt,
-        type: updated.type,
-        recommendedItem: updated.recommendedItem
+        category: updated.category,
+        title: updated.title
       },
-      configTemplate,
-      nextSteps: recommendation.type === 'mcp_server'
-        ? 'Run "ccm sync" to sync the MCP server configuration to your machine.'
-        : 'Run "ccm sync" to create the skill on your machine.',
+      appliedConfig: {
+        id: appliedConfig.id,
+        configType: appliedConfig.configType,
+        configName: appliedConfig.configName
+      },
+      configData,
+      nextSteps: getNextSteps(recommendation.category),
       estimatedSavings: {
-        daily: recommendation.dailySavings,
-        monthly: recommendation.monthlySavings
+        tokensSaved: recommendation.estimatedTokenSavings,
+        timeSaved: recommendation.estimatedTimeSavings
       }
     });
   } catch (error) {
@@ -143,17 +102,19 @@ export async function POST(
 }
 
 /**
- * Map pattern types to technologies
+ * Get next steps based on recommendation category
  */
-function patternToTechnology(pattern: string): string | null {
-  const mapping: Record<string, string> = {
-    'ssh_database_query': 'postgresql',
-    'git_workflow': 'git',
-    'n8n_workflow_management': 'n8n',
-    'docker_management': 'docker',
-    'service_health_check': 'monitoring',
-    'frequent_file_search': 'search'
-  };
-
-  return mapping[pattern] || null;
+function getNextSteps(category: string): string {
+  switch (category) {
+    case 'mcp_server':
+      return 'The MCP server configuration has been saved. Add it to your .mcp.json to enable.';
+    case 'skill':
+      return 'The skill template has been saved. Create the skill file in .claude/skills/.';
+    case 'hook':
+      return 'The hook configuration has been saved. Add it to your settings.json.';
+    case 'context':
+      return 'Run "ccm context optimize" to apply the context optimization.';
+    default:
+      return 'Configuration has been saved and is ready to use.';
+  }
 }

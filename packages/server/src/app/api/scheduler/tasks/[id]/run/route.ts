@@ -13,7 +13,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
     const { id } = await params;
     const body = await request.json().catch(() => ({}));
-    const { triggerType = 'manual', machineId } = body;
+    const { triggerType = 'manual' } = body;
 
     // Find the task
     const task = await prisma.scheduledTask.findUnique({
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     }
 
     // Validate trigger type
-    const validTriggerTypes = ['scheduled', 'threshold', 'manual', 'api'];
+    const validTriggerTypes = ['scheduled', 'threshold', 'manual'];
     if (!validTriggerTypes.includes(triggerType)) {
       return NextResponse.json(
         { error: `triggerType must be one of: ${validTriggerTypes.join(', ')}` },
@@ -44,14 +44,11 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    // Use provided machineId or task's machineId
-    const executionMachineId = machineId || task.machineId;
-
     // Create a pending execution record
+    // Note: machineId is on the task, not the execution
     const execution = await prisma.taskExecution.create({
       data: {
         taskId: id,
-        machineId: executionMachineId,
         status: 'pending',
         triggerType,
         startedAt: new Date()
@@ -79,6 +76,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       executionId: updatedExecution.id,
       taskId: id,
       taskName: task.name,
+      machineId: task.machineId,
+      machineName: task.machine?.name,
       status: 'running',
       message: 'Task execution started',
       triggerType

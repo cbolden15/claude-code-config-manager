@@ -10,12 +10,12 @@ export async function GET(request: NextRequest) {
     const { searchParams } = request.nextUrl;
     const machineId = searchParams.get('machineId');
     const status = searchParams.get('status');
-    const type = searchParams.get('type');
-    const priority = searchParams.get('priority');
     const category = searchParams.get('category');
+    const priority = searchParams.get('priority');
+    const configType = searchParams.get('configType');
 
     // Build where clause
-    const where: any = {};
+    const where: Record<string, unknown> = {};
 
     if (machineId) {
       where.machineId = machineId;
@@ -25,16 +25,16 @@ export async function GET(request: NextRequest) {
       where.status = status;
     }
 
-    if (type) {
-      where.type = type;
+    if (category) {
+      where.category = category;
     }
 
     if (priority) {
       where.priority = priority;
     }
 
-    if (category) {
-      where.category = category;
+    if (configType) {
+      where.configType = configType;
     }
 
     // Fetch recommendations
@@ -61,9 +61,8 @@ export async function GET(request: NextRequest) {
     const transformed = recommendations
       .map(rec => ({
         ...rec,
-        detectedPatterns: JSON.parse(rec.detectedPatterns),
-        projectsAffected: JSON.parse(rec.projectsAffected),
-        configTemplate: rec.configTemplate ? JSON.parse(rec.configTemplate) : null
+        evidence: JSON.parse(rec.evidence),
+        configData: JSON.parse(rec.configData)
       }))
       .sort((a, b) => {
         const priorityDiff = (priorityOrder[a.priority as keyof typeof priorityOrder] || 3) -
@@ -79,7 +78,7 @@ export async function GET(request: NextRequest) {
         active: recommendations.filter(r => r.status === 'active').length,
         applied: recommendations.filter(r => r.status === 'applied').length,
         dismissed: recommendations.filter(r => r.status === 'dismissed').length,
-        archived: recommendations.filter(r => r.status === 'archived').length
+        expired: recommendations.filter(r => r.status === 'expired').length
       },
       byPriority: {
         critical: recommendations.filter(r => r.priority === 'critical').length,
@@ -87,16 +86,17 @@ export async function GET(request: NextRequest) {
         medium: recommendations.filter(r => r.priority === 'medium').length,
         low: recommendations.filter(r => r.priority === 'low').length
       },
-      byType: {
-        mcp_server: recommendations.filter(r => r.type === 'mcp_server').length,
-        skill: recommendations.filter(r => r.type === 'skill').length
+      byCategory: {
+        mcp_server: recommendations.filter(r => r.category === 'mcp_server').length,
+        skill: recommendations.filter(r => r.category === 'skill').length,
+        hook: recommendations.filter(r => r.category === 'hook').length,
+        permission: recommendations.filter(r => r.category === 'permission').length,
+        context: recommendations.filter(r => r.category === 'context').length,
+        workflow: recommendations.filter(r => r.category === 'workflow').length
       },
-      totalDailySavings: recommendations
-        .filter(r => r.status === 'active')
-        .reduce((sum, r) => sum + r.dailySavings, 0),
       totalMonthlySavings: recommendations
         .filter(r => r.status === 'active')
-        .reduce((sum, r) => sum + r.monthlySavings, 0)
+        .reduce((sum, r) => sum + r.estimatedTokenSavings, 0)
     };
 
     return NextResponse.json({

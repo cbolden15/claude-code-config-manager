@@ -32,7 +32,7 @@ interface ScheduledTask {
   id: string;
   scheduleType: string;
   cronExpression?: string | null;
-  intervalMinutes?: number | null;
+  intervalHours?: number | null;
   thresholdMetric?: string | null;
   thresholdOperator?: string | null;
   thresholdValue?: number | null;
@@ -187,11 +187,11 @@ export function getNextCronRun(expr: string, from: Date = new Date()): Date {
 /**
  * Calculate the next run time for an interval-based schedule
  *
- * @param intervalMinutes - Interval in minutes
+ * @param intervalHours - Interval in minutes
  * @param lastRunAt - Last run timestamp (if any)
  * @returns Next scheduled run time
  */
-export function getNextIntervalRun(intervalMinutes: number, lastRunAt?: Date | null): Date {
+export function getNextIntervalRun(intervalHours: number, lastRunAt?: Date | null): Date {
   const now = new Date();
 
   if (!lastRunAt) {
@@ -200,7 +200,7 @@ export function getNextIntervalRun(intervalMinutes: number, lastRunAt?: Date | n
   }
 
   const next = new Date(lastRunAt);
-  next.setMinutes(next.getMinutes() + intervalMinutes);
+  next.setMinutes(next.getMinutes() + intervalHours);
 
   // If next run is in the past, schedule now
   if (next <= now) {
@@ -492,8 +492,8 @@ export function calculateNextRun(task: ScheduledTask): Date | null {
       return getNextCronRun(task.cronExpression);
 
     case 'interval':
-      if (!task.intervalMinutes) return null;
-      return getNextIntervalRun(task.intervalMinutes);
+      if (!task.intervalHours) return null;
+      return getNextIntervalRun(task.intervalHours);
 
     case 'threshold':
     case 'manual':

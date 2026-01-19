@@ -16,7 +16,7 @@ import { calculateContextOptimizationScore, getQuickStats } from '@/lib/context'
  */
 export interface HealthScoreResult {
   /** Overall score (0-100) */
-  totalScore: number;
+  score: number;
   /** MCP server optimization score (0-100) */
   mcpScore: number;
   /** Skill utilization score (0-100) */
@@ -29,10 +29,10 @@ export interface HealthScoreResult {
   activeRecommendations: number;
   /** Number of applied recommendations */
   appliedRecommendations: number;
-  /** Estimated tokens wasted per day */
-  estimatedDailyWaste: number;
-  /** Estimated tokens saved per day (from applied recommendations) */
-  estimatedDailySavings: number;
+  /** Estimated tokens wasted per month */
+  estimatedMonthlyWaste: number;
+  /** Estimated tokens saved per month (from applied recommendations) */
+  estimatedMonthlySavings: number;
   /** Previous score (if available) */
   previousScore: number | null;
   /** Trend direction */
@@ -64,7 +64,7 @@ export interface HealthBreakdown {
   context: {
     score: number;
     avgTokensPerSession: number;
-    startupTokens: number;
+    contextTokens: number;
     details: string;
     /** v3.1: CLAUDE.md optimization score (0-100) */
     contextOptimizationScore?: number;
@@ -91,7 +91,7 @@ export interface RecommendationsSummary {
   high: number;
   medium: number;
   low: number;
-  byType: {
+  byCategory: {
     mcp_server: number;
     skill: number;
   };
@@ -120,7 +120,7 @@ async function calculateMcpScore(
   const recommendations = await prisma.recommendation.findMany({
     where: {
       machineId,
-      type: 'mcp_server'
+      category: 'mcp_server'
     }
   });
 
@@ -153,7 +153,7 @@ async function calculateSkillScore(
   const recommendations = await prisma.recommendation.findMany({
     where: {
       machineId,
-      type: 'skill'
+      category: 'skill'
     }
   });
 
@@ -181,7 +181,7 @@ async function calculateSkillScore(
 interface ContextScoreResult {
   score: number;
   avgTokensPerSession: number;
-  startupTokens: number;
+  contextTokens: number;
   /** v3.1: CLAUDE.md optimization score */
   contextOptimizationScore?: number;
   /** v3.1: CLAUDE.md stats */
@@ -221,14 +221,14 @@ async function calculateContextScore(
     return {
       score: contextOptimizationScore ?? 100,
       avgTokensPerSession: 0,
-      startupTokens: 0,
+      contextTokens: 0,
       contextOptimizationScore,
       claudeMdStats
     };
   }
 
   const avgTokensPerSession = analysis.avgTokensPerSession;
-  const avgStartupTokens = analysis.tokenBreakdown.startup / analysis.sessionCount;
+  const avgContextTokens = analysis.tokenBreakdown.context / analysis.sessionCount;
 
   // Scoring based on token efficiency
   // Lower tokens = better score
@@ -249,11 +249,11 @@ async function calculateContextScore(
     score = 30;
   }
 
-  // Penalty for high startup tokens (indicates large CLAUDE.md or context)
-  // High startup tokens suggest context could be optimized
-  if (avgStartupTokens > 10000) {
+  // Penalty for high context tokens (indicates large CLAUDE.md or context)
+  // High context tokens suggest context could be optimized
+  if (avgContextTokens > 10000) {
     score = Math.max(score - 10, 0);
-  } else if (avgStartupTokens > 5000) {
+  } else if (avgContextTokens > 5000) {
     score = Math.max(score - 5, 0);
   }
 
@@ -265,7 +265,7 @@ async function calculateContextScore(
   return {
     score,
     avgTokensPerSession: Math.round(avgTokensPerSession),
-    startupTokens: Math.round(avgStartupTokens),
+    contextTokens: Math.round(avgContextTokens),
     contextOptimizationScore,
     claudeMdStats
   };
@@ -278,7 +278,7 @@ async function calculatePatternScore(
   machineId: string,
   daysBack: number
 ): Promise<{ score: number; detected: number; optimized: number }> {
-  const patterns = await prisma.usagePattern.findMany({
+  const patterns = await prisma.pattern.findMany({
     where: { machineId }
   });
 
@@ -293,22 +293,8 @@ async function calculatePatternScore(
   // High confidence patterns that have corresponding applied recommendations
   const highConfidencePatterns = patterns.filter(p => p.confidence >= 0.7);
 
-  // Check which patterns have applied recommendations
-  const appliedRecs = recommendations.filter(r => r.status === 'applied');
-  const appliedPatternTypes = new Set<string>();
-
-  for (const rec of appliedRecs) {
-    try {
-      const patterns = JSON.parse(rec.detectedPatterns) as string[];
-      patterns.forEach(p => appliedPatternTypes.add(p));
-    } catch {
-      // Ignore parse errors
-    }
-  }
-
-  const optimizedPatterns = highConfidencePatterns.filter(p =>
-    appliedPatternTypes.has(p.patternType)
-  );
+  // Check which patterns have been marked as having a recommendation
+  const optimizedPatterns = highConfidencePatterns.filter(p => p.hasRecommendation);
 
   const score = highConfidencePatterns.length === 0
     ? 100
@@ -332,7 +318,7 @@ async function getRecommendationsSummary(
       machineId,
       status: 'active'
     },
-    orderBy: { dailySavings: 'desc' }
+    orderBy: { estimatedTokenSavings: 'desc' }
   });
 
   const summary: RecommendationsSummary = {
@@ -340,7 +326,7 @@ async function getRecommendationsSummary(
     high: 0,
     medium: 0,
     low: 0,
-    byType: {
+    byCategory: {
       mcp_server: 0,
       skill: 0
     },
@@ -364,11 +350,11 @@ async function getRecommendationsSummary(
         break;
     }
 
-    // Count by type
-    if (rec.type === 'mcp_server') {
-      summary.byType.mcp_server++;
-    } else if (rec.type === 'skill') {
-      summary.byType.skill++;
+    // Count by category
+    if (rec.category === 'mcp_server') {
+      summary.byCategory.mcp_server++;
+    } else if (rec.category === 'skill') {
+      summary.byCategory.skill++;
     }
   }
 
@@ -377,7 +363,7 @@ async function getRecommendationsSummary(
     const top = recommendations[0];
     summary.topRecommendation = {
       title: top.title,
-      savings: top.dailySavings
+      savings: top.estimatedTokenSavings
     };
   }
 
@@ -423,13 +409,13 @@ export async function calculateHealthScore(
   const activeRecs = recommendations.filter(r => r.status === 'active');
   const appliedRecs = recommendations.filter(r => r.status === 'applied');
 
-  const estimatedDailyWaste = activeRecs.reduce(
-    (sum, r) => sum + r.dailySavings,
+  const estimatedMonthlyWaste = activeRecs.reduce(
+    (sum, r) => sum + r.estimatedTokenSavings,
     0
   );
 
-  const estimatedDailySavings = appliedRecs.reduce(
-    (sum, r) => sum + r.dailySavings,
+  const estimatedMonthlySavings = appliedRecs.reduce(
+    (sum, r) => sum + r.estimatedTokenSavings,
     0
   );
 
@@ -439,7 +425,7 @@ export async function calculateHealthScore(
     orderBy: { timestamp: 'desc' }
   });
 
-  const previousScore = previousHealth?.totalScore || null;
+  const previousScore = previousHealth?.score || null;
 
   // Calculate trend
   let trend: 'improving' | 'stable' | 'declining';
@@ -479,7 +465,7 @@ export async function calculateHealthScore(
     context: {
       score: contextResult.score,
       avgTokensPerSession: contextResult.avgTokensPerSession,
-      startupTokens: contextResult.startupTokens,
+      contextTokens: contextResult.contextTokens,
       details: contextResult.score >= 75
         ? 'Context usage is efficient'
         : contextResult.score >= 50
@@ -504,15 +490,16 @@ export async function calculateHealthScore(
     await prisma.healthScore.create({
       data: {
         machineId,
-        totalScore,
+        score: totalScore,
         mcpScore: mcpResult.score,
         skillScore: skillResult.score,
         contextScore: contextResult.score,
         patternScore: patternResult.score,
         activeRecommendations: activeRecs.length,
         appliedRecommendations: appliedRecs.length,
-        estimatedDailyWaste,
-        estimatedDailySavings,
+        dismissedRecommendations: recommendations.filter(r => r.status === 'dismissed').length,
+        estimatedMonthlyWaste,
+        estimatedMonthlySavings,
         previousScore,
         trend
       }
@@ -520,15 +507,15 @@ export async function calculateHealthScore(
   }
 
   return {
-    totalScore,
+    score: totalScore,
     mcpScore: mcpResult.score,
     skillScore: skillResult.score,
     contextScore: contextResult.score,
     patternScore: patternResult.score,
     activeRecommendations: activeRecs.length,
     appliedRecommendations: appliedRecs.length,
-    estimatedDailyWaste,
-    estimatedDailySavings,
+    estimatedMonthlyWaste,
+    estimatedMonthlySavings,
     previousScore,
     trend,
     breakdown,
@@ -582,7 +569,7 @@ export async function getHealthScoreTrend(
 
   return scores.map(s => ({
     date: s.timestamp.toISOString().split('T')[0],
-    score: s.totalScore,
+    score: s.score,
     trend: s.trend
   }));
 }
@@ -626,7 +613,7 @@ export function getImprovementSuggestions(
     suggestions.push(`${healthScore.recommendationsSummary.critical} critical recommendation(s) available with high impact`);
   }
 
-  if (suggestions.length === 0 && healthScore.totalScore >= 90) {
+  if (suggestions.length === 0 && healthScore.score >= 90) {
     suggestions.push('Excellent optimization! Keep monitoring for new opportunities.');
   }
 

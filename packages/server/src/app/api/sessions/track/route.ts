@@ -10,21 +10,20 @@ import { z } from 'zod';
 
 const SessionTrackSchema = z.object({
   machineId: z.string().min(1),
-  projectId: z.string().optional(),
-  projectPath: z.string().optional(),
   sessionId: z.string().min(1),
-  duration: z.number().int().min(0),
+  projectPath: z.string().optional(),
+  projectName: z.string().optional(),
+  duration: z.number().int().min(0).optional(),
   toolsUsed: z.array(z.string()).default([]),
   commandsRun: z.array(z.string()).default([]),
   filesAccessed: z.array(z.string()).default([]),
   errors: z.array(z.string()).default([]),
-  startupTokens: z.number().int().min(0).default(0),
-  totalTokens: z.number().int().min(0).default(0),
-  toolTokens: z.number().int().min(0).default(0),
+  tokensUsed: z.number().int().min(0).default(0),
   contextTokens: z.number().int().min(0).default(0),
   detectedTechs: z.array(z.string()).default([]),
   detectedPatterns: z.array(z.string()).default([]),
-  timestamp: z.string().datetime().optional()
+  startedAt: z.string().datetime().optional(),
+  endedAt: z.string().datetime().optional()
 });
 
 export async function POST(request: NextRequest) {
@@ -44,101 +43,71 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const timestamp = validated.timestamp ? new Date(validated.timestamp) : new Date();
+    const now = new Date();
+    const startedAt = validated.startedAt ? new Date(validated.startedAt) : now;
+    const endedAt = validated.endedAt ? new Date(validated.endedAt) : now;
 
-    // Save session activity
-    const sessionActivity = await prisma.sessionActivity.create({
+    // Save session
+    const session = await prisma.session.create({
       data: {
         machineId: validated.machineId,
-        projectId: validated.projectId,
         sessionId: validated.sessionId,
         projectPath: validated.projectPath,
+        projectName: validated.projectName,
+        startedAt,
+        endedAt,
         duration: validated.duration,
         toolsUsed: JSON.stringify(validated.toolsUsed),
         commandsRun: JSON.stringify(validated.commandsRun),
         filesAccessed: JSON.stringify(validated.filesAccessed),
         errors: JSON.stringify(validated.errors),
-        startupTokens: validated.startupTokens,
-        totalTokens: validated.totalTokens,
-        toolTokens: validated.toolTokens,
+        tokensUsed: validated.tokensUsed,
         contextTokens: validated.contextTokens,
         detectedTechs: JSON.stringify(validated.detectedTechs),
-        detectedPatterns: JSON.stringify(validated.detectedPatterns),
-        timestamp
+        detectedPatterns: JSON.stringify(validated.detectedPatterns)
       }
     });
 
-    // Update or create usage patterns
-    for (const pattern of validated.detectedPatterns) {
-      await prisma.usagePattern.upsert({
+    // Update or create patterns
+    for (const patternType of validated.detectedPatterns) {
+      await prisma.pattern.upsert({
         where: {
-          machineId_patternType: {
+          machineId_type: {
             machineId: validated.machineId,
-            patternType: pattern
+            type: patternType
           }
         },
         update: {
           occurrences: { increment: 1 },
-          lastSeen: timestamp,
-          // Update project IDs if new project
-          ...(validated.projectId && {
-            projectIds: await updateProjectIds(
+          lastSeen: endedAt,
+          // Update project paths if new project
+          ...(validated.projectPath && {
+            projectPaths: await updateProjectPaths(
               validated.machineId,
-              pattern,
-              validated.projectId
+              patternType,
+              validated.projectPath
             )
           })
         },
         create: {
           machineId: validated.machineId,
-          patternType: pattern,
+          type: patternType,
           occurrences: 1,
-          lastSeen: timestamp,
-          firstSeen: timestamp,
-          avgFrequency: 0,
-          projectIds: JSON.stringify(validated.projectId ? [validated.projectId] : []),
+          lastSeen: endedAt,
+          firstSeen: startedAt,
+          avgPerWeek: 0,
+          projectPaths: JSON.stringify(validated.projectPath ? [validated.projectPath] : []),
           technologies: JSON.stringify(validated.detectedTechs),
           confidence: 1.0
         }
       });
     }
 
-    // Update technology usage
-    for (const tech of validated.detectedTechs) {
-      await prisma.technologyUsage.upsert({
-        where: {
-          machineId_technology: {
-            machineId: validated.machineId,
-            technology: tech
-          }
-        },
-        update: {
-          sessionCount: { increment: 1 },
-          lastUsed: timestamp,
-          commandCount: {
-            increment: validated.commandsRun.filter(cmd =>
-              cmd.toLowerCase().includes(tech.toLowerCase())
-            ).length
-          }
-        },
-        create: {
-          machineId: validated.machineId,
-          technology: tech,
-          projectCount: validated.projectId ? 1 : 0,
-          sessionCount: 1,
-          commandCount: validated.commandsRun.filter(cmd =>
-            cmd.toLowerCase().includes(tech.toLowerCase())
-          ).length,
-          lastUsed: timestamp
-        }
-      });
-    }
-
     return NextResponse.json({
       success: true,
-      sessionActivityId: sessionActivity.id,
+      sessionId: session.id,
       patternsTracked: validated.detectedPatterns.length,
-      technologiesTracked: validated.detectedTechs.length
+      technologiesDetected: validated.detectedTechs.length
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -157,29 +126,29 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * Helper to update project IDs in usage pattern
- * Adds new projectId if not already present
+ * Helper to update project paths in pattern
+ * Adds new projectPath if not already present
  */
-async function updateProjectIds(
+async function updateProjectPaths(
   machineId: string,
-  patternType: string,
-  newProjectId: string
+  type: string,
+  newProjectPath: string
 ): Promise<string> {
-  const existing = await prisma.usagePattern.findUnique({
+  const existing = await prisma.pattern.findUnique({
     where: {
-      machineId_patternType: { machineId, patternType }
+      machineId_type: { machineId, type }
     },
-    select: { projectIds: true }
+    select: { projectPaths: true }
   });
 
   if (!existing) {
-    return JSON.stringify([newProjectId]);
+    return JSON.stringify([newProjectPath]);
   }
 
-  const projectIds: string[] = JSON.parse(existing.projectIds);
-  if (!projectIds.includes(newProjectId)) {
-    projectIds.push(newProjectId);
+  const projectPaths: string[] = JSON.parse(existing.projectPaths);
+  if (!projectPaths.includes(newProjectPath)) {
+    projectPaths.push(newProjectPath);
   }
 
-  return JSON.stringify(projectIds);
+  return JSON.stringify(projectPaths);
 }

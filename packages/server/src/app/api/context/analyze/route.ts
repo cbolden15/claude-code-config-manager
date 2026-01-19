@@ -71,9 +71,10 @@ export async function POST(request: NextRequest) {
         sections: placeholderSections,
         issues: placeholderIssues,
         estimatedSavings: 0,
-        optimizationScore: 50,
+        currentScore: 50,
+        potentialScore: 75,
         status: 'analyzed',
-        lastAnalyzedAt: new Date()
+        analyzedAt: new Date()
       },
       create: {
         machineId,
@@ -84,7 +85,8 @@ export async function POST(request: NextRequest) {
         sections: placeholderSections,
         issues: placeholderIssues,
         estimatedSavings: 0,
-        optimizationScore: 50,
+        currentScore: 50,
+        potentialScore: 75,
         status: 'analyzed'
       },
       include: {
@@ -137,7 +139,7 @@ export async function GET(request: NextRequest) {
         projectPath
       },
       orderBy: {
-        lastAnalyzedAt: 'desc'
+        analyzedAt: 'desc'
       },
       include: {
         machine: {

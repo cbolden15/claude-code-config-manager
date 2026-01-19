@@ -41,11 +41,8 @@ export async function GET(
     // Parse JSON fields
     const transformed = {
       ...recommendation,
-      detectedPatterns: JSON.parse(recommendation.detectedPatterns),
-      projectsAffected: JSON.parse(recommendation.projectsAffected),
-      configTemplate: recommendation.configTemplate
-        ? JSON.parse(recommendation.configTemplate)
-        : null
+      evidence: JSON.parse(recommendation.evidence),
+      configData: JSON.parse(recommendation.configData)
     };
 
     return NextResponse.json(transformed);
@@ -124,9 +121,9 @@ export async function DELETE(
  * Update recommendation fields (e.g., feedback after applying)
  */
 const UpdateSchema = z.object({
-  wasUseful: z.boolean().optional(),
+  wasHelpful: z.boolean().optional(),
   actualSavings: z.number().int().optional(),
-  status: z.enum(['active', 'applied', 'dismissed', 'archived']).optional()
+  status: z.enum(['active', 'applied', 'dismissed', 'expired']).optional()
 });
 
 export async function PATCH(
@@ -152,7 +149,7 @@ export async function PATCH(
     const updated = await prisma.recommendation.update({
       where: { id },
       data: {
-        ...(validated.wasUseful !== undefined && { wasUseful: validated.wasUseful }),
+        ...(validated.wasHelpful !== undefined && { wasHelpful: validated.wasHelpful }),
         ...(validated.actualSavings !== undefined && { actualSavings: validated.actualSavings }),
         ...(validated.status !== undefined && { status: validated.status })
       }
@@ -160,9 +157,8 @@ export async function PATCH(
 
     return NextResponse.json({
       ...updated,
-      detectedPatterns: JSON.parse(updated.detectedPatterns),
-      projectsAffected: JSON.parse(updated.projectsAffected),
-      configTemplate: updated.configTemplate ? JSON.parse(updated.configTemplate) : null
+      evidence: JSON.parse(updated.evidence),
+      configData: JSON.parse(updated.configData)
     });
   } catch (error) {
     if (error instanceof z.ZodError) {

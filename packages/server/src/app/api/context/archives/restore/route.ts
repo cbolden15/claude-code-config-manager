@@ -50,15 +50,14 @@ export async function POST(request: NextRequest) {
         id: archive.id,
         sourceFile: archive.sourceFile,
         sectionName: archive.sectionName,
-        archiveReason: archive.archiveReason,
+        reason: archive.reason,
         archivedAt: archive.archivedAt
       },
       restoreContent: {
         originalContent: archive.archivedContent,
-        originalLines: archive.originalLines,
         originalTokens: archive.originalTokens,
         currentSummary: archive.summaryContent,
-        summaryLines: archive.summaryLines
+        summaryTokens: archive.summaryTokens
       },
       instructions: {
         message: 'Archive content ready for restoration.',

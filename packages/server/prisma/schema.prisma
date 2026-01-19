@@ -1,5 +1,11 @@
-// Prisma schema for CCM
-// See docs/SPECIFICATION.md section 8 for full data model
+// =============================================================================
+// CCM Simplified Schema - Smart Recommendations Core
+// =============================================================================
+//
+// Philosophy: OBSERVE → ANALYZE → RECOMMEND → APPLY → MEASURE → AUTOMATE
+//
+// 12 models focused on intelligent optimization
+// =============================================================================
 
 generator client {
   provider = "prisma-client-js"
@@ -10,96 +16,9 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Component types enum is handled via string field
-// MCP_SERVER, SUBAGENT, SKILL, COMMAND, HOOK, CLAUDE_MD_TEMPLATE, AUTO_CLAUDE_AGENT_CONFIG, AUTO_CLAUDE_PROMPT, AUTO_CLAUDE_MODEL_PROFILE, AUTO_CLAUDE_PROJECT_CONFIG
-
-model Component {
-  id          String   @id @default(cuid())
-  type        String   // ComponentType enum as string
-  name        String
-  description String
-  config      String   // JSON stored as TEXT
-  sourceUrl   String?
-  version     String?
-  tags        String   @default("")
-  enabled     Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  profiles ProfileComponent[]
-
-  @@unique([type, name])
-}
-
-model Profile {
-  id               String   @id @default(cuid())
-  name             String   @unique
-  description      String
-  claudeMdTemplate String?  // CLAUDE.md template content
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-
-  components ProfileComponent[]
-  projects   Project[]
-}
-
-model ProfileComponent {
-  profileId   String
-  componentId String
-  order       Int      @default(0)
-  createdAt   DateTime @default(now())
-
-  profile   Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  component Component @relation(fields: [componentId], references: [id], onDelete: Cascade)
-
-  @@id([profileId, componentId])
-}
-
-model Project {
-  id           String    @id @default(cuid())
-  name         String
-  path         String
-  machine      String
-  profileId    String?
-  lastSyncedAt DateTime?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-
-  // Auto-Claude specific
-  autoClaudeEnabled    Boolean   @default(false)
-  autoClaudeConfigId   String?   // Link to AUTO_CLAUDE_PROJECT_CONFIG
-  modelProfileId       String?   // Link to AUTO_CLAUDE_MODEL_PROFILE
-  lastAutoClaudeSync   DateTime?
-
-  profile Profile? @relation(fields: [profileId], references: [id], onDelete: SetNull)
-
-  @@unique([path, machine])
-}
-
-model MonitoringEntry {
-  id        String   @id @default(cuid())
-  source    String   // e.g., "claude-code-changelog", "mcp-servers"
-  title     String
-  content   String   // Full content or summary
-  url       String?
-  severity  String   @default("info") // info, warning, important
-  isRead    Boolean  @default(false)
-  fetchedAt DateTime @default(now())
-  createdAt DateTime @default(now())
-}
-
-model Settings {
-  id        String   @id @default(cuid())
-  key       String   @unique
-  value     String   // JSON or plain text
-  encrypted Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-// ============================================================================
-// CCM v2.0 - Machine Registry
-// ============================================================================
+// =============================================================================
+// CORE: Machine & Project Identity
+// =============================================================================
 
 model Machine {
   id               String   @id @default(cuid())
@@ -107,478 +26,264 @@ model Machine {
   hostname         String?
   platform         String   // "darwin", "linux", "win32"
   arch             String?  // "arm64", "x64"
-  homeDir          String?  // For path resolution
+  homeDir          String?
   lastSeen         DateTime @default(now())
-  lastSyncedAt     DateTime?
-  syncEnabled      Boolean  @default(true)
   isCurrentMachine Boolean  @default(false)
 
-  overrides MachineOverride[]
-  syncLogs  SyncLog[]
-
-  // v3.0 Smart Recommendations relationships
-  sessionActivities SessionActivity[]
-  usagePatterns     UsagePattern[]
+  // Relationships
+  projects          Project[]
+  sessions          Session[]
+  patterns          Pattern[]
   recommendations   Recommendation[]
   healthScores      HealthScore[]
-  impactMetrics     ImpactMetric[]
-  technologyUsage   TechnologyUsage[]
-
-  // v3.1 Context Optimizer relationships
-  contextAnalyses    ContextAnalysis[]
-  contextArchives    ContextArchive[]
-  optimizationRules  ContextOptimizationRule[]
-
-  // v3.2 Scheduler relationships
+  contextAnalyses   ContextAnalysis[]
+  contextArchives   ContextArchive[]
   scheduledTasks    ScheduledTask[]
-  taskExecutions    TaskExecution[]
-  webhookConfigs    WebhookConfig[]
+  appliedConfigs    AppliedConfig[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([lastSeen])
-  @@index([syncEnabled])
 }
 
-model MachineOverride {
-  id           String   @id @default(cuid())
-  machineId    String
-  configType   String   // "mcp_server", "hook", "permission", "env_var", "plugin"
-  configKey    String   // ID or name of the config being overridden
-  action       String   // "include", "exclude", "modify"
-  overrideData String?  // JSON override data if action is "modify"
-  reason       String?  // Why this override exists
+model Project {
+  id        String   @id @default(cuid())
+  name      String
+  path      String
+  machineId String
+
+  // Detected info (auto-populated from sessions)
+  detectedTechs    String?  // JSON: ["nextjs", "postgresql", "docker"]
+  detectedPatterns String?  // JSON: ["database_queries", "git_workflow"]
+  lastActiveAt     DateTime?
 
   machine Machine @relation(fields: [machineId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([machineId, configType, configKey])
+  @@unique([path, machineId])
   @@index([machineId])
+  @@index([lastActiveAt])
 }
 
-// ============================================================================
-// CCM v2.0 - Global Hooks
-// ============================================================================
+// =============================================================================
+// OBSERVE: Session Tracking
+// =============================================================================
 
-model GlobalHook {
-  id          String   @id @default(cuid())
-  hookType    String   // "PreToolUse", "PostToolUse", "SessionStart", "Stop", "Notification", "SubagentStop"
-  matcher     String   // Tool matcher pattern, e.g., "Edit|Write", "*"
-  command     String   @default("") // Shell command to run (can be multi-line)
-  timeout     Int?     // Timeout in seconds
-  description String?
-  enabled     Boolean  @default(true)
-  order       Int      @default(0)
-  category    String?  // For UI grouping: "git", "security", "formatting", "notifications"
-  tags        String   @default("") // Comma-separated tags
+model Session {
+  id        String   @id @default(cuid())
+  machineId String
+  sessionId String   @unique // Claude Code session ID
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  // Context
+  projectPath String?
+  projectName String?
 
-  @@index([hookType])
-  @@index([enabled])
-  @@index([category])
-}
+  // Timing
+  startedAt DateTime @default(now())
+  endedAt   DateTime?
+  duration  Int?     // seconds
 
-// ============================================================================
-// CCM v2.0 - Global Permissions
-// ============================================================================
+  // What happened (JSON arrays)
+  toolsUsed       String @default("[]") // ["Read", "Bash", "Edit", "Grep"]
+  commandsRun     String @default("[]") // ["git status", "psql -h localhost"]
+  filesAccessed   String @default("[]") // ["/src/index.ts", "/prisma/schema.prisma"]
+  errors          String @default("[]") // ["ENOENT", "Connection refused"]
 
-model GlobalPermission {
-  id          String   @id @default(cuid())
-  permission  String   // e.g., "Bash(git:*)", "WebFetch(domain:github.com)"
-  action      String   // "allow" or "deny"
-  description String?
-  enabled     Boolean  @default(true)
-  category    String?  // "git", "network", "shell", "file", "docker", "cloud"
-  priority    Int      @default(0) // Higher = evaluated first
+  // Token usage
+  tokensUsed      Int @default(0)
+  contextTokens   Int @default(0) // Tokens from CLAUDE.md etc.
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([permission, action])
-  @@index([action])
-  @@index([category])
-  @@index([enabled])
-}
-
-// ============================================================================
-// CCM v2.0 - Global Environment Variables
-// ============================================================================
-
-model GlobalEnvVar {
-  id          String   @id @default(cuid())
-  key         String   @unique
-  value       String   // Encrypted for sensitive values
-  encrypted   Boolean  @default(false)
-  sensitive   Boolean  @default(false) // Mask in UI even if not encrypted
-  description String?
-  scope       String   @default("all") // "all", "claude-desktop", "claude-code", "cli"
-  category    String?  // "api_keys", "paths", "webhooks", "database"
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([scope])
-  @@index([category])
-}
-
-// ============================================================================
-// CCM v2.0 - Claude Desktop Configuration
-// ============================================================================
-
-model ClaudeDesktopMcp {
-  id              String   @id @default(cuid())
-  componentId     String   // Reference to Component with type MCP_SERVER
-  enabled         Boolean  @default(true)
-
-  // Desktop-specific overrides (JSON)
-  commandOverride String?  // Override command for desktop
-  argsOverride    String?  // Override args for desktop (JSON array)
-  envOverrides    String?  // Additional/override env vars (JSON object)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([componentId])
-  @@index([enabled])
-}
-
-model ClaudeDesktopPlugin {
-  id       String   @id @default(cuid())
-  pluginId String   // e.g., "frontend-design@claude-plugins-official"
-  enabled  Boolean  @default(true)
-  config   String?  // Plugin-specific config (JSON)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([pluginId])
-}
-
-// ============================================================================
-// CCM v2.0 - Sync System
-// ============================================================================
-
-model SyncLog {
-  id           String    @id @default(cuid())
-  machineId    String
-  syncType     String    // "full", "incremental", "push", "pull"
-  status       String    // "started", "in_progress", "completed", "failed"
-
-  // Stats
-  filesCreated Int @default(0)
-  filesUpdated Int @default(0)
-  filesDeleted Int @default(0)
-  filesSkipped Int @default(0)
-
-  // Details
-  details      String?  // JSON with detailed sync info
-  errorMessage String?
-
-  startedAt   DateTime  @default(now())
-  completedAt DateTime?
+  // Auto-detected (JSON arrays)
+  detectedTechs    String @default("[]") // ["postgresql", "docker", "nextjs"]
+  detectedPatterns String @default("[]") // ["ssh_database", "git_workflow"]
 
   machine Machine @relation(fields: [machineId], references: [id], onDelete: Cascade)
 
   @@index([machineId])
-  @@index([status])
+  @@index([projectPath])
   @@index([startedAt])
 }
 
-model SyncState {
-  id           String    @id @default(cuid())
-  machineId    String
-  configType   String    // "hook", "permission", "mcp_server", "agent", etc.
-  configId     String    // ID of the config item
-  localHash    String?   // Hash of local file content
-  serverHash   String?   // Hash of server content
-  lastSyncedAt DateTime?
-  syncStatus   String    @default("unknown") // "synced", "local_newer", "server_newer", "conflict"
+// =============================================================================
+// ANALYZE: Pattern Detection
+// =============================================================================
 
-  @@unique([machineId, configType, configId])
-  @@index([syncStatus])
-  @@index([machineId])
-}
+model Pattern {
+  id        String @id @default(cuid())
+  machineId String
+  type      String // "database_query", "git_workflow", "docker_ops", "api_calls"
 
-// ============================================================================
-// CCM v3.0 - Smart Recommendations System
-// ============================================================================
+  // Statistics
+  occurrences  Int      @default(1)
+  firstSeen    DateTime @default(now())
+  lastSeen     DateTime @default(now())
+  avgPerWeek   Float    @default(0)
 
-// Session activity tracking - captures every Claude Code session
-model SessionActivity {
-  id              String   @id @default(cuid())
-  machineId       String
-  projectId       String?
-  sessionId       String   // Unique per Claude Code session
+  // Context (JSON)
+  projectPaths   String @default("[]") // Projects where this pattern occurs
+  technologies   String @default("[]") // Related technologies
+  exampleCommand String? // Representative example
 
-  // Basic metadata
-  projectPath     String?
-  duration        Int      // Seconds
-  timestamp       DateTime @default(now())
-
-  // Tools used (JSON array)
-  toolsUsed       String   // ["Read", "Bash", "Edit", "Grep", ...]
-
-  // Commands executed (JSON array)
-  commandsRun     String   // ["git status", "psql -h ...", ...]
-
-  // Files accessed (JSON array)
-  filesAccessed   String   // ["/path/to/file1.ts", "/path/to/file2.sql", ...]
-
-  // Errors encountered (JSON array)
-  errors          String   // ["ENOENT", "Connection refused", ...]
-
-  // Token usage
-  startupTokens   Int      // Tokens at session start
-  totalTokens     Int      // Total tokens used
-  toolTokens      Int      // Tokens from tool use
-  contextTokens   Int      // Tokens from context
-
-  // Detected technologies (JSON array)
-  detectedTechs   String   // ["postgresql", "n8n", "docker", "nextjs", ...]
-
-  // Patterns detected (JSON array)
-  detectedPatterns String  // ["ssh_database_query", "git_workflow", ...]
+  // Analysis
+  confidence       Float @default(1.0) // 0.0 to 1.0
+  hasRecommendation Boolean @default(false)
 
   machine Machine @relation(fields: [machineId], references: [id], onDelete: Cascade)
 
-  @@index([machineId])
-  @@index([projectId])
-  @@index([timestamp])
-  @@index([sessionId])
-}
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-// Aggregated usage patterns (computed from SessionActivity)
-model UsagePattern {
-  id              String   @id @default(cuid())
-  machineId       String
-  patternType     String   // "ssh_database_query", "git_workflow", etc.
-
-  // Occurrence statistics
-  occurrences     Int      @default(0)
-  lastSeen        DateTime
-  firstSeen       DateTime
-  avgFrequency    Float    // Occurrences per week
-
-  // Context
-  projectIds      String   // JSON array of project IDs where seen
-  technologies    String   // JSON array of related technologies
-
-  // Examples (for UI display)
-  exampleCommand  String?
-  exampleFiles    String?  // JSON array
-
-  // Pattern confidence
-  confidence      Float    @default(1.0) // 0.0 to 1.0
-
-  machine Machine @relation(fields: [machineId], references: [id], onDelete: Cascade)
-
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  @@unique([machineId, patternType])
+  @@unique([machineId, type])
   @@index([machineId])
   @@index([occurrences])
-  @@index([confidence])
 }
 
-// Smart recommendations
+// =============================================================================
+// RECOMMEND: Smart Recommendations
+// =============================================================================
+
+// Unified recommendation model - handles MCP servers, skills, hooks, context, etc.
 model Recommendation {
-  id              String   @id @default(cuid())
-  machineId       String
-  type            String   // "mcp_server" or "skill"
+  id        String @id @default(cuid())
+  machineId String
 
-  // What to recommend
-  recommendedItem String   // Name of MCP server or skill
-  category        String   // "database", "cicd", "automation", etc.
+  // What type of recommendation
+  category String // "mcp_server", "skill", "hook", "permission", "context", "workflow"
 
-  // Why recommend (human-readable)
-  title           String   // Short title
-  reason          String   // Detailed explanation
+  // Human-readable
+  title       String // "Enable PostgreSQL MCP Server"
+  description String // "You've run 47 database queries via SSH..."
+  priority    String // "critical", "high", "medium", "low"
 
-  // Evidence
-  detectedPatterns String  // JSON array of pattern types
-  occurrenceCount Int      // How many times pattern seen
-  projectsAffected String  // JSON array of project IDs
-  exampleUsage    String?  // Example of the pattern
+  // Evidence (JSON)
+  evidence String @default("{}") // { patterns: [...], occurrences: 47, projects: [...] }
 
   // Impact estimation
-  timeSavings     Int      // Seconds saved per use
-  tokenSavings    Int      // Tokens saved per use
-  dailySavings    Int      // Estimated daily savings
-  monthlySavings  Int      // Estimated monthly savings
+  estimatedTokenSavings Int @default(0) // per month
+  estimatedTimeSavings  Int @default(0) // seconds per use
+  confidenceScore       Float @default(0.8)
 
-  // Confidence & priority
-  confidenceScore Float    // 0.0 to 1.0
-  priority        String   // "critical", "high", "medium", "low"
+  // The actual config to apply (JSON)
+  // For MCP: { command: "npx", args: [...], env: {...} }
+  // For Hook: { type: "PreToolUse", matcher: "*", command: "..." }
+  // For Skill: { name: "...", content: "..." }
+  configType   String  // "mcp_server", "hook", "permission", "skill", "context_rule"
+  configData   String  @default("{}") // JSON config to apply
 
-  // Status tracking
-  status          String   @default("active") // "active", "applied", "dismissed", "archived"
-  appliedAt       DateTime?
-  dismissedAt     DateTime?
-  dismissReason   String?  // Why user dismissed
+  // Status
+  status        String    @default("active") // "active", "applied", "dismissed", "expired"
+  appliedAt     DateTime?
+  dismissedAt   DateTime?
+  dismissReason String?
 
-  // Configuration to apply
-  configTemplate  String?  // JSON config
-
-  // Feedback (for learning)
-  wasUseful       Boolean? // User feedback after applying
-  actualSavings   Int?     // Measured savings after applying
+  // Feedback loop
+  wasHelpful    Boolean?
+  actualSavings Int? // Measured after applying
 
   machine Machine @relation(fields: [machineId], references: [id], onDelete: Cascade)
 
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  @@unique([machineId, recommendedItem])
   @@index([machineId])
   @@index([status])
   @@index([priority])
-  @@index([confidenceScore])
+  @@index([category])
 }
 
-// Health score tracking
+// =============================================================================
+// MEASURE: Health & Impact
+// =============================================================================
+
 model HealthScore {
-  id              String   @id @default(cuid())
-  machineId       String
+  id        String @id @default(cuid())
+  machineId String
 
   // Overall score (0-100)
-  totalScore      Int
+  score Int
 
-  // Category scores (0-100)
-  mcpScore        Int      // MCP server optimization
-  skillScore      Int      // Skill utilization
-  contextScore    Int      // Context efficiency
-  patternScore    Int      // Pattern optimization
+  // Category breakdown (0-100 each)
+  mcpScore     Int // Are you using recommended MCP servers?
+  contextScore Int // Is your CLAUDE.md optimized?
+  patternScore Int // Are repetitive patterns automated?
+  skillScore   Int // Are you using skills effectively?
 
   // Metrics
-  activeRecommendations  Int  // Open recommendations
-  appliedRecommendations Int  // Applied recommendations
-  estimatedDailyWaste    Int  // Tokens wasted per day
-  estimatedDailySavings  Int  // Tokens saved per day (after optimizations)
+  activeRecommendations  Int @default(0)
+  appliedRecommendations Int @default(0)
+  dismissedRecommendations Int @default(0)
 
   // Trend
-  previousScore   Int?     // Score from last calculation
-  trend           String   // "improving", "stable", "declining"
+  previousScore Int?
+  trend         String @default("stable") // "improving", "stable", "declining"
 
-  timestamp       DateTime @default(now())
-  machine         Machine  @relation(fields: [machineId], references: [id], onDelete: Cascade)
+  // Token metrics
+  estimatedMonthlyWaste   Int @default(0)
+  estimatedMonthlySavings Int @default(0)
+
+  machine   Machine  @relation(fields: [machineId], references: [id], onDelete: Cascade)
+  timestamp DateTime @default(now())
 
   @@index([machineId])
   @@index([timestamp])
 }
 
-// Impact tracking (measures actual results)
-model ImpactMetric {
-  id              String   @id @default(cuid())
-  machineId       String
-  recommendationId String?
-  metricType      String   // "token_savings", "time_savings", "pattern_reduction"
+// =============================================================================
+// CONTEXT: CLAUDE.md Optimization
+// =============================================================================
 
-  // Before/after comparison
-  beforeValue     Int
-  afterValue      Int
-  improvement     Float    // Percentage improvement
-
-  // Time period
-  measurementStart DateTime
-  measurementEnd   DateTime
-
-  timestamp       DateTime @default(now())
-  machine         Machine  @relation(fields: [machineId], references: [id], onDelete: Cascade)
-
-  @@index([machineId])
-  @@index([recommendationId])
-  @@index([timestamp])
-}
-
-// Technology usage tracking
-model TechnologyUsage {
-  id              String   @id @default(cuid())
-  machineId       String
-  technology      String   // "postgresql", "docker", "n8n", etc.
-
-  // Usage stats
-  projectCount    Int      @default(0)  // Projects using this
-  sessionCount    Int      @default(0)  // Sessions using this
-  commandCount    Int      @default(0)  // Commands related to this
-  lastUsed        DateTime?
-
-  // Recommendations
-  hasRecommendation Boolean @default(false)
-  recommendationId  String?
-
-  machine Machine @relation(fields: [machineId], references: [id], onDelete: Cascade)
-
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  @@unique([machineId, technology])
-  @@index([machineId])
-  @@index([sessionCount])
-}
-
-// ============================================================================
-// CCM v3.1 - Context Optimizer
-// ============================================================================
-
-// Context analysis results
 model ContextAnalysis {
-  id              String   @id @default(cuid())
-  machineId       String
-  projectPath     String
-  filePath        String   // Path to CLAUDE.md or other context file
+  id          String @id @default(cuid())
+  machineId   String
+  projectPath String
+  filePath    String // Usually "CLAUDE.md"
 
-  // Analysis results
-  totalLines      Int
-  totalTokens     Int      // Estimated token count
+  // Size metrics
+  totalLines  Int
+  totalTokens Int
 
-  // Section breakdown (JSON)
-  sections        String   // Array of detected sections with metadata
+  // Analysis results (JSON)
+  sections String @default("[]") // [{ name: "...", lines: 50, tokens: 200, type: "active|historical" }]
+  issues   String @default("[]") // [{ type: "bloat", severity: "high", description: "..." }]
 
-  // Issues detected (JSON)
-  issues          String   // Array of optimization opportunities
-
-  // Recommendations
-  estimatedSavings    Int  // Tokens that could be saved
-  optimizationScore   Int  // 0-100, higher = more optimized
+  // Optimization potential
+  currentScore     Int // 0-100
+  potentialScore   Int // 0-100 after optimization
+  estimatedSavings Int // tokens
 
   // Status
-  status          String   @default("analyzed") // "analyzed", "optimized", "archived"
-  lastAnalyzedAt  DateTime @default(now())
+  status     String   @default("analyzed") // "analyzed", "optimized"
+  analyzedAt DateTime @default(now())
 
   machine Machine @relation(fields: [machineId], references: [id], onDelete: Cascade)
 
   @@unique([machineId, projectPath, filePath])
   @@index([machineId])
-  @@index([optimizationScore])
+  @@index([currentScore])
 }
 
-// Archived content from context files
 model ContextArchive {
-  id              String   @id @default(cuid())
-  machineId       String
-  projectPath     String
-  sourceFile      String   // Original file (e.g., "CLAUDE.md")
-  archiveFile     String   // Archive path (e.g., ".claude/archives/CLAUDE-2026-01.md")
+  id          String @id @default(cuid())
+  machineId   String
+  projectPath String
+  sourceFile  String // "CLAUDE.md"
 
   // What was archived
-  sectionName     String   // e.g., "Completed Work Sessions"
-  originalLines   Int
-  originalTokens  Int
-  summaryLines    Int      // Lines in condensed summary
+  sectionName    String
+  reason         String // "completed_work", "outdated", "verbose"
+  originalTokens Int
+  summaryTokens  Int
 
   // Content
-  archivedContent String   // Full archived content
-  summaryContent  String   // Condensed replacement
+  archivedContent String // Full content moved to archive
+  summaryContent  String // Condensed replacement (if any)
 
   // Metadata
-  archiveReason   String   // "completed_work", "outdated", "verbose", "duplicate"
-  archivedAt      DateTime @default(now())
+  archivePath String   // ".claude/archives/2026-01-context.md"
+  archivedAt  DateTime @default(now())
 
   machine Machine @relation(fields: [machineId], references: [id], onDelete: Cascade)
 
@@ -587,155 +292,107 @@ model ContextArchive {
   @@index([archivedAt])
 }
 
-// Optimization rules (user-configurable)
-model ContextOptimizationRule {
-  id              String   @id @default(cuid())
-  machineId       String?  // null = global rule
+// =============================================================================
+// AUTOMATE: Scheduled Tasks
+// =============================================================================
 
-  // Rule definition
-  name            String
-  description     String?
-  ruleType        String   // "archive", "condense", "remove", "move"
-
-  // Pattern matching
-  sectionPattern  String?  // Regex to match section headers
-  contentPattern  String?  // Regex to match content
-  ageThreshold    Int?     // Days old before applying
-  lineThreshold   Int?     // Min lines before applying
-
-  // Action
-  action          String   // JSON action configuration
-
-  enabled         Boolean  @default(true)
-  priority        Int      @default(0)
-
-  machine Machine? @relation(fields: [machineId], references: [id], onDelete: Cascade)
-
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  @@index([machineId])
-  @@index([ruleType])
-  @@index([enabled])
-}
-
-// ============================================================================
-// CCM v3.2 - Scheduled Optimization & Automation
-// ============================================================================
-
-// Scheduled tasks for automation
 model ScheduledTask {
-  id              String   @id @default(cuid())
-  machineId       String?  // null = all machines
+  id        String  @id @default(cuid())
+  machineId String?
 
   // Task definition
-  name            String
-  description     String?
-  taskType        String   // "analyze", "optimize", "health_check", "custom"
+  name        String
+  description String?
+  taskType    String // "analyze_context", "generate_recommendations", "health_check"
 
-  // Schedule configuration
-  scheduleType    String   // "cron", "interval", "threshold", "manual"
-  cronExpression  String?  // e.g., "0 9 * * *" (9 AM daily)
-  intervalMinutes Int?     // e.g., 1440 (daily)
+  // Schedule
+  scheduleType   String  // "cron", "interval", "threshold"
+  cronExpression String? // "0 9 * * *"
+  intervalHours  Int?    // 24 = daily
 
-  // Threshold trigger (for scheduleType = "threshold")
-  thresholdMetric   String?  // "optimization_score", "token_count", "issue_count"
-  thresholdValue    Int?     // e.g., 60 (trigger when score < 60)
-  thresholdOperator String?  // "lt", "gt", "eq", "lte", "gte"
+  // Threshold trigger (optional)
+  thresholdMetric String? // "health_score", "context_tokens"
+  thresholdValue  Int?
+  thresholdOp     String? // "lt", "gt"
 
-  // Scope
-  projectFilter   String?  // JSON array of project paths, null = all
-
-  // Task configuration (JSON)
-  taskConfig      String   @default("{}") // { strategy: "moderate", dryRun: false, ... }
-
-  // Notification settings
-  notifyOnSuccess Boolean  @default(false)
-  notifyOnFailure Boolean  @default(true)
-  webhookIds      String?  // JSON array of webhook IDs to notify
+  // Config (JSON)
+  taskConfig String @default("{}") // { strategy: "moderate", dryRun: false }
 
   // Status
-  enabled         Boolean  @default(true)
-  lastRunAt       DateTime?
-  nextRunAt       DateTime?
+  enabled   Boolean   @default(true)
+  lastRunAt DateTime?
+  nextRunAt DateTime?
 
-  // Metadata
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  // Relationships
+  machine    Machine?        @relation(fields: [machineId], references: [id], onDelete: Cascade)
+  executions TaskExecution[]
 
-  machine         Machine? @relation(fields: [machineId], references: [id], onDelete: Cascade)
-  executions      TaskExecution[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([machineId])
   @@index([enabled])
   @@index([nextRunAt])
-  @@index([taskType])
 }
 
-// Task execution history
 model TaskExecution {
-  id              String   @id @default(cuid())
-  taskId          String
-  machineId       String?
+  id     String  @id @default(cuid())
+  taskId String
 
-  // Execution details
-  status          String   // "pending", "running", "completed", "failed", "skipped"
-  triggerType     String   // "scheduled", "threshold", "manual", "api"
-
-  // Timing
-  startedAt       DateTime @default(now())
-  completedAt     DateTime?
-  durationMs      Int?
+  // Execution
+  status      String   @default("pending") // "pending", "running", "completed", "failed"
+  triggerType String // "scheduled", "threshold", "manual"
+  startedAt   DateTime @default(now())
+  completedAt DateTime?
+  durationMs  Int?
 
   // Results (JSON)
-  result          String?  // { projectsAnalyzed: 5, issuesFound: 12, ... }
-  error           String?  // Error message if failed
+  result String? // { analyzed: 5, recommendations: 3, tokensSaved: 1200 }
+  error  String?
 
-  // Metrics captured
-  projectsProcessed Int    @default(0)
-  issuesFound       Int    @default(0)
-  tokensSaved       Int    @default(0)
-
-  // Notifications sent
-  notificationsSent String? // JSON array of webhook IDs notified
-
-  task            ScheduledTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  machine         Machine?      @relation(fields: [machineId], references: [id], onDelete: SetNull)
+  task ScheduledTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
 
   @@index([taskId])
-  @@index([machineId])
   @@index([status])
   @@index([startedAt])
 }
 
-// Webhook configurations for notifications
-model WebhookConfig {
-  id              String   @id @default(cuid())
-  machineId       String?  // null = global webhook
+// =============================================================================
+// APPLIED CONFIGS: What's Currently Active
+// =============================================================================
 
-  // Webhook details
-  name            String
-  description     String?
-  webhookType     String   // "slack", "discord", "generic", "n8n"
-  webhookUrl      String   // The webhook URL (encrypted)
+// Track what recommendations have been applied (the actual configs in use)
+model AppliedConfig {
+  id        String @id @default(cuid())
+  machineId String
 
-  // Configuration (JSON)
-  config          String   @default("{}") // { channel: "#alerts", username: "CCM Bot", ... }
+  // What type
+  configType String // "mcp_server", "hook", "permission", "skill"
+  configName String // "postgresql", "pre-commit-lint", etc.
 
-  // Event filters
-  eventTypes      String   @default("[]") // JSON array: ["task_completed", "task_failed", "threshold_triggered"]
+  // The active configuration (JSON)
+  configData String
+
+  // Source
+  recommendationId String? // Which recommendation led to this (if any)
+  source           String  // "recommendation", "manual", "imported"
 
   // Status
-  enabled         Boolean  @default(true)
-  lastUsedAt      DateTime?
-  failureCount    Int      @default(0)
+  enabled   Boolean  @default(true)
+  appliedAt DateTime @default(now())
 
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  // Impact tracking
+  usageCount    Int @default(0)
+  lastUsedAt    DateTime?
+  tokensSaved   Int @default(0)
 
-  machine         Machine? @relation(fields: [machineId], references: [id], onDelete: Cascade)
+  machine Machine @relation(fields: [machineId], references: [id], onDelete: Cascade)
 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([machineId, configType, configName])
   @@index([machineId])
-  @@index([webhookType])
+  @@index([configType])
   @@index([enabled])
 }

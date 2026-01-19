@@ -446,7 +446,7 @@ export async function generateSkillRecommendations(
     // Gather affected projects
     const projectsAffected = new Set<string>();
     for (const pattern of matchingPatterns) {
-      pattern.projectIds.forEach(id => projectsAffected.add(id));
+      pattern.projectPaths.forEach(path => projectsAffected.add(path));
     }
 
     // Also get projects directly from pattern analysis

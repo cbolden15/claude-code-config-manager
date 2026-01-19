@@ -58,15 +58,11 @@ interface ScheduledTask {
   taskType: string;
   scheduleType: string;
   cronExpression: string | null;
-  intervalMinutes: number | null;
+  intervalHours: number | null;
   thresholdMetric: string | null;
-  thresholdOperator: string | null;
+  thresholdOp: string | null;
   thresholdValue: number | null;
-  projectFilter: string | null;
   taskConfig: string;
-  notifyOnSuccess: boolean;
-  notifyOnFailure: boolean;
-  webhookIds: string | null;
   enabled: boolean;
   lastRunAt: Date | null;
   nextRunAt: Date | null;
@@ -282,7 +278,6 @@ export class SchedulerRunner {
     const execution = await prisma.taskExecution.create({
       data: {
         taskId: task.id,
-        machineId: task.machineId,
         status: 'running',
         triggerType,
         startedAt: new Date(),
@@ -310,7 +305,7 @@ export class SchedulerRunner {
       const result = await this.executeWithTimeout(task);
       const duration = Date.now() - startTime;
 
-      // Update execution record
+      // Update execution record (stats stored in result JSON)
       await prisma.taskExecution.update({
         where: { id: execution.id },
         data: {
@@ -318,9 +313,6 @@ export class SchedulerRunner {
           completedAt: new Date(),
           durationMs: duration,
           result: JSON.stringify(result),
-          projectsProcessed: result.projectsProcessed,
-          issuesFound: result.issuesFound,
-          tokensSaved: result.tokensSaved,
         },
       });
 
@@ -338,8 +330,8 @@ export class SchedulerRunner {
         `Task ${task.id} completed in ${duration}ms: ${result.projectsProcessed} projects, ${result.tokensSaved} tokens saved`
       );
 
-      // Send success notification
-      if (task.notifyOnSuccess && webhooks.length > 0) {
+      // Send success notification if webhooks configured
+      if (webhooks.length > 0) {
         await this.webhookNotifier.notify(
           webhooks,
           'task_completed',
@@ -383,20 +375,18 @@ export class SchedulerRunner {
         },
       });
 
-      // Send failure notification
-      if (task.notifyOnFailure) {
-        const webhooks = await this.getWebhooksForTask(task);
-        if (webhooks.length > 0) {
-          await this.webhookNotifier.notify(
-            webhooks,
-            'task_failed',
-            createTaskFailedPayload(
-              { id: task.id, name: task.name, taskType: task.taskType },
-              { id: execution.id, duration },
-              errorMessage
-            )
-          );
-        }
+      // Send failure notification if webhooks configured
+      const webhooksForFailure = await this.getWebhooksForTask(task);
+      if (webhooksForFailure.length > 0) {
+        await this.webhookNotifier.notify(
+          webhooksForFailure,
+          'task_failed',
+          createTaskFailedPayload(
+            { id: task.id, name: task.name, taskType: task.taskType },
+            { id: execution.id, duration },
+            errorMessage
+          )
+        );
       }
 
       throw error;
@@ -428,27 +418,11 @@ export class SchedulerRunner {
 
   /**
    * Get webhooks configured for a task
+   * Note: Webhooks are not yet implemented in the simplified schema
    */
-  private async getWebhooksForTask(task: ScheduledTask): Promise<WebhookConfig[]> {
-    if (!task.webhookIds) {
-      // Get global webhooks
-      return prisma.webhookConfig.findMany({
-        where: {
-          enabled: true,
-          machineId: null,
-        },
-      });
-    }
-
-    const webhookIds: string[] = JSON.parse(task.webhookIds);
-    if (webhookIds.length === 0) return [];
-
-    return prisma.webhookConfig.findMany({
-      where: {
-        id: { in: webhookIds },
-        enabled: true,
-      },
-    });
+  private async getWebhooksForTask(_task: ScheduledTask): Promise<WebhookConfig[]> {
+    // Webhooks removed in simplified schema - return empty array
+    return [];
   }
 
   /**
@@ -544,20 +518,13 @@ export class SchedulerRunner {
 
   /**
    * Send a test notification
+   * Note: Webhooks not yet implemented in simplified schema
    *
-   * @param webhookId - Webhook ID to test
+   * @param _webhookId - Webhook ID to test
    * @returns Test result
    */
-  async testWebhook(webhookId: string): Promise<{ success: boolean; error?: string }> {
-    const webhook = await prisma.webhookConfig.findUnique({
-      where: { id: webhookId },
-    });
-
-    if (!webhook) {
-      return { success: false, error: 'Webhook not found' };
-    }
-
-    return this.webhookNotifier.testWebhook(webhook);
+  async testWebhook(_webhookId: string): Promise<{ success: boolean; error?: string }> {
+    return { success: false, error: 'Webhooks not yet implemented' };
   }
 }
 

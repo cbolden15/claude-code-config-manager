@@ -20,10 +20,21 @@ export async function GET(request: NextRequest) {
         ]
       },
       include: {
-        overrides: true,
-        syncLogs: {
-          orderBy: { startedAt: 'desc' },
-          take: 10
+        projects: {
+          orderBy: { lastActiveAt: 'desc' },
+          take: 5
+        },
+        healthScores: {
+          orderBy: { timestamp: 'desc' },
+          take: 1
+        },
+        _count: {
+          select: {
+            projects: true,
+            sessions: true,
+            recommendations: true,
+            appliedConfigs: true
+          }
         }
       }
     });
@@ -34,15 +45,30 @@ export async function GET(request: NextRequest) {
         where: { id: machine.id },
         data: { lastSeen: new Date() },
         include: {
-          overrides: true,
-          syncLogs: {
-            orderBy: { startedAt: 'desc' },
-            take: 10
+          projects: {
+            orderBy: { lastActiveAt: 'desc' },
+            take: 5
+          },
+          healthScores: {
+            orderBy: { timestamp: 'desc' },
+            take: 1
+          },
+          _count: {
+            select: {
+              projects: true,
+              sessions: true,
+              recommendations: true,
+              appliedConfigs: true
+            }
           }
         }
       });
 
-      return NextResponse.json(machine);
+      return NextResponse.json({
+        ...machine,
+        latestHealthScore: machine.healthScores[0] || null,
+        healthScores: undefined
+      });
     }
 
     // Auto-register new machine
@@ -60,19 +86,27 @@ export async function GET(request: NextRequest) {
         platform: machineInfo.platform,
         arch: machineInfo.arch,
         homeDir: machineInfo.homeDir,
-        isCurrentMachine: true,
-        syncEnabled: true
+        isCurrentMachine: true
       },
       include: {
-        overrides: true,
-        syncLogs: {
-          orderBy: { startedAt: 'desc' },
-          take: 10
+        projects: true,
+        healthScores: true,
+        _count: {
+          select: {
+            projects: true,
+            sessions: true,
+            recommendations: true,
+            appliedConfigs: true
+          }
         }
       }
     });
 
-    return NextResponse.json(machine, { status: 201 });
+    return NextResponse.json({
+      ...machine,
+      latestHealthScore: null,
+      healthScores: undefined
+    }, { status: 201 });
   } catch (error) {
     console.error('[GET /api/machines/current]', error);
     return NextResponse.json(

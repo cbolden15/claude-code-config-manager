@@ -323,7 +323,7 @@ export async function generateMcpRecommendations(
     // Gather affected projects
     const projectsAffected = new Set<string>();
     for (const pattern of matchingPatterns) {
-      pattern.projectIds.forEach(id => projectsAffected.add(id));
+      pattern.projectPaths.forEach(id => projectsAffected.add(id));
     }
 
     // If no projects from patterns, get from technology
