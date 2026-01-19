@@ -40,3 +40,9 @@ packages/server/prisma/*.db-journal
 
 # Auto Claude data directory
 .auto-claude/
+
+# Planning/temporary files
+SIMPLIFIED-ARCHITECTURE.md
+SIMPLIFIED-SCHEMA-PROPOSAL.prisma
+WARP.md
+mockups/
