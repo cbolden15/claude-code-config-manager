@@ -15,6 +15,12 @@ const navigation = [
   { name: 'Claude Desktop', href: '/desktop', icon: 'app-window' },
 ];
 
+const intelligenceNavigation = [
+  { name: 'Recommendations', href: '/recommendations', icon: 'sparkles' },
+  { name: 'Context Optimizer', href: '/context', icon: 'file-search' },
+  { name: 'Health', href: '/health', icon: 'heart-pulse' },
+];
+
 const autoClaudeNavigation = [
   { name: 'Auto-Claude', href: '/auto-claude', icon: 'robot' },
   { name: 'Agents', href: '/auto-claude/agents', icon: 'users', isSubItem: true },
@@ -97,6 +103,23 @@ const icons: Record<string, React.ReactNode> = {
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
     </svg>
   ),
+  // Intelligence section icons
+  sparkles: (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+    </svg>
+  ),
+  'file-search': (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 21h7a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v11m0 5l4.879-4.879m0 0a3 3 0 104.243-4.242 3 3 0 00-4.243 4.242z" />
+    </svg>
+  ),
+  'heart-pulse': (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 12l-3-3m0 0l3 3m-3-3l3-3" />
+    </svg>
+  ),
 };
 
 export function Sidebar() {
@@ -135,6 +158,35 @@ export function Sidebar() {
             </Link>
           );
         })}
+
+        {/* Intelligence Section */}
+        <div className="mt-6">
+          <div className="px-3 py-2">
+            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
+              Intelligence
+            </h3>
+          </div>
+          {intelligenceNavigation.map((item) => {
+            const isActive = pathname === item.href ||
+              (item.href !== '/' && pathname.startsWith(item.href));
+
+            return (
+              <Link
+                key={item.name}
+                href={item.href}
+                className={cn(
+                  'flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors',
+                  isActive
+                    ? 'text-violet-900 bg-violet-50 border-r-2 border-violet-500'
+                    : 'text-gray-700 hover:bg-gray-50 hover:text-violet-700'
+                )}
+              >
+                {icons[item.icon]}
+                {item.name}
+              </Link>
+            );
+          })}
+        </div>
 
         {/* Auto-Claude Section */}
         <div className="mt-6">

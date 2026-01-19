@@ -31,3 +31,6 @@ export { createTrackCommand } from './track.js';
 
 // Recommendations command group (v3.0 smart recommendations)
 export { createRecommendationsCommand } from './recommendations.js';
+
+// Context optimizer command group (v3.1 context optimization)
+export { createContextCommand } from './context.js';

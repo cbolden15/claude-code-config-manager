@@ -124,6 +124,11 @@ model Machine {
   impactMetrics     ImpactMetric[]
   technologyUsage   TechnologyUsage[]
 
+  // v3.1 Context Optimizer relationships
+  contextAnalyses    ContextAnalysis[]
+  contextArchives    ContextArchive[]
+  optimizationRules  ContextOptimizationRule[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -510,4 +515,101 @@ model TechnologyUsage {
   @@unique([machineId, technology])
   @@index([machineId])
   @@index([sessionCount])
+}
+
+// ============================================================================
+// CCM v3.1 - Context Optimizer
+// ============================================================================
+
+// Context analysis results
+model ContextAnalysis {
+  id              String   @id @default(cuid())
+  machineId       String
+  projectPath     String
+  filePath        String   // Path to CLAUDE.md or other context file
+
+  // Analysis results
+  totalLines      Int
+  totalTokens     Int      // Estimated token count
+
+  // Section breakdown (JSON)
+  sections        String   // Array of detected sections with metadata
+
+  // Issues detected (JSON)
+  issues          String   // Array of optimization opportunities
+
+  // Recommendations
+  estimatedSavings    Int  // Tokens that could be saved
+  optimizationScore   Int  // 0-100, higher = more optimized
+
+  // Status
+  status          String   @default("analyzed") // "analyzed", "optimized", "archived"
+  lastAnalyzedAt  DateTime @default(now())
+
+  machine Machine @relation(fields: [machineId], references: [id], onDelete: Cascade)
+
+  @@unique([machineId, projectPath, filePath])
+  @@index([machineId])
+  @@index([optimizationScore])
+}
+
+// Archived content from context files
+model ContextArchive {
+  id              String   @id @default(cuid())
+  machineId       String
+  projectPath     String
+  sourceFile      String   // Original file (e.g., "CLAUDE.md")
+  archiveFile     String   // Archive path (e.g., ".claude/archives/CLAUDE-2026-01.md")
+
+  // What was archived
+  sectionName     String   // e.g., "Completed Work Sessions"
+  originalLines   Int
+  originalTokens  Int
+  summaryLines    Int      // Lines in condensed summary
+
+  // Content
+  archivedContent String   // Full archived content
+  summaryContent  String   // Condensed replacement
+
+  // Metadata
+  archiveReason   String   // "completed_work", "outdated", "verbose", "duplicate"
+  archivedAt      DateTime @default(now())
+
+  machine Machine @relation(fields: [machineId], references: [id], onDelete: Cascade)
+
+  @@index([machineId])
+  @@index([projectPath])
+  @@index([archivedAt])
+}
+
+// Optimization rules (user-configurable)
+model ContextOptimizationRule {
+  id              String   @id @default(cuid())
+  machineId       String?  // null = global rule
+
+  // Rule definition
+  name            String
+  description     String?
+  ruleType        String   // "archive", "condense", "remove", "move"
+
+  // Pattern matching
+  sectionPattern  String?  // Regex to match section headers
+  contentPattern  String?  // Regex to match content
+  ageThreshold    Int?     // Days old before applying
+  lineThreshold   Int?     // Min lines before applying
+
+  // Action
+  action          String   // JSON action configuration
+
+  enabled         Boolean  @default(true)
+  priority        Int      @default(0)
+
+  machine Machine? @relation(fields: [machineId], references: [id], onDelete: Cascade)
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([machineId])
+  @@index([ruleType])
+  @@index([enabled])
 }

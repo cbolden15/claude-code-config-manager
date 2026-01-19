@@ -18,7 +18,9 @@ export {
   getHealthScoreHistory,
   getLatestHealthScore,
   getHealthScoreTrend,
-  getImprovementSuggestions
+  getImprovementSuggestions,
+  // v3.1: CLAUDE.md optimization
+  getClaudeMdOptimizationScore
 } from './calculator';
 
 import { prisma } from '@/lib/db';

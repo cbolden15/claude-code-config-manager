@@ -1,12 +1,15 @@
 /**
- * Health Score Calculator for CCM v3.0
+ * Health Score Calculator for CCM v3.0/v3.1
  *
  * Calculates an overall health score (0-100) for a machine based on
  * how well optimized its Claude Code configuration is.
+ *
+ * v3.1 adds context optimization scoring based on CLAUDE.md analysis.
  */
 
 import { prisma } from '@/lib/db';
 import { analyzeCrossProject } from '@/lib/recommendations/cross-project-analyzer';
+import { calculateContextOptimizationScore, getQuickStats } from '@/lib/context';
 
 /**
  * Health score result
@@ -63,6 +66,14 @@ export interface HealthBreakdown {
     avgTokensPerSession: number;
     startupTokens: number;
     details: string;
+    /** v3.1: CLAUDE.md optimization score (0-100) */
+    contextOptimizationScore?: number;
+    /** v3.1: CLAUDE.md file stats */
+    claudeMdStats?: {
+      lines: number;
+      tokens: number;
+      sections: number;
+    };
   };
   patterns: {
     score: number;
@@ -165,16 +176,55 @@ async function calculateSkillScore(
 }
 
 /**
+ * Context score result with v3.1 CLAUDE.md optimization
+ */
+interface ContextScoreResult {
+  score: number;
+  avgTokensPerSession: number;
+  startupTokens: number;
+  /** v3.1: CLAUDE.md optimization score */
+  contextOptimizationScore?: number;
+  /** v3.1: CLAUDE.md stats */
+  claudeMdStats?: {
+    lines: number;
+    tokens: number;
+    sections: number;
+  };
+}
+
+/**
  * Calculate context efficiency score
+ *
+ * v3.1: Now includes CLAUDE.md file optimization analysis when content is provided.
  */
 async function calculateContextScore(
   machineId: string,
-  daysBack: number
-): Promise<{ score: number; avgTokensPerSession: number; startupTokens: number }> {
+  daysBack: number,
+  claudeMdContent?: string
+): Promise<ContextScoreResult> {
   const analysis = await analyzeCrossProject(machineId, daysBack);
 
+  // v3.1: Calculate CLAUDE.md optimization if content provided
+  let contextOptimizationScore: number | undefined;
+  let claudeMdStats: { lines: number; tokens: number; sections: number } | undefined;
+
+  if (claudeMdContent) {
+    try {
+      contextOptimizationScore = calculateContextOptimizationScore(claudeMdContent);
+      claudeMdStats = getQuickStats(claudeMdContent);
+    } catch {
+      // If context analysis fails, continue without it
+    }
+  }
+
   if (analysis.sessionCount === 0) {
-    return { score: 100, avgTokensPerSession: 0, startupTokens: 0 };
+    return {
+      score: contextOptimizationScore ?? 100,
+      avgTokensPerSession: 0,
+      startupTokens: 0,
+      contextOptimizationScore,
+      claudeMdStats
+    };
   }
 
   const avgTokensPerSession = analysis.avgTokensPerSession;
@@ -207,10 +257,17 @@ async function calculateContextScore(
     score = Math.max(score - 5, 0);
   }
 
+  // v3.1: Blend in CLAUDE.md optimization score if available (30% weight)
+  if (contextOptimizationScore !== undefined) {
+    score = Math.round(score * 0.7 + contextOptimizationScore * 0.3);
+  }
+
   return {
     score,
     avgTokensPerSession: Math.round(avgTokensPerSession),
-    startupTokens: Math.round(avgStartupTokens)
+    startupTokens: Math.round(avgStartupTokens),
+    contextOptimizationScore,
+    claudeMdStats
   };
 }
 
@@ -333,18 +390,20 @@ async function getRecommendationsSummary(
  * @param machineId - Machine ID to calculate score for
  * @param daysBack - Number of days of data to analyze (default: 30)
  * @param saveToDatabase - Whether to persist the score (default: true)
+ * @param claudeMdContent - Optional CLAUDE.md content for v3.1 optimization analysis
  * @returns Complete health score result
  */
 export async function calculateHealthScore(
   machineId: string,
   daysBack: number = 30,
-  saveToDatabase: boolean = true
+  saveToDatabase: boolean = true,
+  claudeMdContent?: string
 ): Promise<HealthScoreResult> {
   // Calculate all category scores in parallel
   const [mcpResult, skillResult, contextResult, patternResult] = await Promise.all([
     calculateMcpScore(machineId),
     calculateSkillScore(machineId),
-    calculateContextScore(machineId, daysBack),
+    calculateContextScore(machineId, daysBack, claudeMdContent),
     calculatePatternScore(machineId, daysBack)
   ]);
 
@@ -425,7 +484,10 @@ export async function calculateHealthScore(
         ? 'Context usage is efficient'
         : contextResult.score >= 50
           ? 'Context could be more efficient'
-          : 'High context usage detected'
+          : 'High context usage detected',
+      // v3.1: CLAUDE.md optimization data
+      contextOptimizationScore: contextResult.contextOptimizationScore,
+      claudeMdStats: contextResult.claudeMdStats
     },
     patterns: {
       score: patternResult.score,
@@ -569,4 +631,35 @@ export function getImprovementSuggestions(
   }
 
   return suggestions;
+}
+
+/**
+ * v3.1: Get CLAUDE.md optimization score and stats
+ *
+ * Standalone function to analyze CLAUDE.md content without full health calculation.
+ *
+ * @param content - CLAUDE.md file content
+ * @returns Optimization score and file statistics
+ */
+export function getClaudeMdOptimizationScore(content: string): {
+  score: number;
+  stats: {
+    lines: number;
+    tokens: number;
+    sections: number;
+  };
+  needsOptimization: boolean;
+} {
+  const score = calculateContextOptimizationScore(content);
+  const stats = getQuickStats(content);
+
+  return {
+    score,
+    stats: {
+      lines: stats.lines,
+      tokens: stats.tokens,
+      sections: stats.sections
+    },
+    needsOptimization: score < 70
+  };
 }

@@ -42,11 +42,18 @@ export function RecommendationCard({ recommendation }: RecommendationCardProps) 
   const typeLabels: Record<string, string> = {
     mcp_server: 'MCP Server',
     skill: 'Skill',
+    context_optimization: 'Context Optimizer',
   };
 
   const handleApply = async () => {
     setIsApplying(true);
     try {
+      // For context_optimization, redirect to context optimizer page
+      if (recommendation.type === 'context_optimization') {
+        window.location.href = '/context';
+        return;
+      }
+
       const response = await fetch(
         `/api/recommendations/${recommendation.id}/apply`,
         { method: 'POST' }
@@ -114,6 +121,10 @@ export function RecommendationCard({ recommendation }: RecommendationCardProps) 
                   <rect width="20" height="8" x="2" y="14" rx="2" ry="2"/>
                   <line x1="6" x2="6.01" y1="6" y2="6"/>
                   <line x1="6" x2="6.01" y1="18" y2="18"/>
+                </svg>
+              ) : recommendation.type === 'context_optimization' ? (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M10 21h7a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v11m0 5l4.879-4.879m0 0a3 3 0 104.243-4.242 3 3 0 00-4.243 4.242z"/>
                 </svg>
               ) : (
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
