@@ -10,15 +10,16 @@ export const dynamic = 'force-dynamic';
 interface HealthScore {
   id: string;
   machineId: string;
-  totalScore: number;
+  score: number;
   mcpScore: number;
   skillScore: number;
   contextScore: number;
   patternScore: number;
   activeRecommendations: number;
   appliedRecommendations: number;
-  estimatedDailyWaste: number;
-  estimatedDailySavings: number;
+  dismissedRecommendations: number;
+  estimatedMonthlyWaste: number;
+  estimatedMonthlySavings: number;
   previousScore: number | null;
   trend: string;
   timestamp: Date;
@@ -26,7 +27,6 @@ interface HealthScore {
 
 async function getHealthScore(): Promise<HealthScore | null> {
   try {
-    // @ts-expect-error - HealthScore model may not exist yet (T1 adding schema)
     return await prisma.healthScore.findFirst({
       orderBy: { timestamp: 'desc' }
     });
@@ -38,7 +38,6 @@ async function getHealthScore(): Promise<HealthScore | null> {
 
 async function getHealthHistory(): Promise<HealthScore[]> {
   try {
-    // @ts-expect-error - HealthScore model may not exist yet (T1 adding schema)
     return await prisma.healthScore.findMany({
       orderBy: { timestamp: 'desc' },
       take: 30
@@ -93,15 +92,16 @@ export default async function HealthPage() {
   const mockHealth: HealthScore = {
     id: 'mock',
     machineId: 'mock',
-    totalScore: 0,
+    score: 0,
     mcpScore: 0,
     skillScore: 0,
     contextScore: 0,
     patternScore: 0,
     activeRecommendations: 0,
     appliedRecommendations: 0,
-    estimatedDailyWaste: 0,
-    estimatedDailySavings: 0,
+    dismissedRecommendations: 0,
+    estimatedMonthlyWaste: 0,
+    estimatedMonthlySavings: 0,
     previousScore: null,
     trend: 'stable',
     timestamp: new Date()
@@ -188,13 +188,13 @@ export default async function HealthPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className={`text-6xl font-bold ${getScoreColor(health.totalScore)} mb-4`}>
-                  {health.totalScore}/100
+                <div className={`text-6xl font-bold ${getScoreColor(health.score)} mb-4`}>
+                  {health.score}/100
                 </div>
                 <div className="relative h-4 w-full overflow-hidden rounded-full bg-gray-200 mb-4">
                   <div
-                    className={`h-full ${getProgressColor(health.totalScore)} transition-all duration-300 ease-in-out`}
-                    style={{ width: `${health.totalScore}%` }}
+                    className={`h-full ${getProgressColor(health.score)} transition-all duration-300 ease-in-out`}
+                    style={{ width: `${health.score}%` }}
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4 text-sm">
@@ -205,9 +205,9 @@ export default async function HealthPage() {
                     </p>
                   </div>
                   <div>
-                    <p className="text-muted-foreground">Daily Token Waste</p>
+                    <p className="text-muted-foreground">Monthly Token Waste</p>
                     <p className="text-xl font-semibold text-red-600">
-                      ~{health.estimatedDailyWaste.toLocaleString()}
+                      ~{health.estimatedMonthlyWaste.toLocaleString()}
                     </p>
                   </div>
                 </div>
@@ -215,10 +215,10 @@ export default async function HealthPage() {
                   <div className="mt-4 pt-4 border-t">
                     <p className="text-sm text-muted-foreground">
                       Previous score: {health.previousScore} ({' '}
-                      {health.totalScore > health.previousScore ? (
-                        <span className="text-green-600">+{health.totalScore - health.previousScore}</span>
-                      ) : health.totalScore < health.previousScore ? (
-                        <span className="text-red-600">{health.totalScore - health.previousScore}</span>
+                      {health.score > health.previousScore ? (
+                        <span className="text-green-600">+{health.score - health.previousScore}</span>
+                      ) : health.score < health.previousScore ? (
+                        <span className="text-red-600">{health.score - health.previousScore}</span>
                       ) : (
                         <span>no change</span>
                       )}
@@ -301,15 +301,15 @@ export default async function HealthPage() {
                       <polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/>
                       <polyline points="17 18 23 18 23 12"/>
                     </svg>
-                    Estimated Daily Waste
+                    Estimated Monthly Waste
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-4xl font-bold text-red-600">
-                    {health.estimatedDailyWaste.toLocaleString()}
+                    {health.estimatedMonthlyWaste.toLocaleString()}
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    tokens wasted per day without optimizations
+                    tokens wasted per month without optimizations
                   </p>
                 </CardContent>
               </Card>
@@ -321,15 +321,15 @@ export default async function HealthPage() {
                       <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
                       <polyline points="17 6 23 6 23 12"/>
                     </svg>
-                    Estimated Daily Savings
+                    Estimated Monthly Savings
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-4xl font-bold text-green-600">
-                    {health.estimatedDailySavings.toLocaleString()}
+                    {health.estimatedMonthlySavings.toLocaleString()}
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    tokens saved per day from applied optimizations
+                    tokens saved per month from applied optimizations
                   </p>
                 </CardContent>
               </Card>
@@ -386,15 +386,15 @@ export default async function HealthPage() {
                         key={score.id}
                         className="flex-1 rounded-t"
                         style={{
-                          height: `${score.totalScore}%`,
+                          height: `${score.score}%`,
                           backgroundColor:
-                            score.totalScore >= 80
+                            score.score >= 80
                               ? '#16a34a'
-                              : score.totalScore >= 60
+                              : score.score >= 60
                               ? '#eab308'
                               : '#dc2626'
                         }}
-                        title={`${score.totalScore} - ${new Date(score.timestamp).toLocaleDateString()}`}
+                        title={`${score.score} - ${new Date(score.timestamp).toLocaleDateString()}`}
                       />
                     ))}
                   </div>

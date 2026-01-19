@@ -6,47 +6,32 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { SyncButton } from './sync-button';
 import { DeleteButton } from './delete-button';
 
 async function getProject(id: string) {
   return prisma.project.findUnique({
     where: { id },
     include: {
-      profile: {
-        include: {
-          components: {
-            include: { component: true },
-            orderBy: { order: 'asc' },
-          },
-        },
-      },
+      machine: true,
     },
   });
 }
 
-function formatDate(date: Date | null) {
+async function getProjectRecommendations(machineId: string) {
+  return prisma.recommendation.findMany({
+    where: {
+      machineId,
+      status: 'active',
+    },
+    take: 5,
+    orderBy: { priority: 'asc' },
+  });
+}
+
+function formatDate(date: Date | null | undefined) {
   if (!date) return 'Never';
   return new Date(date).toLocaleString();
 }
-
-const typeLabels: Record<string, string> = {
-  MCP_SERVER: 'MCP Server',
-  SUBAGENT: 'Subagent',
-  SKILL: 'Skill',
-  COMMAND: 'Command',
-  HOOK: 'Hook',
-  CLAUDE_MD_TEMPLATE: 'Template',
-};
-
-const typeColors: Record<string, string> = {
-  MCP_SERVER: 'bg-violet-100 text-violet-800',
-  SUBAGENT: 'bg-blue-100 text-blue-800',
-  SKILL: 'bg-green-100 text-green-800',
-  COMMAND: 'bg-amber-100 text-amber-800',
-  HOOK: 'bg-rose-100 text-rose-800',
-  CLAUDE_MD_TEMPLATE: 'bg-gray-100 text-gray-800',
-};
 
 export default async function ProjectDetailPage({
   params,
@@ -60,12 +45,15 @@ export default async function ProjectDetailPage({
     notFound();
   }
 
-  const components = project.profile?.components.map((pc) => pc.component) ?? [];
-  const componentsByType = components.reduce((acc, c) => {
-    if (!acc[c.type]) acc[c.type] = [];
-    acc[c.type].push(c);
-    return acc;
-  }, {} as Record<string, typeof components>);
+  const recommendations = await getProjectRecommendations(project.machineId);
+
+  // Parse detected technologies and patterns
+  const detectedTechs = project.detectedTechs
+    ? JSON.parse(project.detectedTechs) as string[]
+    : [];
+  const detectedPatterns = project.detectedPatterns
+    ? JSON.parse(project.detectedPatterns) as string[]
+    : [];
 
   return (
     <>
@@ -74,9 +62,8 @@ export default async function ProjectDetailPage({
         description={project.path}
         actions={
           <div className="flex gap-2">
-            <SyncButton projectId={project.id} />
-            <Link href={`/projects/${id}/edit`}>
-              <Button variant="outline">Edit</Button>
+            <Link href={`/context?project=${encodeURIComponent(project.path)}`}>
+              <Button variant="outline">Analyze Context</Button>
             </Link>
             <DeleteButton projectId={project.id} projectName={project.name} />
           </div>
@@ -87,67 +74,85 @@ export default async function ProjectDetailPage({
         <div className="grid grid-cols-3 gap-6">
           {/* Main Content */}
           <div className="col-span-2 space-y-6">
-            {/* Profile & Components */}
+            {/* Detected Technologies */}
             <Card>
               <CardHeader>
-                <CardTitle>
-                  {project.profile ? (
-                    <span>
-                      Profile:{' '}
-                      <Link
-                        href={`/profiles/${project.profile.id}`}
-                        className="text-violet-600 hover:text-violet-800"
-                      >
-                        {project.profile.name}
-                      </Link>
-                    </span>
-                  ) : (
-                    'No Profile Assigned'
-                  )}
-                </CardTitle>
+                <CardTitle>Detected Technologies</CardTitle>
               </CardHeader>
               <CardContent>
-                {project.profile ? (
-                  <>
-                    <p className="text-sm text-gray-500 mb-4">{project.profile.description}</p>
-
-                    {Object.entries(componentsByType).map(([type, comps]) => (
-                      <div key={type} className="mb-4 last:mb-0">
-                        <h4 className="text-sm font-medium text-gray-500 mb-2 flex items-center gap-2">
-                          <span className={`px-2 py-0.5 rounded text-xs ${typeColors[type]}`}>
-                            {typeLabels[type]}
-                          </span>
-                          <span className="text-gray-400">({comps.length})</span>
-                        </h4>
-                        <div className="grid grid-cols-2 gap-2">
-                          {comps.map((component) => (
-                            <Link
-                              key={component.id}
-                              href={`/components/${component.id}`}
-                              className="block p-2 rounded border border-gray-200 hover:border-gray-300 transition-colors"
-                            >
-                              <p className="font-medium text-sm text-gray-900">{component.name}</p>
-                            </Link>
-                          ))}
-                        </div>
-                      </div>
+                {detectedTechs.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {detectedTechs.map((tech) => (
+                      <Badge key={tech} variant="secondary">
+                        {tech}
+                      </Badge>
                     ))}
-
-                    {components.length === 0 && (
-                      <p className="text-gray-500 text-center py-4">
-                        Profile has no components.
-                      </p>
-                    )}
-                  </>
-                ) : (
-                  <div className="text-center py-8">
-                    <p className="text-gray-500 mb-4">
-                      Assign a profile to this project to manage its configuration.
-                    </p>
-                    <Link href={`/projects/${id}/edit`}>
-                      <Button variant="outline">Assign Profile</Button>
-                    </Link>
                   </div>
+                ) : (
+                  <p className="text-sm text-gray-500">
+                    No technologies detected yet. Technologies are discovered from session activity.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Detected Patterns */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Usage Patterns</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {detectedPatterns.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {detectedPatterns.map((pattern) => (
+                      <Badge key={pattern} variant="outline">
+                        {pattern.replace(/_/g, ' ')}
+                      </Badge>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500">
+                    No patterns detected yet. Patterns are identified from repeated behaviors across sessions.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Recommendations */}
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>Recommendations</CardTitle>
+                <Link href="/recommendations">
+                  <Button variant="ghost" size="sm">View All</Button>
+                </Link>
+              </CardHeader>
+              <CardContent>
+                {recommendations.length > 0 ? (
+                  <div className="space-y-3">
+                    {recommendations.map((rec) => (
+                      <Link
+                        key={rec.id}
+                        href={`/recommendations/${rec.id}`}
+                        className="block p-3 border rounded-lg hover:bg-gray-50 transition-colors"
+                      >
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <p className="font-medium text-sm">{rec.title}</p>
+                            <p className="text-xs text-gray-500 mt-1">{rec.category}</p>
+                          </div>
+                          <Badge
+                            variant={rec.priority === 'critical' ? 'destructive' : 'secondary'}
+                          >
+                            {rec.priority}
+                          </Badge>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500 text-center py-4">
+                    No active recommendations for this machine.
+                  </p>
                 )}
               </CardContent>
             </Card>
@@ -159,16 +164,16 @@ export default async function ProjectDetailPage({
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <p className="text-sm text-gray-500 mb-2">Sync this project:</p>
+                  <p className="text-sm text-gray-500 mb-2">Analyze CLAUDE.md:</p>
                   <code className="block p-3 bg-gray-900 text-gray-100 rounded text-sm font-mono">
-                    ccm sync --path &quot;{project.path}&quot;
+                    ccm context analyze --project &quot;{project.path}&quot;
                   </code>
                 </div>
 
                 <div>
-                  <p className="text-sm text-gray-500 mb-2">Apply profile changes:</p>
+                  <p className="text-sm text-gray-500 mb-2">View recommendations:</p>
                   <code className="block p-3 bg-gray-900 text-gray-100 rounded text-sm font-mono">
-                    ccm apply --path &quot;{project.path}&quot;
+                    ccm recommendations list
                   </code>
                 </div>
               </CardContent>
@@ -188,7 +193,9 @@ export default async function ProjectDetailPage({
                     <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                     </svg>
-                    <p className="font-medium">{project.machine}</p>
+                    <Link href={`/machines/${project.machine.id}`} className="font-medium hover:text-blue-600">
+                      {project.machine.name}
+                    </Link>
                   </div>
                 </div>
 
@@ -202,35 +209,20 @@ export default async function ProjectDetailPage({
                 <Separator />
 
                 <div>
-                  <p className="text-sm text-gray-500">Sync Status</p>
-                  <div className="mt-1">
-                    {project.lastSyncedAt ? (
-                      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                        Synced
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
-                        Never synced
-                      </Badge>
-                    )}
-                  </div>
+                  <p className="text-sm text-gray-500">Platform</p>
+                  <p className="text-sm mt-1">{project.machine.platform}</p>
                 </div>
 
                 <Separator />
 
                 <div>
-                  <p className="text-sm text-gray-500">Last Synced</p>
-                  <p className="text-sm mt-1">{formatDate(project.lastSyncedAt)}</p>
+                  <p className="text-sm text-gray-500">Last Active</p>
+                  <p className="text-sm mt-1">{formatDate(project.lastActiveAt)}</p>
                 </div>
 
                 <div>
-                  <p className="text-sm text-gray-500">Registered</p>
+                  <p className="text-sm text-gray-500">Discovered</p>
                   <p className="text-sm mt-1">{formatDate(project.createdAt)}</p>
-                </div>
-
-                <div>
-                  <p className="text-sm text-gray-500">Updated</p>
-                  <p className="text-sm mt-1">{formatDate(project.updatedAt)}</p>
                 </div>
               </CardContent>
             </Card>

@@ -1,254 +1,264 @@
 import Link from 'next/link';
-import { prisma } from '@/lib/db';
 
-export const dynamic = 'force-dynamic';
-import { Header } from '@/components/layout/header';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+// Mock data - will be replaced with API calls after schema migration
+const mockHealthScore = {
+  overall: 73,
+  trend: '+8',
+  trendLabel: 'this week',
+  categories: [
+    { name: 'MCP Servers', score: 92, status: 'good' },
+    { name: 'Context', score: 68, status: 'warning' },
+    { name: 'Patterns', score: 71, status: 'warning' },
+    { name: 'Skills', score: 61, status: 'bad' },
+  ],
+};
 
-async function getStats() {
-  const [componentCount, profileCount, projectCount, unreadMonitoring, machineCount] = await Promise.all([
-    prisma.component.count(),
-    prisma.profile.count(),
-    prisma.project.count(),
-    prisma.monitoringEntry.count({ where: { isRead: false } }),
-    prisma.machine.count(),
-  ]);
+const mockRecommendations = [
+  {
+    id: '1',
+    priority: 'critical',
+    type: 'mcp',
+    icon: '🔌',
+    title: 'Enable PostgreSQL MCP Server',
+    description: '47 database queries detected via SSH in the last 30 days',
+    savings: '~2,100',
+    savingsUnit: 'tokens/month',
+  },
+  {
+    id: '2',
+    priority: 'high',
+    type: 'context',
+    icon: '📄',
+    title: 'Archive completed work sessions',
+    description: 'CLAUDE.md has 12KB of historical content that can be archived',
+    savings: '~4,200',
+    savingsUnit: 'tokens/session',
+  },
+  {
+    id: '3',
+    priority: 'high',
+    type: 'skill',
+    icon: '⚡',
+    title: 'Create git-status skill',
+    description: 'Repetitive pattern: git status && git diff runs 23 times/week',
+    savings: '~800',
+    savingsUnit: 'tokens/week',
+  },
+];
 
-  return { componentCount, profileCount, projectCount, unreadMonitoring, machineCount };
-}
+const mockStats = [
+  { label: 'Sessions Today', value: '12', change: '↑ 3 from yesterday', changeType: 'positive' },
+  { label: 'Tokens Saved', value: '8,420', change: '↑ 1,200 this week', changeType: 'positive' },
+  { label: 'Active Projects', value: '7', change: '2 analyzed today', changeType: 'neutral' },
+];
 
-async function getRecentProjects() {
-  return prisma.project.findMany({
-    include: { profile: { select: { name: true } } },
-    orderBy: { updatedAt: 'desc' },
-    take: 5,
-  });
-}
-
-async function getRecentMonitoring() {
-  return prisma.monitoringEntry.findMany({
-    where: { isRead: false },
-    orderBy: { fetchedAt: 'desc' },
-    take: 5,
-  });
-}
-
-export default async function Dashboard() {
-  const stats = await getStats();
-  const recentProjects = await getRecentProjects();
-  const recentMonitoring = await getRecentMonitoring();
+function HealthRing({ score }: { score: number }) {
+  // Calculate stroke-dashoffset for the progress ring (295 is circumference, lower offset = more fill)
+  const circumference = 295;
+  const offset = circumference - (score / 100) * circumference;
 
   return (
-    <>
-      <Header
-        title="Dashboard"
-        description="Overview of your Claude Code configurations"
+    <div className="relative w-[130px] h-[130px]">
+      <svg width="130" height="130" viewBox="0 0 130 130" className="-rotate-90">
+        <defs>
+          <linearGradient id="healthGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#10b981" />
+            <stop offset="100%" stopColor="#06b6d4" />
+          </linearGradient>
+        </defs>
+        <circle
+          cx="65"
+          cy="65"
+          r="47"
+          fill="none"
+          stroke="#334155"
+          strokeWidth="12"
+        />
+        <circle
+          cx="65"
+          cy="65"
+          r="47"
+          fill="none"
+          stroke="url(#healthGradient)"
+          strokeWidth="12"
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          className="transition-all duration-500"
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <div className="text-4xl font-bold text-[#f1f5f9] tracking-tight">{score}</div>
+        <div className="text-xs text-[#64748b] uppercase tracking-wider">Health</div>
+      </div>
+    </div>
+  );
+}
+
+function CategoryBar({ name, score, status }: { name: string; score: number; status: string }) {
+  const barColors = {
+    good: 'bg-gradient-to-r from-[#10b981] to-[#06b6d4]',
+    warning: 'bg-gradient-to-r from-[#f59e0b] to-[#fbbf24]',
+    bad: 'bg-gradient-to-r from-[#f43f5e] to-[#fb7185]',
+  };
+
+  const textColors = {
+    good: 'text-[#10b981]',
+    warning: 'text-[#f59e0b]',
+    bad: 'text-[#f43f5e]',
+  };
+
+  return (
+    <div className="bg-[rgba(15,23,42,0.5)] p-5 rounded-xl text-center">
+      <div className="h-1.5 bg-[#334155] rounded-full overflow-hidden mb-3.5">
+        <div
+          className={`h-full rounded-full transition-all duration-500 ${barColors[status as keyof typeof barColors]}`}
+          style={{ width: `${score}%` }}
+        />
+      </div>
+      <div className={`text-2xl font-bold mb-1 tracking-tight ${textColors[status as keyof typeof textColors]}`}>
+        {score}
+      </div>
+      <div className="text-xs text-[#64748b] uppercase tracking-wider">{name}</div>
+    </div>
+  );
+}
+
+function RecommendationCard({
+  recommendation,
+}: {
+  recommendation: typeof mockRecommendations[0];
+}) {
+  const priorityColors = {
+    critical: 'bg-gradient-to-b from-[#f43f5e] to-[#fb7185]',
+    high: 'bg-gradient-to-b from-[#f59e0b] to-[#fbbf24]',
+    medium: 'bg-gradient-to-b from-[#6366f1] to-[#06b6d4]',
+  };
+
+  const iconBgColors = {
+    mcp: 'bg-[rgba(99,102,241,0.15)]',
+    context: 'bg-[rgba(245,158,11,0.15)]',
+    skill: 'bg-[rgba(16,185,129,0.15)]',
+    hook: 'bg-[rgba(139,92,246,0.15)]',
+  };
+
+  return (
+    <div className="bg-[#1e293b] border border-[#334155] rounded-2xl p-5 flex items-center gap-5 transition-all duration-200 hover:border-[#6366f1] hover:shadow-[0_0_0_1px_#6366f1] hover:-translate-y-px">
+      <div
+        className={`w-1 h-12 rounded-sm ${priorityColors[recommendation.priority as keyof typeof priorityColors]}`}
       />
+      <div
+        className={`w-12 h-12 rounded-xl flex items-center justify-center text-[22px] ${iconBgColors[recommendation.type as keyof typeof iconBgColors]}`}
+      >
+        {recommendation.icon}
+      </div>
+      <div className="flex-1">
+        <div className="font-semibold text-[15px] mb-1">{recommendation.title}</div>
+        <div className="text-[13px] text-[#94a3b8]">{recommendation.description}</div>
+      </div>
+      <div className="text-right min-w-[110px]">
+        <div className="font-bold text-lg text-[#10b981] tracking-tight">{recommendation.savings}</div>
+        <div className="text-[11px] text-[#64748b] uppercase tracking-wider">{recommendation.savingsUnit}</div>
+      </div>
+      <div className="flex gap-2.5">
+        <button className="px-5 py-2.5 bg-[#334155] text-[#94a3b8] rounded-[10px] text-sm font-semibold transition-all hover:bg-[#475569] hover:text-[#f1f5f9]">
+          Dismiss
+        </button>
+        <button className="px-5 py-2.5 bg-gradient-to-br from-[#6366f1] to-[#4f46e5] text-white rounded-[10px] text-sm font-semibold shadow-[0_4px_12px_rgba(99,102,241,0.3)] transition-all hover:-translate-y-px hover:shadow-[0_6px_16px_rgba(99,102,241,0.4)]">
+          Apply
+        </button>
+      </div>
+    </div>
+  );
+}
 
-      <div className="p-6">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-5 gap-4 mb-6">
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-500">Components</p>
-                  <p className="text-2xl font-semibold text-gray-900 mt-1">
-                    {stats.componentCount}
-                  </p>
+function StatCard({
+  stat,
+}: {
+  stat: typeof mockStats[0];
+}) {
+  const changeColors = {
+    positive: 'text-[#10b981]',
+    negative: 'text-[#f43f5e]',
+    neutral: 'text-[#64748b]',
+  };
+
+  return (
+    <div className="bg-[#1e293b] border border-[#334155] rounded-2xl p-6 transition-colors hover:border-[#475569]">
+      <div className="text-xs text-[#64748b] uppercase tracking-wider mb-2">{stat.label}</div>
+      <div className="text-[32px] font-bold tracking-tight">{stat.value}</div>
+      <div className={`text-[13px] mt-2 font-medium ${changeColors[stat.changeType as keyof typeof changeColors]}`}>
+        {stat.change}
+      </div>
+    </div>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <>
+      {/* Header */}
+      <header className="px-10 py-6 bg-[#1e293b] border-b border-[#334155]">
+        <h1 className="text-2xl font-semibold text-[#f1f5f9] tracking-tight mb-1">Dashboard</h1>
+        <p className="text-sm text-[#64748b]">Your Claude Code optimization overview</p>
+      </header>
+
+      {/* Content */}
+      <div className="flex-1 p-8 bg-[#0f172a]">
+        {/* Health Card */}
+        <div className="bg-gradient-to-br from-[#1e293b] to-[rgba(99,102,241,0.05)] border border-[#334155] rounded-[20px] p-8 mb-8">
+          <div className="flex justify-between items-start mb-8">
+            <div className="flex items-center gap-6">
+              <HealthRing score={mockHealthScore.overall} />
+              <div>
+                <h3 className="text-lg font-semibold mb-2.5 tracking-tight">Good Progress</h3>
+                <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-[rgba(16,185,129,0.15)] text-[#10b981] rounded-full text-[13px] font-semibold">
+                  <span>↑</span> {mockHealthScore.trend} {mockHealthScore.trendLabel}
                 </div>
-                <div className="w-10 h-10 bg-violet-100 rounded-lg flex items-center justify-center">
-                  <svg className="w-5 h-5 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                  </svg>
-                </div>
+                <p className="text-[#94a3b8] text-sm mt-3.5 max-w-[300px] leading-relaxed">
+                  Your setup is {mockHealthScore.overall}% optimized. Apply 2 recommendations to reach 85+.
+                </p>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-500">Profiles</p>
-                  <p className="text-2xl font-semibold text-gray-900 mt-1">
-                    {stats.profileCount}
-                  </p>
-                </div>
-                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                  </svg>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-500">Projects</p>
-                  <p className="text-2xl font-semibold text-gray-900 mt-1">
-                    {stats.projectCount}
-                  </p>
-                </div>
-                <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                  <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-                  </svg>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Link href="/machines" className="block">
-            <Card className="hover:shadow-md transition-shadow cursor-pointer">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-500">Machines</p>
-                    <p className="text-2xl font-semibold text-gray-900 mt-1">
-                      {stats.machineCount}
-                    </p>
-                  </div>
-                  <div className="w-10 h-10 bg-cyan-100 rounded-lg flex items-center justify-center">
-                    <svg className="w-5 h-5 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                    </svg>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
-
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-500">Updates</p>
-                  <p className="text-2xl font-semibold text-gray-900 mt-1">
-                    {stats.unreadMonitoring}
-                  </p>
-                </div>
-                <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
-                  <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  </svg>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="grid grid-cols-4 gap-6">
+            {mockHealthScore.categories.map((category) => (
+              <CategoryBar
+                key={category.name}
+                name={category.name}
+                score={category.score}
+                status={category.status}
+              />
+            ))}
+          </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-6">
-          {/* Recent Projects */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-base font-medium">Recent Projects</CardTitle>
-              <Link href="/projects">
-                <Button variant="ghost" size="sm">View all</Button>
-              </Link>
-            </CardHeader>
-            <CardContent>
-              {recentProjects.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <p>No projects registered yet.</p>
-                  <p className="text-sm mt-1">Use the CLI to initialize a project.</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {recentProjects.map((project) => (
-                    <div
-                      key={project.id}
-                      className="flex items-center justify-between p-3 rounded-lg bg-gray-50"
-                    >
-                      <div>
-                        <p className="font-medium text-gray-900">{project.name}</p>
-                        <p className="text-sm text-gray-500">{project.path}</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {project.profile && (
-                          <Badge variant="secondary">{project.profile.name}</Badge>
-                        )}
-                        <Badge variant="outline">{project.machine}</Badge>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+        {/* Recommendations Section */}
+        <section className="mb-8">
+          <div className="flex justify-between items-center mb-5">
+            <h2 className="text-lg font-semibold tracking-tight">Top Recommendations</h2>
+            <Link
+              href="/recommendations"
+              className="text-[#6366f1] text-sm font-medium transition-colors hover:text-[#06b6d4]"
+            >
+              View all →
+            </Link>
+          </div>
 
-          {/* Monitoring Alerts */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-base font-medium">Recent Updates</CardTitle>
-              <Link href="/monitoring">
-                <Button variant="ghost" size="sm">View all</Button>
-              </Link>
-            </CardHeader>
-            <CardContent>
-              {recentMonitoring.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <p>No unread updates.</p>
-                  <p className="text-sm mt-1">Ecosystem changes will appear here.</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {recentMonitoring.map((entry) => (
-                    <div
-                      key={entry.id}
-                      className="flex items-start justify-between p-3 rounded-lg bg-gray-50"
-                    >
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <Badge
-                            variant={
-                              entry.severity === 'important'
-                                ? 'destructive'
-                                : entry.severity === 'warning'
-                                ? 'default'
-                                : 'secondary'
-                            }
-                          >
-                            {entry.source}
-                          </Badge>
-                        </div>
-                        <p className="font-medium text-gray-900 mt-1">{entry.title}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <div className="flex flex-col gap-3">
+            {mockRecommendations.map((rec) => (
+              <RecommendationCard key={rec.id} recommendation={rec} />
+            ))}
+          </div>
+        </section>
+
+        {/* Quick Stats */}
+        <div className="grid grid-cols-3 gap-5">
+          {mockStats.map((stat) => (
+            <StatCard key={stat.label} stat={stat} />
+          ))}
         </div>
-
-        {/* Quick Actions */}
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle className="text-base font-medium">Quick Actions</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex gap-4">
-              <Link href="/components/new">
-                <Button>New Component</Button>
-              </Link>
-              <Link href="/profiles/new">
-                <Button variant="outline">New Profile</Button>
-              </Link>
-            </div>
-            <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-              <p className="text-sm font-medium text-gray-700">CLI Quick Start</p>
-              <code className="block mt-2 p-2 bg-gray-900 text-gray-100 rounded text-sm">
-                ccm init my-project --profile general
-              </code>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </>
   );

@@ -1,209 +1,272 @@
 import Link from 'next/link';
-import { prisma } from '@/lib/db';
-import { Header } from '@/components/layout/header';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { RecommendationCard } from '@/components/recommendations/RecommendationCard';
-import { RecommendationsStats } from '@/components/recommendations/RecommendationsStats';
 
-export const dynamic = 'force-dynamic';
+// Mock data - will be replaced with API calls after schema migration
+const mockRecommendations = [
+  {
+    id: '1',
+    priority: 'critical',
+    category: 'mcp_server',
+    icon: '🔌',
+    title: 'Enable PostgreSQL MCP Server',
+    description: '47 database queries detected via SSH in the last 30 days',
+    evidence: {
+      patterns: ['database_query', 'ssh_tunnel'],
+      occurrences: 47,
+      projects: ['n8n-workflows', 'api-gateway'],
+    },
+    savings: 2100,
+    savingsUnit: 'tokens/month',
+    confidence: 0.95,
+    status: 'active',
+  },
+  {
+    id: '2',
+    priority: 'high',
+    category: 'context',
+    icon: '📄',
+    title: 'Archive completed work sessions',
+    description: 'CLAUDE.md has 12KB of historical content that can be archived',
+    evidence: {
+      sections: ['Completed Work', 'Historical Notes'],
+      tokens: 4200,
+    },
+    savings: 4200,
+    savingsUnit: 'tokens/session',
+    confidence: 0.92,
+    status: 'active',
+  },
+  {
+    id: '3',
+    priority: 'high',
+    category: 'skill',
+    icon: '⚡',
+    title: 'Create git-status skill',
+    description: 'Repetitive pattern: git status && git diff runs 23 times/week',
+    evidence: {
+      patterns: ['git_workflow'],
+      occurrences: 89,
+      projects: ['claude-code-config-manager', 'personal-site'],
+    },
+    savings: 800,
+    savingsUnit: 'tokens/week',
+    confidence: 0.98,
+    status: 'active',
+  },
+  {
+    id: '4',
+    priority: 'medium',
+    category: 'hook',
+    icon: '🪝',
+    title: 'Add pre-commit linting hook',
+    description: 'Manual ESLint runs detected before commits in TypeScript projects',
+    evidence: {
+      patterns: ['lint_before_commit'],
+      occurrences: 34,
+      projects: ['claude-code-config-manager'],
+    },
+    savings: 450,
+    savingsUnit: 'tokens/week',
+    confidence: 0.85,
+    status: 'active',
+  },
+  {
+    id: '5',
+    priority: 'medium',
+    category: 'mcp_server',
+    icon: '🔌',
+    title: 'Enable n8n Workflow MCP',
+    description: 'Frequent workflow status checks detected via API calls',
+    evidence: {
+      patterns: ['api_calls', 'n8n_workflow'],
+      occurrences: 23,
+      projects: ['n8n-workflows'],
+    },
+    savings: 650,
+    savingsUnit: 'tokens/month',
+    confidence: 0.82,
+    status: 'active',
+  },
+];
 
-interface Recommendation {
-  id: string;
-  machineId: string;
-  type: string;
-  recommendedItem: string;
-  category: string;
-  title: string;
-  reason: string;
-  detectedPatterns: string;
-  occurrenceCount: number;
-  projectsAffected: string;
-  exampleUsage: string | null;
-  timeSavings: number;
-  tokenSavings: number;
-  dailySavings: number;
-  monthlySavings: number;
-  confidenceScore: number;
-  priority: string;
-  status: string;
-  appliedAt: Date | null;
-  dismissedAt: Date | null;
-  dismissReason: string | null;
-  configTemplate: string | null;
-  wasUseful: boolean | null;
-  actualSavings: number | null;
-  createdAt: Date;
-  updatedAt: Date;
-}
+const priorityColors = {
+  critical: { bg: 'bg-gradient-to-b from-[#f43f5e] to-[#fb7185]', text: 'text-[#f43f5e]' },
+  high: { bg: 'bg-gradient-to-b from-[#f59e0b] to-[#fbbf24]', text: 'text-[#f59e0b]' },
+  medium: { bg: 'bg-gradient-to-b from-[#6366f1] to-[#06b6d4]', text: 'text-[#6366f1]' },
+  low: { bg: 'bg-gradient-to-b from-[#64748b] to-[#94a3b8]', text: 'text-[#94a3b8]' },
+};
 
-async function getRecommendations(): Promise<Recommendation[]> {
-  try {
-    // @ts-expect-error - Recommendation model may not exist yet (T1 adding schema)
-    const recommendations = await prisma.recommendation.findMany({
-      where: {
-        status: 'active'
-      },
-      orderBy: [
-        { priority: 'desc' },
-        { confidenceScore: 'desc' }
-      ]
-    });
-    return recommendations;
-  } catch (error) {
-    // Model doesn't exist yet - Terminal 1 is still adding schema
-    console.log('Recommendation model not available yet:', error);
-    return [];
-  }
-}
+const categoryIcons = {
+  mcp_server: 'bg-[rgba(99,102,241,0.15)]',
+  context: 'bg-[rgba(245,158,11,0.15)]',
+  skill: 'bg-[rgba(16,185,129,0.15)]',
+  hook: 'bg-[rgba(139,92,246,0.15)]',
+};
 
-function getStats(recommendations: Recommendation[]) {
-  const totalSavings = recommendations.reduce(
-    (sum, r) => sum + (r.dailySavings || 0),
-    0
-  );
-
-  const highPriority = recommendations.filter(
-    r => r.priority === 'critical' || r.priority === 'high'
-  ).length;
-
-  const projectsSet = new Set<string>();
-  for (const rec of recommendations) {
-    try {
-      const projects = JSON.parse(rec.projectsAffected || '[]') as string[];
-      projects.forEach(p => projectsSet.add(p));
-    } catch {
-      // Invalid JSON, skip
-    }
-  }
-
-  return {
-    total: recommendations.length,
-    highPriority,
-    dailySavings: totalSavings,
-    monthlySavings: totalSavings * 30,
-    projectsAffected: projectsSet.size
-  };
-}
-
-export default async function RecommendationsPage() {
-  const recommendations = await getRecommendations();
-  const stats = getStats(recommendations);
+export default function RecommendationsPage() {
+  const totalSavings = mockRecommendations.reduce((sum, r) => sum + r.savings, 0);
+  const criticalCount = mockRecommendations.filter(r => r.priority === 'critical').length;
+  const highCount = mockRecommendations.filter(r => r.priority === 'high').length;
 
   return (
     <>
-      <Header
-        title="Smart Recommendations"
-        description="AI-powered suggestions based on your usage patterns"
-        actions={
-          <div className="flex gap-2">
-            <Link href="/recommendations/history">
-              <Button variant="outline">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="12 8 12 12 14 14"/>
-                  <path d="M3.05 11a9 9 0 1 1 .5 4m-.5 5v-5h5"/>
-                </svg>
-                View History
-              </Button>
-            </Link>
-            <form action="/api/recommendations/generate" method="POST">
-              <Button type="submit">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
-                </svg>
-                Regenerate
-              </Button>
-            </form>
+      {/* Header */}
+      <header className="px-10 py-6 bg-[#1e293b] border-b border-[#334155]">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-semibold text-[#f1f5f9] tracking-tight mb-1">Recommendations</h1>
+            <p className="text-sm text-[#64748b]">AI-powered suggestions based on your usage patterns</p>
           </div>
-        }
-      />
+          <div className="flex gap-3">
+            <Link
+              href="/recommendations/history"
+              className="px-5 py-2.5 bg-[#334155] text-[#94a3b8] rounded-[10px] text-sm font-semibold transition-all hover:bg-[#475569] hover:text-[#f1f5f9]"
+            >
+              View History
+            </Link>
+            <button className="px-5 py-2.5 bg-gradient-to-br from-[#6366f1] to-[#4f46e5] text-white rounded-[10px] text-sm font-semibold shadow-[0_4px_12px_rgba(99,102,241,0.3)] transition-all hover:-translate-y-px hover:shadow-[0_6px_16px_rgba(99,102,241,0.4)]">
+              Regenerate
+            </button>
+          </div>
+        </div>
+      </header>
 
-      <div className="p-6">
-        {/* Stats Cards */}
-        <RecommendationsStats stats={stats} />
+      {/* Content */}
+      <div className="flex-1 p-8 bg-[#0f172a]">
+        {/* Stats */}
+        <div className="grid grid-cols-4 gap-5 mb-8">
+          <div className="bg-[#1e293b] border border-[#334155] rounded-2xl p-5">
+            <div className="text-xs text-[#64748b] uppercase tracking-wider mb-2">Active Recommendations</div>
+            <div className="text-3xl font-bold">{mockRecommendations.length}</div>
+          </div>
+          <div className="bg-[#1e293b] border border-[#334155] rounded-2xl p-5">
+            <div className="text-xs text-[#64748b] uppercase tracking-wider mb-2">Critical / High</div>
+            <div className="text-3xl font-bold text-[#f43f5e]">{criticalCount + highCount}</div>
+          </div>
+          <div className="bg-[#1e293b] border border-[#334155] rounded-2xl p-5">
+            <div className="text-xs text-[#64748b] uppercase tracking-wider mb-2">Potential Savings</div>
+            <div className="text-3xl font-bold text-[#10b981]">~{(totalSavings / 1000).toFixed(1)}k</div>
+            <div className="text-[11px] text-[#64748b] mt-1">tokens/month</div>
+          </div>
+          <div className="bg-[#1e293b] border border-[#334155] rounded-2xl p-5">
+            <div className="text-xs text-[#64748b] uppercase tracking-wider mb-2">Avg Confidence</div>
+            <div className="text-3xl font-bold text-[#6366f1]">
+              {Math.round(mockRecommendations.reduce((sum, r) => sum + r.confidence, 0) / mockRecommendations.length * 100)}%
+            </div>
+          </div>
+        </div>
 
-        {/* Recommendations List */}
-        {recommendations.length === 0 ? (
-          <Card className="mt-8">
-            <CardHeader>
-              <CardTitle>No Recommendations Yet</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto text-muted-foreground mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 3l1.912 5.813a2 2 0 001.275 1.275L21 12l-5.813 1.912a2 2 0 00-1.275 1.275L12 21l-1.912-5.813a2 2 0 00-1.275-1.275L3 12l5.813-1.912a2 2 0 001.275-1.275z"/>
-                </svg>
-                <p className="text-muted-foreground mb-4">
-                  We need at least 1-2 weeks of usage data to generate meaningful
-                  recommendations. Keep using Claude Code, and we&apos;ll analyze your
-                  patterns to suggest optimizations.
-                </p>
-                <div className="space-y-2 text-sm text-muted-foreground">
-                  <p>What we track:</p>
-                  <ul className="list-disc list-inside space-y-1">
-                    <li>Tools used (Bash, Read, Write, etc.)</li>
-                    <li>Commands executed (git, docker, psql, etc.)</li>
-                    <li>Files accessed across projects</li>
-                    <li>Detected technologies and patterns</li>
-                  </ul>
+        {/* Filter Tabs */}
+        <div className="flex gap-2 mb-6">
+          <button className="px-4 py-2 bg-[rgba(99,102,241,0.15)] text-[#6366f1] rounded-[10px] text-sm font-medium">
+            All ({mockRecommendations.length})
+          </button>
+          <button className="px-4 py-2 bg-[#334155] text-[#94a3b8] rounded-[10px] text-sm font-medium hover:bg-[#475569] transition-colors">
+            MCP Servers (2)
+          </button>
+          <button className="px-4 py-2 bg-[#334155] text-[#94a3b8] rounded-[10px] text-sm font-medium hover:bg-[#475569] transition-colors">
+            Skills (1)
+          </button>
+          <button className="px-4 py-2 bg-[#334155] text-[#94a3b8] rounded-[10px] text-sm font-medium hover:bg-[#475569] transition-colors">
+            Context (1)
+          </button>
+          <button className="px-4 py-2 bg-[#334155] text-[#94a3b8] rounded-[10px] text-sm font-medium hover:bg-[#475569] transition-colors">
+            Hooks (1)
+          </button>
+        </div>
+
+        {/* Recommendation Cards */}
+        <div className="space-y-3">
+          {mockRecommendations.map((rec) => (
+            <div
+              key={rec.id}
+              className="bg-[#1e293b] border border-[#334155] rounded-2xl p-5 flex items-center gap-5 transition-all duration-200 hover:border-[#6366f1] hover:shadow-[0_0_0_1px_#6366f1] hover:-translate-y-px"
+            >
+              {/* Priority Indicator */}
+              <div
+                className={`w-1 h-12 rounded-sm ${priorityColors[rec.priority as keyof typeof priorityColors].bg}`}
+              />
+
+              {/* Icon */}
+              <div
+                className={`w-12 h-12 rounded-xl flex items-center justify-center text-[22px] ${categoryIcons[rec.category as keyof typeof categoryIcons]}`}
+              >
+                {rec.icon}
+              </div>
+
+              {/* Content */}
+              <div className="flex-1">
+                <div className="flex items-center gap-3">
+                  <div className="font-semibold text-[15px]">{rec.title}</div>
+                  <span className={`text-[11px] font-medium uppercase ${priorityColors[rec.priority as keyof typeof priorityColors].text}`}>
+                    {rec.priority}
+                  </span>
                 </div>
-                <div className="mt-6">
-                  <Link href="/health">
-                    <Button variant="outline">
-                      View Health Dashboard
-                    </Button>
-                  </Link>
+                <div className="text-[13px] text-[#94a3b8] mt-1">{rec.description}</div>
+                <div className="flex items-center gap-4 mt-2">
+                  <span className="text-[11px] text-[#64748b]">
+                    Confidence: <span className="text-[#10b981] font-medium">{Math.round(rec.confidence * 100)}%</span>
+                  </span>
+                  {rec.evidence.projects && (
+                    <span className="text-[11px] text-[#64748b]">
+                      Projects: {rec.evidence.projects.join(', ')}
+                    </span>
+                  )}
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="mt-8 space-y-4">
-            {recommendations.map(rec => (
-              <RecommendationCard key={rec.id} recommendation={rec} />
-            ))}
-          </div>
-        )}
 
-        {/* Information Card */}
-        <Card className="mt-8">
-          <CardContent className="p-4">
-            <div className="flex items-start gap-3">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-600 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10"/>
-                <path d="M12 16v-4"/>
-                <path d="M12 8h.01"/>
-              </svg>
-              <div>
-                <p className="text-sm font-medium text-gray-900">How Recommendations Work</p>
-                <p className="text-sm text-gray-600 mt-1">
-                  CCM analyzes your Claude Code usage patterns across all projects to detect
-                  technologies and workflows. Based on this analysis, it suggests MCP servers
-                  and skills that could save you tokens and time. Recommendations are ranked
-                  by confidence score and potential impact.
-                </p>
-                <div className="flex gap-4 mt-3 text-sm">
-                  <div className="flex items-center gap-1">
-                    <span className="inline-block w-3 h-3 bg-red-100 border border-red-300 rounded-full"></span>
-                    <span>Critical</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span className="inline-block w-3 h-3 bg-orange-100 border border-orange-300 rounded-full"></span>
-                    <span>High</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span className="inline-block w-3 h-3 bg-yellow-100 border border-yellow-300 rounded-full"></span>
-                    <span>Medium</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span className="inline-block w-3 h-3 bg-blue-100 border border-blue-300 rounded-full"></span>
-                    <span>Low</span>
-                  </div>
+              {/* Savings */}
+              <div className="text-right min-w-[110px]">
+                <div className="font-bold text-lg text-[#10b981] tracking-tight">~{rec.savings.toLocaleString()}</div>
+                <div className="text-[11px] text-[#64748b] uppercase tracking-wider">{rec.savingsUnit}</div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-2.5">
+                <button className="px-5 py-2.5 bg-[#334155] text-[#94a3b8] rounded-[10px] text-sm font-semibold transition-all hover:bg-[#475569] hover:text-[#f1f5f9]">
+                  Dismiss
+                </button>
+                <button className="px-5 py-2.5 bg-gradient-to-br from-[#6366f1] to-[#4f46e5] text-white rounded-[10px] text-sm font-semibold shadow-[0_4px_12px_rgba(99,102,241,0.3)] transition-all hover:-translate-y-px hover:shadow-[0_6px_16px_rgba(99,102,241,0.4)]">
+                  Apply
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Info Card */}
+        <div className="mt-8 bg-[#1e293b] border border-[#334155] rounded-2xl p-5">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[rgba(99,102,241,0.15)] flex items-center justify-center text-lg">
+              💡
+            </div>
+            <div>
+              <h4 className="font-semibold mb-1">How Recommendations Work</h4>
+              <p className="text-[13px] text-[#94a3b8] leading-relaxed">
+                CCM analyzes your Claude Code usage patterns across all projects to detect technologies
+                and workflows. Based on this analysis, it suggests MCP servers and skills that could
+                save you tokens and time. Recommendations are ranked by confidence score and potential impact.
+              </p>
+              <div className="flex gap-6 mt-3 text-[12px]">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-[#f43f5e]" />
+                  <span className="text-[#94a3b8]">Critical</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-[#f59e0b]" />
+                  <span className="text-[#94a3b8]">High</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-[#6366f1]" />
+                  <span className="text-[#94a3b8]">Medium</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-[#64748b]" />
+                  <span className="text-[#94a3b8]">Low</span>
                 </div>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </>
   );

@@ -20,8 +20,9 @@ async function getMachines() {
     include: {
       _count: {
         select: {
-          overrides: true,
-          syncLogs: true,
+          projects: true,
+          sessions: true,
+          recommendations: true,
         },
       },
     },
@@ -91,7 +92,7 @@ export default async function MachinesPage() {
       );
       return diffMinutes < 1440; // Active if seen in last 24 hours
     }).length,
-    syncEnabled: machines.filter((m) => m.syncEnabled).length,
+    withProjects: machines.filter((m) => m._count.projects > 0).length,
     current: machines.filter((m) => m.isCurrentMachine).length,
   };
 
@@ -145,14 +146,14 @@ export default async function MachinesPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">Sync Enabled</p>
+                  <p className="text-sm text-gray-500">With Projects</p>
                   <p className="text-2xl font-semibold text-gray-900 mt-1">
-                    {stats.syncEnabled}
+                    {stats.withProjects}
                   </p>
                 </div>
                 <div className="w-10 h-10 bg-violet-100 rounded-lg flex items-center justify-center">
                   <svg className="w-5 h-5 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
                   </svg>
                 </div>
               </div>
@@ -205,9 +206,9 @@ export default async function MachinesPage() {
                     <TableHead>Machine</TableHead>
                     <TableHead>Platform</TableHead>
                     <TableHead>Last Seen</TableHead>
-                    <TableHead>Sync</TableHead>
-                    <TableHead>Overrides</TableHead>
-                    <TableHead>Sync Logs</TableHead>
+                    <TableHead>Projects</TableHead>
+                    <TableHead>Sessions</TableHead>
+                    <TableHead>Recommendations</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -256,24 +257,18 @@ export default async function MachinesPage() {
                           </p>
                         </TableCell>
                         <TableCell>
-                          {machine.syncEnabled ? (
-                            <Badge variant="default" className="bg-green-100 text-green-800">
-                              Enabled
-                            </Badge>
-                          ) : (
-                            <Badge variant="outline" className="text-gray-500">
-                              Disabled
-                            </Badge>
-                          )}
-                        </TableCell>
-                        <TableCell>
                           <span className="text-sm text-gray-600">
-                            {machine._count.overrides}
+                            {machine._count.projects}
                           </span>
                         </TableCell>
                         <TableCell>
                           <span className="text-sm text-gray-600">
-                            {machine._count.syncLogs}
+                            {machine._count.sessions}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-sm text-gray-600">
+                            {machine._count.recommendations}
                           </span>
                         </TableCell>
                         <TableCell className="text-right">
@@ -302,8 +297,8 @@ export default async function MachinesPage() {
               <div>
                 <p className="text-sm font-medium text-gray-900">Managing Machines</p>
                 <p className="text-sm text-gray-600 mt-1">
-                  Machines automatically register when you run CLI commands. Use machine overrides to customize
-                  which components, hooks, and settings sync to each machine.
+                  Machines automatically register when you run CLI commands. Usage data is tracked
+                  across sessions to provide smart recommendations for optimizing your workflow.
                 </p>
               </div>
             </div>

@@ -24,12 +24,21 @@ async function getMachine(id: string) {
   return prisma.machine.findUnique({
     where: { id },
     include: {
-      overrides: {
-        orderBy: { createdAt: 'desc' },
+      projects: {
+        orderBy: { lastActiveAt: 'desc' },
+        take: 10,
       },
-      syncLogs: {
+      sessions: {
         orderBy: { startedAt: 'desc' },
         take: 10,
+      },
+      recommendations: {
+        where: { status: 'active' },
+        take: 5,
+      },
+      healthScores: {
+        orderBy: { timestamp: 'desc' },
+        take: 1,
       },
     },
   });
@@ -38,15 +47,6 @@ async function getMachine(id: string) {
 function formatDate(date: Date | null) {
   if (!date) return 'N/A';
   return new Date(date).toLocaleString();
-}
-
-function formatDuration(startedAt: Date, completedAt: Date | null) {
-  if (!completedAt) return 'In progress';
-  const duration = new Date(completedAt).getTime() - new Date(startedAt).getTime();
-  const seconds = Math.floor(duration / 1000);
-  if (seconds < 60) return `${seconds}s`;
-  const minutes = Math.floor(seconds / 60);
-  return `${minutes}m ${seconds % 60}s`;
 }
 
 function getPlatformName(platform: string) {
@@ -70,12 +70,13 @@ export default async function MachineDetailPage({ params }: Props) {
     (Date.now() - new Date(machine.lastSeen).getTime()) / (1000 * 60)
   );
   const isActive = lastSeenMinutes < 1440; // 24 hours
+  const latestHealth = machine.healthScores[0];
 
   return (
     <>
       <Header
         title={machine.name}
-        description={`Machine details and configuration`}
+        description={`Machine details and activity`}
         actions={
           <div className="flex gap-2">
             <Link href="/machines">
@@ -137,19 +138,12 @@ export default async function MachineDetailPage({ params }: Props) {
                   <Badge variant="default">Yes</Badge>
                 </div>
               )}
-
-              <div className="flex justify-between items-start">
-                <span className="text-sm text-gray-500">Sync Enabled</span>
-                <Badge variant={machine.syncEnabled ? "default" : "outline"} className={machine.syncEnabled ? "bg-green-100 text-green-800" : ""}>
-                  {machine.syncEnabled ? 'Enabled' : 'Disabled'}
-                </Badge>
-              </div>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Activity</CardTitle>
+              <CardTitle className="text-base">Activity Summary</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex justify-between items-start">
@@ -165,13 +159,6 @@ export default async function MachineDetailPage({ params }: Props) {
               </div>
 
               <div className="flex justify-between items-start">
-                <span className="text-sm text-gray-500">Last Synced</span>
-                <span className="font-medium text-gray-900">
-                  {formatDate(machine.lastSyncedAt)}
-                </span>
-              </div>
-
-              <div className="flex justify-between items-start">
                 <span className="text-sm text-gray-500">Created</span>
                 <span className="text-sm text-gray-900">
                   {formatDate(machine.createdAt)}
@@ -179,77 +166,65 @@ export default async function MachineDetailPage({ params }: Props) {
               </div>
 
               <div className="flex justify-between items-start">
-                <span className="text-sm text-gray-500">Updated</span>
-                <span className="text-sm text-gray-900">
-                  {formatDate(machine.updatedAt)}
-                </span>
+                <span className="text-sm text-gray-500">Projects</span>
+                <span className="font-medium text-gray-900">{machine.projects.length}</span>
               </div>
 
               <div className="flex justify-between items-start">
-                <span className="text-sm text-gray-500">Total Overrides</span>
-                <span className="font-medium text-gray-900">{machine.overrides.length}</span>
+                <span className="text-sm text-gray-500">Recent Sessions</span>
+                <span className="font-medium text-gray-900">{machine.sessions.length}</span>
               </div>
 
               <div className="flex justify-between items-start">
-                <span className="text-sm text-gray-500">Sync Logs</span>
-                <span className="font-medium text-gray-900">{machine.syncLogs.length}</span>
+                <span className="text-sm text-gray-500">Active Recommendations</span>
+                <span className="font-medium text-gray-900">{machine.recommendations.length}</span>
               </div>
+
+              {latestHealth && (
+                <div className="flex justify-between items-start">
+                  <span className="text-sm text-gray-500">Health Score</span>
+                  <span className="font-medium text-gray-900">{latestHealth.score}/100</span>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
 
-        {/* Machine Overrides */}
+        {/* Recent Projects */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-base">Machine Overrides</CardTitle>
-            <Badge variant="outline">{machine.overrides.length} total</Badge>
+            <CardTitle className="text-base">Recent Projects</CardTitle>
+            <Badge variant="outline">{machine.projects.length} total</Badge>
           </CardHeader>
           <CardContent>
-            {machine.overrides.length === 0 ? (
+            {machine.projects.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 <svg className="w-8 h-8 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
                 </svg>
-                <p className="text-sm">No overrides configured for this machine.</p>
+                <p className="text-sm">No projects tracked yet.</p>
                 <p className="text-xs mt-1">
-                  Overrides allow you to customize which components sync to this machine.
+                  Projects are auto-detected from Claude Code sessions.
                 </p>
               </div>
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Key</TableHead>
-                    <TableHead>Action</TableHead>
-                    <TableHead>Reason</TableHead>
-                    <TableHead>Created</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Path</TableHead>
+                    <TableHead>Last Active</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {machine.overrides.map((override) => (
-                    <TableRow key={override.id}>
-                      <TableCell>
-                        <Badge variant="outline" className="capitalize">
-                          {override.configType.replace('_', ' ')}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="font-mono text-sm">
-                        {override.configKey}
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={override.action === 'exclude' ? 'destructive' : override.action === 'include' ? 'default' : 'secondary'}
-                          className="capitalize"
-                        >
-                          {override.action}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-sm text-gray-600">
-                        {override.reason || '-'}
+                  {machine.projects.map((project) => (
+                    <TableRow key={project.id}>
+                      <TableCell className="font-medium">{project.name}</TableCell>
+                      <TableCell className="font-mono text-sm text-gray-600">
+                        {project.path}
                       </TableCell>
                       <TableCell className="text-sm text-gray-500">
-                        {new Date(override.createdAt).toLocaleDateString()}
+                        {project.lastActiveAt ? formatDate(project.lastActiveAt) : 'N/A'}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -259,62 +234,47 @@ export default async function MachineDetailPage({ params }: Props) {
           </CardContent>
         </Card>
 
-        {/* Recent Sync Logs */}
+        {/* Recent Sessions */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-base">Recent Sync History</CardTitle>
-            <Badge variant="outline">Last 10 syncs</Badge>
+            <CardTitle className="text-base">Recent Sessions</CardTitle>
+            <Badge variant="outline">Last 10 sessions</Badge>
           </CardHeader>
           <CardContent>
-            {machine.syncLogs.length === 0 ? (
+            {machine.sessions.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 <svg className="w-8 h-8 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <p className="text-sm">No sync history yet.</p>
+                <p className="text-sm">No sessions recorded yet.</p>
                 <p className="text-xs mt-1">
-                  Sync logs will appear here after running sync operations.
+                  Sessions will appear here after using Claude Code.
                 </p>
               </div>
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Files Created</TableHead>
-                    <TableHead>Files Updated</TableHead>
-                    <TableHead>Duration</TableHead>
+                    <TableHead>Project</TableHead>
                     <TableHead>Started</TableHead>
+                    <TableHead>Duration</TableHead>
+                    <TableHead>Tokens</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {machine.syncLogs.map((log) => (
-                    <TableRow key={log.id}>
-                      <TableCell>
-                        <Badge variant="outline" className="capitalize">
-                          {log.syncType}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={log.status === 'completed' ? 'default' : log.status === 'failed' ? 'destructive' : 'secondary'}
-                          className={log.status === 'completed' ? 'bg-green-100 text-green-800' : ''}
-                        >
-                          {log.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-sm text-gray-600">
-                        {log.filesCreated || 0}
-                      </TableCell>
-                      <TableCell className="text-sm text-gray-600">
-                        {log.filesUpdated || 0}
-                      </TableCell>
-                      <TableCell className="text-sm text-gray-600">
-                        {formatDuration(log.startedAt, log.completedAt)}
+                  {machine.sessions.map((session) => (
+                    <TableRow key={session.id}>
+                      <TableCell className="font-medium">
+                        {session.projectName || session.projectPath || 'Unknown'}
                       </TableCell>
                       <TableCell className="text-sm text-gray-500">
-                        {formatDate(log.startedAt)}
+                        {formatDate(session.startedAt)}
+                      </TableCell>
+                      <TableCell className="text-sm text-gray-600">
+                        {session.duration ? `${Math.floor(session.duration / 60)}m` : 'In progress'}
+                      </TableCell>
+                      <TableCell className="text-sm text-gray-600">
+                        {session.tokensUsed.toLocaleString()}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -324,31 +284,34 @@ export default async function MachineDetailPage({ params }: Props) {
           </CardContent>
         </Card>
 
-        {/* Actions */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Machine Actions</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex gap-3">
-              <Button variant="outline" disabled>
-                Toggle Sync
-              </Button>
-              <Button variant="outline" disabled>
-                Add Override
-              </Button>
-              <Button variant="outline" disabled>
-                Set as Current
-              </Button>
-              <Button variant="outline" className="text-red-600 hover:text-red-700" disabled>
-                Delete Machine
-              </Button>
-            </div>
-            <p className="text-xs text-gray-500 mt-3">
-              Machine management actions are coming soon. Use the CLI to manage machines for now.
-            </p>
-          </CardContent>
-        </Card>
+        {/* Active Recommendations */}
+        {machine.recommendations.length > 0 && (
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="text-base">Active Recommendations</CardTitle>
+              <Link href="/recommendations">
+                <Button variant="outline" size="sm">View All</Button>
+              </Link>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {machine.recommendations.map((rec) => (
+                  <div key={rec.id} className="flex items-start justify-between p-3 bg-gray-50 rounded-lg">
+                    <div>
+                      <p className="font-medium text-sm">{rec.title}</p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {rec.category} - {rec.priority} priority
+                      </p>
+                    </div>
+                    <Badge variant="outline">
+                      ~{rec.estimatedTokenSavings.toLocaleString()} tokens/mo
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </>
   );

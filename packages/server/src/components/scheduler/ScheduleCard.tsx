@@ -14,7 +14,7 @@ export interface ScheduledTask {
   taskType: 'analyze' | 'optimize' | 'health_check' | 'custom';
   scheduleType: 'cron' | 'interval' | 'threshold' | 'manual';
   cronExpression: string | null;
-  intervalMinutes: number | null;
+  intervalHours: number | null;
   thresholdMetric: string | null;
   thresholdValue: number | null;
   thresholdOperator: string | null;
@@ -43,16 +43,16 @@ function formatSchedule(task: ScheduledTask): string {
   if (task.scheduleType === 'cron' && task.cronExpression) {
     return `Cron: ${task.cronExpression}`;
   }
-  if (task.scheduleType === 'interval' && task.intervalMinutes) {
-    if (task.intervalMinutes >= 1440) {
-      const days = Math.floor(task.intervalMinutes / 1440);
+  if (task.scheduleType === 'interval' && task.intervalHours) {
+    if (task.intervalHours >= 1440) {
+      const days = Math.floor(task.intervalHours / 1440);
       return `Every ${days} day${days > 1 ? 's' : ''}`;
     }
-    if (task.intervalMinutes >= 60) {
-      const hours = Math.floor(task.intervalMinutes / 60);
+    if (task.intervalHours >= 60) {
+      const hours = Math.floor(task.intervalHours / 60);
       return `Every ${hours} hour${hours > 1 ? 's' : ''}`;
     }
-    return `Every ${task.intervalMinutes} min`;
+    return `Every ${task.intervalHours} min`;
   }
   if (task.scheduleType === 'threshold') {
     return `When ${task.thresholdMetric} ${task.thresholdOperator} ${task.thresholdValue}`;

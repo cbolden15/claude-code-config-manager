@@ -19,7 +19,7 @@ export interface CreateTaskData {
   taskType: 'analyze' | 'optimize' | 'health_check' | 'custom';
   scheduleType: 'cron' | 'interval' | 'threshold' | 'manual';
   cronExpression?: string;
-  intervalMinutes?: number;
+  intervalHours?: number;
   thresholdMetric?: string;
   thresholdValue?: number;
   thresholdOperator?: string;
@@ -78,7 +78,7 @@ export function CreateTaskDialog({
     taskType: 'analyze',
     scheduleType: 'cron',
     cronExpression: '0 9 * * *',
-    intervalMinutes: 60,
+    intervalHours: 60,
     thresholdMetric: 'context_score',
     thresholdValue: 60,
     thresholdOperator: '<',
@@ -102,7 +102,7 @@ export function CreateTaskDialog({
         taskType: 'analyze',
         scheduleType: 'cron',
         cronExpression: '0 9 * * *',
-        intervalMinutes: 60,
+        intervalHours: 60,
         thresholdMetric: 'context_score',
         thresholdValue: 60,
         thresholdOperator: '<',
@@ -254,8 +254,8 @@ export function CreateTaskDialog({
                 </label>
                 <input
                   type="number"
-                  value={formData.intervalMinutes}
-                  onChange={(e) => setFormData({ ...formData, intervalMinutes: parseInt(e.target.value) || 60 })}
+                  value={formData.intervalHours}
+                  onChange={(e) => setFormData({ ...formData, intervalHours: parseInt(e.target.value) || 60 })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-violet-500"
                   min={1}
                 />

@@ -4,48 +4,53 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 262.1 83.3% 57.8%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 262.1 83.3% 57.8%;
-    --radius: 0.5rem;
-  }
+    /* Dark Slate Theme - Base Colors */
+    --bg: 222 47% 11%;           /* #0f172a */
+    --bg-subtle: 217 33% 17%;    /* #1e293b */
+    --bg-muted: 215 25% 27%;     /* #334155 */
+    --bg-elevated: 217 33% 17%;  /* #1e293b */
 
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 263.4 70% 50.4%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 263.4 70% 50.4%;
+    /* Borders */
+    --border: 215 25% 27%;       /* #334155 */
+    --border-strong: 215 19% 35%; /* #475569 */
+
+    /* Text */
+    --text: 210 40% 96%;         /* #f1f5f9 */
+    --text-secondary: 215 16% 62%; /* #94a3b8 */
+    --text-muted: 215 16% 47%;   /* #64748b */
+
+    /* Primary (Indigo) */
+    --primary: 239 84% 67%;      /* #6366f1 */
+    --primary-hover: 243 75% 59%; /* #4f46e5 */
+    --primary-light: 239 84% 67% / 0.15;
+
+    /* Status Colors */
+    --success: 160 84% 39%;      /* #10b981 */
+    --success-light: 160 84% 39% / 0.15;
+    --warning: 38 92% 50%;       /* #f59e0b */
+    --warning-light: 38 92% 50% / 0.15;
+    --error: 350 89% 60%;        /* #f43f5e */
+    --error-light: 350 89% 60% / 0.15;
+    --cyan: 187 96% 42%;         /* #06b6d4 */
+
+    /* shadcn/ui compatible variables */
+    --background: var(--bg);
+    --foreground: var(--text);
+    --card: var(--bg-subtle);
+    --card-foreground: var(--text);
+    --popover: var(--bg-elevated);
+    --popover-foreground: var(--text);
+    --secondary: var(--bg-muted);
+    --secondary-foreground: var(--text);
+    --muted: var(--bg-muted);
+    --muted-foreground: var(--text-muted);
+    --accent: var(--bg-muted);
+    --accent-foreground: var(--text);
+    --destructive: var(--error);
+    --destructive-foreground: var(--text);
+    --input: var(--border);
+    --ring: var(--primary);
+    --radius: 0.625rem;
   }
 }
 
@@ -53,7 +58,54 @@
   * {
     @apply border-border;
   }
+
   body {
-    @apply bg-background text-foreground;
+    @apply bg-[hsl(var(--bg))] text-[hsl(var(--text))];
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+}
+
+@layer utilities {
+  /* Custom gradient utilities */
+  .gradient-primary {
+    background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-hover)));
+  }
+
+  .gradient-success {
+    background: linear-gradient(90deg, hsl(var(--success)), hsl(var(--cyan)));
+  }
+
+  .gradient-warning {
+    background: linear-gradient(90deg, hsl(var(--warning)), #fbbf24);
+  }
+
+  .gradient-error {
+    background: linear-gradient(90deg, hsl(var(--error)), #fb7185);
+  }
+
+  /* Health ring gradient */
+  .health-ring-gradient {
+    background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--cyan)));
+  }
+
+  /* Card hover effects */
+  .card-hover {
+    @apply transition-all duration-200;
+  }
+
+  .card-hover:hover {
+    @apply border-[hsl(var(--primary))] shadow-[0_0_0_1px_hsl(var(--primary))];
+    transform: translateY(-1px);
+  }
+
+  /* Button shadow */
+  .btn-primary-shadow {
+    box-shadow: 0 4px 12px hsl(var(--primary) / 0.3);
+  }
+
+  .btn-primary-shadow:hover {
+    box-shadow: 0 6px 16px hsl(var(--primary) / 0.4);
   }
 }
