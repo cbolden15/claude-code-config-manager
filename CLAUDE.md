@@ -101,10 +101,20 @@ claude-code-config-manager/
 
 ## Current Phase
 
-**Phase:** CCM v3.1 - Context Optimizer
-**Status:** ✅ Complete
-**Completed:** January 19, 2026
+**Phase:** CCM v3.2 - Scheduled Optimization & Automation
+**Status:** 📋 Planned
+**Planning Date:** January 19, 2026
 **Repository:** https://github.com/cbolden15/claude-code-config-manager
+
+### Next Up: v3.2 Implementation
+
+**Design Document:** `CCM-V3.2-SCHEDULED-OPTIMIZATION-DESIGN.md`
+**Terminal Prompts:** `V3.2-TERMINAL-PROMPTS.md`
+
+Ready for 3-terminal parallel implementation:
+- **Terminal 1:** Database + Server APIs (ScheduledTask, TaskExecution, WebhookConfig models + 12 API routes)
+- **Terminal 2:** Scheduler Engine (runner, triggers, webhooks, task handlers)
+- **Terminal 3:** UI + CLI (`/scheduler` dashboard + `ccm schedule` commands)
 
 ### CCM v2.0 Workstreams (Foundation Complete)
 
@@ -133,6 +143,14 @@ claude-code-config-manager/
 - [x] **Intelligence Engine** — Analyzer, classifier, detector, optimizer, archiver
 - [x] **UI Components** — Context optimizer dashboard, health card, issue cards, archive list
 - [x] **CLI Integration** — `ccm context` command with analyze, optimize, archives subcommands
+
+### CCM v3.2 Implementation (Planned)
+
+- [ ] **Database Layer** — 3 new Prisma models (ScheduledTask, TaskExecution, WebhookConfig)
+- [ ] **Server APIs** — Task CRUD, execution history, webhook management, scheduler control
+- [ ] **Scheduler Engine** — Background runner, cron/threshold triggers, webhook notifications
+- [ ] **UI Components** — Scheduler dashboard, task cards, execution history, webhook config
+- [ ] **CLI Integration** — `ccm schedule` command with list, create, run, webhooks subcommands
 
 ---
 
@@ -340,6 +358,82 @@ ccm context archives restore <id>      # Restore from archive
 - **5,000-15,000 tokens saved** per session
 - **100% archive preservation** - never lose content
 - **<10% false positive rate** - unnecessary optimizations
+
+---
+
+## CCM v3.2: Scheduled Optimization & Automation
+
+**Planning Date:** January 19, 2026
+**Implementation Plan:** `CCM-V3.2-SCHEDULED-OPTIMIZATION-DESIGN.md`
+**Terminal Prompts:** `V3.2-TERMINAL-PROMPTS.md`
+**Goal:** Automate context optimization with scheduled tasks and webhook notifications
+
+### Problem Statement
+
+- Users forget to run context optimization manually
+- CLAUDE.md files degrade over time without intervention
+- No way to monitor context health across projects automatically
+- Manual optimization requires active user engagement
+
+### Solution
+
+An automation layer that schedules periodic analysis, triggers optimization based on thresholds, and notifies users through webhooks when action is needed.
+
+### New Database Models (v3.2)
+
+- **ScheduledTask** - Cron/interval/threshold scheduled automation tasks
+- **TaskExecution** - Execution history with metrics and results
+- **WebhookConfig** - Notification webhooks (Slack, Discord, n8n, generic)
+
+### API Endpoints
+
+| Endpoint | Methods | Description |
+|----------|---------|-------------|
+| `/api/scheduler/tasks` | GET, POST | List/create scheduled tasks |
+| `/api/scheduler/tasks/[id]` | GET, PATCH, DELETE | Task CRUD |
+| `/api/scheduler/tasks/[id]/run` | POST | Manually trigger task |
+| `/api/scheduler/executions` | GET | Execution history |
+| `/api/scheduler/executions/[id]` | GET, POST | Details and retry |
+| `/api/scheduler/webhooks` | GET, POST | List/create webhooks |
+| `/api/scheduler/webhooks/[id]` | GET, PATCH, DELETE | Webhook CRUD |
+| `/api/scheduler/webhooks/[id]/test` | POST | Test notification |
+| `/api/scheduler/status` | GET | Scheduler status |
+| `/api/scheduler/upcoming` | GET | Upcoming tasks |
+
+### Schedule Types
+
+| Type | Description | Example |
+|------|-------------|---------|
+| Cron | Standard cron expression | `0 9 * * *` (daily 9 AM) |
+| Interval | Run every N minutes | `1440` (daily) |
+| Threshold | Trigger when metric crosses value | Score < 60 |
+
+### CLI Commands (v3.2)
+
+```bash
+# Task management
+ccm schedule list                          # List all tasks
+ccm schedule create                        # Interactive creation
+ccm schedule run <id>                      # Manual trigger
+ccm schedule enable/disable <id>           # Toggle task
+
+# Webhooks
+ccm schedule webhooks list                 # List webhooks
+ccm schedule webhooks add                  # Add webhook
+ccm schedule webhooks test <id>            # Test notification
+
+# Quick setup presets
+ccm schedule quick daily-analysis          # Daily 9 AM analysis
+ccm schedule quick weekly-optimize         # Weekly Monday optimization
+ccm schedule quick threshold-alert --score 50  # Alert on low score
+```
+
+### Webhook Providers
+
+- **Slack** - Rich message blocks with fields
+- **Discord** - Embed format with colors
+- **n8n** - Trigger workflow automation
+- **Generic** - Standard JSON POST
 
 ---
 
