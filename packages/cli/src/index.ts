@@ -13,7 +13,9 @@ import {
   createMachineCommand,
   createDesktopCommand,
   createTrackCommand,
-  createRecommendationsCommand
+  createRecommendationsCommand,
+  createContextCommand,
+  createScheduleCommand
 } from './commands/index.js';
 
 program
@@ -122,6 +124,12 @@ program.addCommand(createTrackCommand());
 
 // Recommendations command group (v3.0 smart recommendations)
 program.addCommand(createRecommendationsCommand());
+
+// Context optimizer command group (v3.1 context optimization)
+program.addCommand(createContextCommand());
+
+// Scheduler command group (v3.2 scheduled automation)
+program.addCommand(createScheduleCommand());
 
 // Show help if no command specified
 program.showHelpAfterError();

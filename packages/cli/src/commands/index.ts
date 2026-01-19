@@ -34,3 +34,6 @@ export { createRecommendationsCommand } from './recommendations.js';
 
 // Context optimizer command group (v3.1 context optimization)
 export { createContextCommand } from './context.js';
+
+// Scheduler command group (v3.2 scheduled automation)
+export { createScheduleCommand } from './schedule.js';
