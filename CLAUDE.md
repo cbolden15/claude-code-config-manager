@@ -101,7 +101,7 @@ claude-code-config-manager/
 
 ## Current Phase
 
-**Phase:** CCM v3.0 - Smart Recommendations System
+**Phase:** CCM v3.1 - Context Optimizer
 **Status:** ✅ Complete
 **Completed:** January 19, 2026
 **Repository:** https://github.com/cbolden15/claude-code-config-manager
@@ -125,6 +125,14 @@ claude-code-config-manager/
 - [x] **Intelligence Engine** — Pattern detection, MCP/skill recommenders, cross-project analysis
 - [x] **UI Components** — Recommendations dashboard, health score visualization
 - [x] **CLI Integration** — Session tracking hook, recommendations commands
+
+### CCM v3.1 Implementation (Complete)
+
+- [x] **Database Layer** — 3 new Prisma models (ContextAnalysis, ContextArchive, ContextOptimizationRule)
+- [x] **Server APIs** — Context analysis, optimization, archives, rules CRUD
+- [x] **Intelligence Engine** — Analyzer, classifier, detector, optimizer, archiver
+- [x] **UI Components** — Context optimizer dashboard, health card, issue cards, archive list
+- [x] **CLI Integration** — `ccm context` command with analyze, optimize, archives subcommands
 
 ---
 
@@ -260,6 +268,78 @@ CCM v3.0 **extends** v2.0, doesn't replace it:
 - v3.0 recommendations → v2.0 configuration sync
 - v2.0 machine registry → v3.0 cross-machine analytics
 - v2.0 profiles → v3.0 suggests which profiles to use
+
+---
+
+## CCM v3.1: Context Optimizer
+
+**Planning Date:** January 19, 2026
+**Implementation Plan:** `CCM-V3.1-CONTEXT-OPTIMIZER-DESIGN.md`
+**Goal:** Intelligent CLAUDE.md optimization agent that reduces token waste
+
+### Problem Statement
+
+- CLAUDE.md files accumulate bloat over time (completed work, historical notes, outdated references)
+- Every Claude Code session pays token cost for non-actionable information
+- Manual maintenance is tedious and often neglected
+- No tooling exists to intelligently optimize context files
+
+### Solution
+
+An autonomous agent that analyzes CLAUDE.md files, detects optimization opportunities, and applies improvements while preserving important context in archives.
+
+### New Database Models (v3.1)
+
+- **ContextAnalysis** - Analysis results for CLAUDE.md files (sections, issues, scores)
+- **ContextArchive** - Archived content with full history preservation
+- **ContextOptimizationRule** - User-configurable optimization rules
+
+### API Endpoints
+
+| Endpoint | Methods | Description |
+|----------|---------|-------------|
+| `/api/context/analyze` | GET, POST | Analyze CLAUDE.md, get latest analysis |
+| `/api/context/analyze/[id]` | GET | Get specific analysis by ID |
+| `/api/context/optimize` | GET, POST | Apply optimization, list strategies |
+| `/api/context/optimize/preview` | POST | Preview changes without applying |
+| `/api/context/archives` | GET | List archives for a project |
+| `/api/context/archives/[id]` | GET, DELETE | Get/delete specific archive |
+| `/api/context/archives/restore` | POST | Restore content from archive |
+| `/api/context/rules` | GET, POST | List/create optimization rules |
+| `/api/context/rules/[id]` | GET, PATCH, DELETE | CRUD for individual rules |
+
+### Optimization Strategies
+
+| Strategy | Description | Reduction |
+|----------|-------------|-----------|
+| Conservative | Archive only, never modify in place | 20-30% |
+| Moderate | Archive + condense + dedupe | 40-60% |
+| Aggressive | Minimize to essential context only | 60-80% |
+| Custom | Apply user-defined rules only | Varies |
+
+### CLI Commands (v3.1)
+
+```bash
+# Analyze CLAUDE.md
+ccm context analyze                    # Analyze current project
+ccm context analyze --project /path    # Analyze specific project
+
+# Optimize
+ccm context optimize --dry-run         # Preview optimization
+ccm context optimize --strategy moderate  # Apply optimization
+
+# Archives
+ccm context archives                   # List archives
+ccm context archives show <id>         # View archive content
+ccm context archives restore <id>      # Restore from archive
+```
+
+### Target Results
+
+- **40-60% reduction** in CLAUDE.md size
+- **5,000-15,000 tokens saved** per session
+- **100% archive preservation** - never lose content
+- **<10% false positive rate** - unnecessary optimizations
 
 ---
 
@@ -745,3 +825,41 @@ packages/test-utils/
 - `TESTING.md` - Test structure and practices (523 lines)
 - `INTEGRATIONS.md` - External services and APIs (151 lines)
 - `CONCERNS.md` - Technical debt and issues (159 lines)
+
+### v3.1 Context Optimizer (2026-01-19)
+
+**Status:** ✅ Complete
+**Approach:** 3 parallel Claude Code terminals
+**Commit:** `8caa20b` - 30 files, 6,449 insertions
+
+**Terminal 1 - Database + Server APIs:**
+- Added 3 Prisma models: ContextAnalysis, ContextArchive, ContextOptimizationRule
+- Updated Machine model with v3.1 relationships
+- Created 9 API route files:
+  - `/api/context/analyze` - POST (analyze), GET (latest)
+  - `/api/context/analyze/[id]` - GET (by ID)
+  - `/api/context/optimize` - POST (apply), GET (strategies)
+  - `/api/context/optimize/preview` - POST (preview changes)
+  - `/api/context/archives` - GET (list)
+  - `/api/context/archives/[id]` - GET, DELETE
+  - `/api/context/archives/restore` - POST
+  - `/api/context/rules` - GET, POST (CRUD)
+  - `/api/context/rules/[id]` - GET, PATCH, DELETE
+
+**Terminal 2 - Intelligence Engine:**
+- `packages/server/src/lib/context/analyzer.ts` - Parse CLAUDE.md, extract sections, count tokens
+- `packages/server/src/lib/context/classifier.ts` - Categorize sections by type and actionability
+- `packages/server/src/lib/context/detector.ts` - Identify optimization issues
+- `packages/server/src/lib/context/optimizer.ts` - Generate optimization plans
+- `packages/server/src/lib/context/archiver.ts` - Create archives, generate summaries
+- `packages/server/src/lib/context/rules.ts` - Default optimization rules
+- Updated health calculator with context score
+
+**Terminal 3 - UI + CLI:**
+- `packages/server/src/app/context/page.tsx` - Optimization dashboard
+- `packages/server/src/components/context/ContextHealthCard.tsx` - Health visualization
+- `packages/server/src/components/context/OptimizationIssueCard.tsx` - Issue display
+- `packages/server/src/components/context/OptimizationPreviewDialog.tsx` - Preview modal
+- `packages/server/src/components/context/ArchiveList.tsx` - Archive browser
+- Added Context Optimizer link to sidebar navigation
+- `packages/cli/src/commands/context.ts` - CLI with analyze, optimize, archives subcommands
