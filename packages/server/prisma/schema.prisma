@@ -129,6 +129,11 @@ model Machine {
   contextArchives    ContextArchive[]
   optimizationRules  ContextOptimizationRule[]
 
+  // v3.2 Scheduler relationships
+  scheduledTasks    ScheduledTask[]
+  taskExecutions    TaskExecution[]
+  webhookConfigs    WebhookConfig[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -611,5 +616,126 @@ model ContextOptimizationRule {
 
   @@index([machineId])
   @@index([ruleType])
+  @@index([enabled])
+}
+
+// ============================================================================
+// CCM v3.2 - Scheduled Optimization & Automation
+// ============================================================================
+
+// Scheduled tasks for automation
+model ScheduledTask {
+  id              String   @id @default(cuid())
+  machineId       String?  // null = all machines
+
+  // Task definition
+  name            String
+  description     String?
+  taskType        String   // "analyze", "optimize", "health_check", "custom"
+
+  // Schedule configuration
+  scheduleType    String   // "cron", "interval", "threshold", "manual"
+  cronExpression  String?  // e.g., "0 9 * * *" (9 AM daily)
+  intervalMinutes Int?     // e.g., 1440 (daily)
+
+  // Threshold trigger (for scheduleType = "threshold")
+  thresholdMetric   String?  // "optimization_score", "token_count", "issue_count"
+  thresholdValue    Int?     // e.g., 60 (trigger when score < 60)
+  thresholdOperator String?  // "lt", "gt", "eq", "lte", "gte"
+
+  // Scope
+  projectFilter   String?  // JSON array of project paths, null = all
+
+  // Task configuration (JSON)
+  taskConfig      String   @default("{}") // { strategy: "moderate", dryRun: false, ... }
+
+  // Notification settings
+  notifyOnSuccess Boolean  @default(false)
+  notifyOnFailure Boolean  @default(true)
+  webhookIds      String?  // JSON array of webhook IDs to notify
+
+  // Status
+  enabled         Boolean  @default(true)
+  lastRunAt       DateTime?
+  nextRunAt       DateTime?
+
+  // Metadata
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  machine         Machine? @relation(fields: [machineId], references: [id], onDelete: Cascade)
+  executions      TaskExecution[]
+
+  @@index([machineId])
+  @@index([enabled])
+  @@index([nextRunAt])
+  @@index([taskType])
+}
+
+// Task execution history
+model TaskExecution {
+  id              String   @id @default(cuid())
+  taskId          String
+  machineId       String?
+
+  // Execution details
+  status          String   // "pending", "running", "completed", "failed", "skipped"
+  triggerType     String   // "scheduled", "threshold", "manual", "api"
+
+  // Timing
+  startedAt       DateTime @default(now())
+  completedAt     DateTime?
+  durationMs      Int?
+
+  // Results (JSON)
+  result          String?  // { projectsAnalyzed: 5, issuesFound: 12, ... }
+  error           String?  // Error message if failed
+
+  // Metrics captured
+  projectsProcessed Int    @default(0)
+  issuesFound       Int    @default(0)
+  tokensSaved       Int    @default(0)
+
+  // Notifications sent
+  notificationsSent String? // JSON array of webhook IDs notified
+
+  task            ScheduledTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  machine         Machine?      @relation(fields: [machineId], references: [id], onDelete: SetNull)
+
+  @@index([taskId])
+  @@index([machineId])
+  @@index([status])
+  @@index([startedAt])
+}
+
+// Webhook configurations for notifications
+model WebhookConfig {
+  id              String   @id @default(cuid())
+  machineId       String?  // null = global webhook
+
+  // Webhook details
+  name            String
+  description     String?
+  webhookType     String   // "slack", "discord", "generic", "n8n"
+  webhookUrl      String   // The webhook URL (encrypted)
+
+  // Configuration (JSON)
+  config          String   @default("{}") // { channel: "#alerts", username: "CCM Bot", ... }
+
+  // Event filters
+  eventTypes      String   @default("[]") // JSON array: ["task_completed", "task_failed", "threshold_triggered"]
+
+  // Status
+  enabled         Boolean  @default(true)
+  lastUsedAt      DateTime?
+  failureCount    Int      @default(0)
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  machine         Machine? @relation(fields: [machineId], references: [id], onDelete: Cascade)
+
+  @@index([machineId])
+  @@index([webhookType])
   @@index([enabled])
 }
