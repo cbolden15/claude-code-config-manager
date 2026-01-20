@@ -1,12 +1,11 @@
 import { PrismaClient } from '@prisma/client'
 import type {
   Machine,
-  MachineOverride,
-  GlobalHook,
-  GlobalPermission,
-  GlobalEnvVar,
-  Component,
-  Profile,
+  Project,
+  Session,
+  Pattern,
+  Recommendation,
+  HealthScore,
 } from '@prisma/client'
 
 /**
@@ -35,180 +34,8 @@ export async function createTestMachine(
       platform: overrides.platform || 'darwin',
       arch: overrides.arch || 'arm64',
       homeDir: overrides.homeDir || '/Users/test',
-      syncEnabled: overrides.syncEnabled !== undefined ? overrides.syncEnabled : true,
       isCurrentMachine: overrides.isCurrentMachine !== undefined ? overrides.isCurrentMachine : false,
       lastSeen: overrides.lastSeen || new Date(),
-      lastSyncedAt: overrides.lastSyncedAt || null,
-    },
-  })
-}
-
-/**
- * Machine Override Factory
- */
-export async function createTestMachineOverride(
-  prisma: PrismaClient,
-  machineId: string,
-  overrides: Partial<MachineOverride> = {}
-): Promise<MachineOverride> {
-  const uniqueId = getUniqueId()
-  return prisma.machineOverride.create({
-    data: {
-      machineId,
-      configType: overrides.configType || 'hook',
-      configKey: overrides.configKey || `test-config-${uniqueId}`,
-      action: overrides.action || 'exclude',
-      overrideData: overrides.overrideData || null,
-      reason: overrides.reason || 'Test override',
-    },
-  })
-}
-
-/**
- * Global Hook Factory
- */
-export async function createTestGlobalHook(
-  prisma: PrismaClient,
-  overrides: Partial<GlobalHook> = {}
-): Promise<GlobalHook> {
-  const uniqueId = getUniqueId()
-  return prisma.globalHook.create({
-    data: {
-      hookType: overrides.hookType || 'PreToolUse',
-      matcher: overrides.matcher || `Test-${uniqueId}`,
-      command: overrides.command || 'echo "test"',
-      timeout: overrides.timeout || 30,
-      enabled: overrides.enabled !== undefined ? overrides.enabled : true,
-      description: overrides.description || 'Test hook',
-      category: overrides.category || 'testing',
-    },
-  })
-}
-
-/**
- * Global Permission Factory
- */
-export async function createTestGlobalPermission(
-  prisma: PrismaClient,
-  overrides: Partial<GlobalPermission> = {}
-): Promise<GlobalPermission> {
-  const uniqueId = getUniqueId()
-  return prisma.globalPermission.create({
-    data: {
-      permission: overrides.permission || `Bash(test-${uniqueId}:*)`,
-      action: overrides.action || 'allow',
-      description: overrides.description || 'Test permission',
-      enabled: overrides.enabled !== undefined ? overrides.enabled : true,
-      category: overrides.category || 'testing',
-      priority: overrides.priority || 0,
-    },
-  })
-}
-
-/**
- * Global Env Var Factory
- */
-export async function createTestGlobalEnvVar(
-  prisma: PrismaClient,
-  overrides: Partial<GlobalEnvVar> = {}
-): Promise<GlobalEnvVar> {
-  const uniqueId = getUniqueId()
-  return prisma.globalEnvVar.create({
-    data: {
-      key: overrides.key || `TEST_VAR_${uniqueId.toUpperCase().replace(/-/g, '_')}`,
-      value: overrides.value || 'test-value',
-      encrypted: overrides.encrypted !== undefined ? overrides.encrypted : false,
-      sensitive: overrides.sensitive !== undefined ? overrides.sensitive : false,
-      description: overrides.description || 'Test environment variable',
-      scope: overrides.scope || 'all',
-      category: overrides.category || null,
-    },
-  })
-}
-
-/**
- * Component Factory
- */
-export async function createTestComponent(
-  prisma: PrismaClient,
-  overrides: Partial<Component> = {}
-): Promise<Component> {
-  const uniqueId = getUniqueId()
-  return prisma.component.create({
-    data: {
-      type: overrides.type || 'MCP_SERVER',
-      name: overrides.name || `test-component-${uniqueId}`,
-      description: overrides.description || 'Test component',
-      config: overrides.config || JSON.stringify({ test: true }),
-      enabled: overrides.enabled !== undefined ? overrides.enabled : true,
-      tags: overrides.tags || '',
-      version: overrides.version || '1.0.0',
-      sourceUrl: overrides.sourceUrl || null,
-    },
-  })
-}
-
-/**
- * Profile Factory
- */
-export async function createTestProfile(
-  prisma: PrismaClient,
-  overrides: Partial<Profile> = {}
-): Promise<Profile> {
-  const uniqueId = getUniqueId()
-  return prisma.profile.create({
-    data: {
-      name: overrides.name || `test-profile-${uniqueId}`,
-      description: overrides.description || 'Test profile',
-      claudeMdTemplate: overrides.claudeMdTemplate || null,
-    },
-  })
-}
-
-/**
- * Create a complete machine with overrides and sync logs
- */
-export async function createTestMachineWithData(
-  prisma: PrismaClient,
-  options: {
-    machine?: Partial<Machine>
-    overridesCount?: number
-    syncLogsCount?: number
-  } = {}
-): Promise<Machine> {
-  const machine = await createTestMachine(prisma, options.machine)
-
-  // Create overrides
-  const overridesCount = options.overridesCount || 0
-  for (let i = 0; i < overridesCount; i++) {
-    await createTestMachineOverride(prisma, machine.id, {
-      configKey: `override-${i}`,
-    })
-  }
-
-  // Create sync logs
-  const syncLogsCount = options.syncLogsCount || 0
-  for (let i = 0; i < syncLogsCount; i++) {
-    await prisma.syncLog.create({
-      data: {
-        machineId: machine.id,
-        syncType: 'full',
-        status: 'completed',
-        filesCreated: i + 1,
-        filesUpdated: i,
-        filesDeleted: 0,
-        startedAt: new Date(Date.now() - i * 1000),
-        completedAt: new Date(Date.now() - i * 1000 + 100),
-      },
-    })
-  }
-
-  // Reload machine with relations
-  return prisma.machine.findUniqueOrThrow({
-    where: { id: machine.id },
-    include: {
-      overrides: true,
-      syncLogs: true,
     },
   })
 }
@@ -218,79 +45,168 @@ export async function createTestMachineWithData(
  */
 export async function createTestProject(
   prisma: PrismaClient,
-  overrides: Partial<{
-    name: string
-    path: string
-    machine: string
-    profileId: string | null
-    lastSyncedAt: Date | null
-  }> = {}
-): Promise<any> {
+  machineId: string,
+  overrides: Partial<Project> = {}
+): Promise<Project> {
   const uniqueId = getUniqueId()
   return prisma.project.create({
     data: {
+      machineId,
       name: overrides.name || `test-project-${uniqueId}`,
       path: overrides.path || `/test/path/${uniqueId}`,
-      machine: overrides.machine || 'test-machine',
-      profileId: overrides.profileId !== undefined ? overrides.profileId : null,
-      lastSyncedAt: overrides.lastSyncedAt !== undefined ? overrides.lastSyncedAt : null,
+      lastActiveAt: overrides.lastActiveAt || new Date(),
     },
   })
 }
 
 /**
- * Create a complete project with profile and components
+ * Session Factory
  */
-export async function createTestProjectWithProfile(
+export async function createTestSession(
+  prisma: PrismaClient,
+  machineId: string,
+  projectPath: string,
+  overrides: Partial<Session> = {}
+): Promise<Session> {
+  return prisma.session.create({
+    data: {
+      machineId,
+      projectPath,
+      toolsUsed: overrides.toolsUsed || JSON.stringify(['Read', 'Write', 'Bash']),
+      commandsRun: overrides.commandsRun || JSON.stringify(['npm test', 'git status']),
+      tokensUsed: overrides.tokensUsed || 1500,
+      contextTokens: overrides.contextTokens || 500,
+      filesModified: overrides.filesModified || 3,
+      duration: overrides.duration || 300,
+      startedAt: overrides.startedAt || new Date(),
+      endedAt: overrides.endedAt || new Date(),
+    },
+  })
+}
+
+/**
+ * Pattern Factory
+ */
+export async function createTestPattern(
+  prisma: PrismaClient,
+  machineId: string,
+  overrides: Partial<Pattern> = {}
+): Promise<Pattern> {
+  const uniqueId = getUniqueId()
+  return prisma.pattern.create({
+    data: {
+      machineId,
+      type: overrides.type || 'git_workflow',
+      occurrences: overrides.occurrences || 10,
+      confidence: overrides.confidence || 0.8,
+      examples: overrides.examples || JSON.stringify(['git status', 'git commit']),
+      projectPaths: overrides.projectPaths || JSON.stringify(['/test/project']),
+      lastSeenAt: overrides.lastSeenAt || new Date(),
+    },
+  })
+}
+
+/**
+ * Recommendation Factory
+ */
+export async function createTestRecommendation(
+  prisma: PrismaClient,
+  machineId: string,
+  overrides: Partial<Recommendation> = {}
+): Promise<Recommendation> {
+  const uniqueId = getUniqueId()
+  return prisma.recommendation.create({
+    data: {
+      machineId,
+      type: overrides.type || 'mcp_server',
+      recommendedItem: overrides.recommendedItem || `test-server-${uniqueId}`,
+      category: overrides.category || 'database',
+      title: overrides.title || 'Test Recommendation',
+      reason: overrides.reason || 'Detected frequent database queries',
+      detectedPatterns: overrides.detectedPatterns || JSON.stringify(['direct_database_query']),
+      occurrenceCount: overrides.occurrenceCount || 25,
+      confidenceScore: overrides.confidenceScore || 0.85,
+      estimatedTokenSavings: overrides.estimatedTokenSavings || 500,
+      priority: overrides.priority || 'medium',
+      status: overrides.status || 'active',
+    },
+  })
+}
+
+/**
+ * HealthScore Factory
+ */
+export async function createTestHealthScore(
+  prisma: PrismaClient,
+  machineId: string,
+  overrides: Partial<HealthScore> = {}
+): Promise<HealthScore> {
+  return prisma.healthScore.create({
+    data: {
+      machineId,
+      score: overrides.score || 75,
+      mcpScore: overrides.mcpScore || 80,
+      skillScore: overrides.skillScore || 70,
+      contextScore: overrides.contextScore || 75,
+      patternScore: overrides.patternScore || 75,
+      activeRecommendations: overrides.activeRecommendations || 3,
+      appliedRecommendations: overrides.appliedRecommendations || 5,
+      dismissedRecommendations: overrides.dismissedRecommendations || 1,
+      estimatedMonthlyWaste: overrides.estimatedMonthlyWaste || 10000,
+      estimatedMonthlySavings: overrides.estimatedMonthlySavings || 5000,
+      previousScore: overrides.previousScore || 70,
+      trend: overrides.trend || 'improving',
+    },
+  })
+}
+
+/**
+ * Create a complete machine with related data
+ */
+export async function createTestMachineWithData(
   prisma: PrismaClient,
   options: {
-    project?: Partial<{ name: string; path: string; machine: string }>
-    profile?: Partial<Profile>
-    componentsCount?: number
+    machine?: Partial<Machine>
+    projectsCount?: number
+    sessionsCount?: number
+    patternsCount?: number
   } = {}
-): Promise<any> {
-  // Create profile
-  const profile = await createTestProfile(prisma, options.profile)
+): Promise<Machine> {
+  const machine = await createTestMachine(prisma, options.machine)
 
-  // Create components and link to profile
-  const componentsCount = options.componentsCount || 2
-  for (let i = 0; i < componentsCount; i++) {
-    const component = await createTestComponent(prisma, {
-      name: `component-${i}`,
-      type: i === 0 ? 'MCP_SERVER' : 'SUBAGENT',
-    })
-
-    await prisma.profileComponent.create({
-      data: {
-        profileId: profile.id,
-        componentId: component.id,
-        order: i,
-      },
+  // Create projects
+  const projectsCount = options.projectsCount || 0
+  for (let i = 0; i < projectsCount; i++) {
+    await createTestProject(prisma, machine.id, {
+      name: `project-${i}`,
+      path: `/test/project-${i}`,
     })
   }
 
-  // Create project with profile
-  const project = await createTestProject(prisma, {
-    ...options.project,
-    profileId: profile.id,
-  })
+  // Create sessions
+  const sessionsCount = options.sessionsCount || 0
+  for (let i = 0; i < sessionsCount; i++) {
+    await createTestSession(prisma, machine.id, `/test/project-0`, {
+      tokensUsed: 1000 + i * 100,
+    })
+  }
 
-  // Reload project with relations
-  return prisma.project.findUniqueOrThrow({
-    where: { id: project.id },
+  // Create patterns
+  const patternsCount = options.patternsCount || 0
+  for (let i = 0; i < patternsCount; i++) {
+    await createTestPattern(prisma, machine.id, {
+      type: i % 2 === 0 ? 'git_workflow' : 'database_query',
+      occurrences: 10 + i * 5,
+    })
+  }
+
+  // Reload machine with relations
+  return prisma.machine.findUniqueOrThrow({
+    where: { id: machine.id },
     include: {
-      profile: {
-        include: {
-          components: {
-            include: {
-              component: true,
-            },
-            orderBy: {
-              order: 'asc',
-            },
-          },
-        },
-      },
+      projects: true,
+      sessions: true,
+      patterns: true,
     },
   })
 }

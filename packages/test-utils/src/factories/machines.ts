@@ -4,10 +4,9 @@
  * Factory functions for creating test machine data
  */
 
-import type { Machine, MachineOverride } from '@ccm/shared';
+import type { Machine } from '@ccm/shared';
 
 let machineCounter = 0;
-let overrideCounter = 0;
 
 /**
  * Creates a machine with default or custom properties
@@ -25,31 +24,7 @@ export function createMachine(overrides?: Partial<Machine>): Machine {
     arch: overrides?.arch ?? 'arm64',
     homeDir: overrides?.homeDir ?? `/Users/testuser${machineCounter}`,
     lastSeen: overrides?.lastSeen ?? now,
-    lastSyncedAt: overrides?.lastSyncedAt ?? null,
-    syncEnabled: overrides?.syncEnabled ?? true,
     isCurrentMachine: overrides?.isCurrentMachine ?? false,
-    createdAt: overrides?.createdAt ?? now,
-    updatedAt: overrides?.updatedAt ?? now,
-    ...overrides,
-  };
-}
-
-/**
- * Creates a machine override with default or custom properties
- */
-export function createMachineOverride(overrides?: Partial<MachineOverride>): MachineOverride {
-  overrideCounter++;
-
-  const now = new Date();
-
-  return {
-    id: overrides?.id ?? `override_${overrideCounter}`,
-    machineId: overrides?.machineId ?? `machine_${machineCounter}`,
-    configType: overrides?.configType ?? 'mcp_server',
-    configKey: overrides?.configKey ?? `config_${overrideCounter}`,
-    action: overrides?.action ?? 'include',
-    overrideData: overrides?.overrideData ?? null,
-    reason: overrides?.reason ?? null,
     createdAt: overrides?.createdAt ?? now,
     updatedAt: overrides?.updatedAt ?? now,
     ...overrides,
@@ -89,7 +64,6 @@ export function createCIMachine(): Machine {
     platform: 'linux',
     arch: 'x64',
     homeDir: '/home/runner',
-    syncEnabled: false,
   });
 }
 
@@ -111,5 +85,4 @@ export function createServerMachine(): Machine {
  */
 export function resetMachineCounters(): void {
   machineCounter = 0;
-  overrideCounter = 0;
 }

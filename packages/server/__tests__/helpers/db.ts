@@ -53,16 +53,17 @@ export async function setupTestDatabase(): Promise<PrismaClient> {
  */
 export async function cleanDatabase(client: PrismaClient = prisma): Promise<void> {
   // Delete in order to respect foreign key constraints
-  await client.syncLog.deleteMany()
-  await client.machineOverride.deleteMany()
-  await client.machine.deleteMany()
-  await client.globalPermission.deleteMany()
-  await client.globalHook.deleteMany()
-  await client.globalEnvVar.deleteMany()
+  await client.taskExecution.deleteMany()
+  await client.scheduledTask.deleteMany()
+  await client.appliedConfig.deleteMany()
+  await client.contextArchive.deleteMany()
+  await client.contextAnalysis.deleteMany()
+  await client.healthScore.deleteMany()
+  await client.recommendation.deleteMany()
+  await client.pattern.deleteMany()
+  await client.session.deleteMany()
   await client.project.deleteMany()
-  await client.profileComponent.deleteMany()
-  await client.profile.deleteMany()
-  await client.component.deleteMany()
+  await client.machine.deleteMany()
 }
 
 /**

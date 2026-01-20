@@ -5,9 +5,6 @@
  */
 
 export * from './machines';
-export * from './env';
-export * from './hooks';
-export * from './permissions';
 
 /**
  * Reset all factory counters
@@ -15,12 +12,5 @@ export * from './permissions';
  */
 export function resetAllCounters(): void {
   const { resetMachineCounters } = require('./machines');
-  const { resetEnvVarCounters } = require('./env');
-  const { resetHookCounters } = require('./hooks');
-  const { resetPermissionCounters } = require('./permissions');
-
   resetMachineCounters();
-  resetEnvVarCounters();
-  resetHookCounters();
-  resetPermissionCounters();
 }
